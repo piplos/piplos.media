@@ -5,9 +5,9 @@ name: Build containers (on demand)
 # version tag. Release tags (v*) stay owned by release.yml.
 #
 # Published packages (same names as release.yml):
-#   - ghcr.io/piplos-media/piplos-api     — Go API (docker/Dockerfile.api)
-#   - ghcr.io/piplos-media/piplos-migrate — goose migrations (docker/Dockerfile.migrate)
-#   - ghcr.io/piplos-media/piplos-admin   — admin panel behind nginx (docker/Dockerfile.admin)
+#   - ghcr.io/piplos/piplos-api     — Go API (docker/Dockerfile.api)
+#   - ghcr.io/piplos/piplos-migrate — goose migrations (docker/Dockerfile.migrate)
+#   - ghcr.io/piplos/piplos-admin   — admin panel behind nginx (docker/Dockerfile.admin)
 #
 # Tags applied to each pushed image (semver tags are NEVER touched here):
 #   <ref-slug>   e.g. `main`, `feature-foo`  (the built branch/tag, slugified)
@@ -55,7 +55,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  GHCR_OWNER: piplos-media
+  GHCR_OWNER: piplos
 
 permissions:
   contents: read

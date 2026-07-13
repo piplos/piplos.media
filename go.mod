@@ -1,4 +1,4 @@
-module github.com/piplos-media/site
+module github.com/piplos/site
 
 go 1.26.5
 

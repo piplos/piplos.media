@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/piplos-media/site/internal/models"
+	"github.com/piplos/site/internal/models"
 )
 
 // Repository executes queries against PostgreSQL.

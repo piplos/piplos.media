@@ -1,8 +1,11 @@
-# Production stack — API + admin + PostgreSQL.
+# Production stack — images from ghcr.io/piplos/piplos-{api,migrate,admin}:latest
 # Site (Cloudflare Pages) is not in this compose.
 #
 #   cp .env.example .env   # set secrets for production
 #   docker compose pull && docker compose up -d
+#
+# Migrations run automatically on `up` (one-shot `migrate` → api/admin start after success).
+# Manual goose: docker compose run --rm migrate status|down
 #
 # Requires Traefik on external network `webproxy` (entrypoint `websecure`,
 # cert resolver `cloudflare`). Tunables: repo-root `.env`.
@@ -59,10 +62,7 @@ services:
     logging: *default-logging
 
   migrate:
-    image: ghcr.io/piplos-media/piplos-migrate:latest
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.migrate
+    image: ghcr.io/piplos/piplos-migrate:latest
     restart: "no"
     <<: *hardening
     environment:
@@ -70,15 +70,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    labels:
+      - traefik.enable=false
     networks:
       - internal
     logging: *default-logging
 
   api:
-    image: ghcr.io/piplos-media/piplos-api:latest
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.api
+    image: ghcr.io/piplos/piplos-api:latest
     restart: unless-stopped
     init: true
     <<: *hardening
@@ -117,10 +116,7 @@ services:
     logging: *default-logging
 
   admin:
-    image: ghcr.io/piplos-media/piplos-admin:latest
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.admin
+    image: ghcr.io/piplos/piplos-admin:latest
     restart: unless-stopped
     init: true
     <<: *hardening

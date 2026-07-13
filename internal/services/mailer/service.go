@@ -6,7 +6,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/piplos-media/site/internal/models"
+	"github.com/piplos/site/internal/models"
 )
 
 type userLister interface {

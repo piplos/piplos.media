@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/piplos-media/site/internal/models"
+	"github.com/piplos/site/internal/models"
 )
 
 const leadColumns = `id, types, project_name, description, stack, reference_urls, budget, currency,

@@ -6,10 +6,10 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	apperrors "github.com/piplos-media/site/internal/errors"
-	"github.com/piplos-media/site/internal/middleware"
-	"github.com/piplos-media/site/internal/repository"
-	authsvc "github.com/piplos-media/site/internal/services/auth"
+	apperrors "github.com/piplos/site/internal/errors"
+	"github.com/piplos/site/internal/middleware"
+	"github.com/piplos/site/internal/repository"
+	authsvc "github.com/piplos/site/internal/services/auth"
 )
 
 // AuthHandler serves login/refresh/me endpoints.

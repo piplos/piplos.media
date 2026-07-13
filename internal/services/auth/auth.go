@@ -8,8 +8,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/piplos-media/site/internal/config"
-	"github.com/piplos-media/site/internal/models"
+	"github.com/piplos/site/internal/config"
+	"github.com/piplos/site/internal/models"
 )
 
 // Service handles authentication operations.

@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/piplos-media/site/internal/models"
+	"github.com/piplos/site/internal/models"
 )
 
 const serviceColumns = "id, slug, icon, tags, published, sort_order, translations, created_at, updated_at"

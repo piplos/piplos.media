@@ -6,9 +6,9 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 
-	apperrors "github.com/piplos-media/site/internal/errors"
-	"github.com/piplos-media/site/internal/models"
-	"github.com/piplos-media/site/internal/repository"
+	apperrors "github.com/piplos/site/internal/errors"
+	"github.com/piplos/site/internal/models"
+	"github.com/piplos/site/internal/repository"
 )
 
 // AIModelsHandler manages the ai_provider_models catalog.

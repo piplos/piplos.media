@@ -6,9 +6,9 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	apperrors "github.com/piplos-media/site/internal/errors"
-	"github.com/piplos-media/site/internal/models"
-	"github.com/piplos-media/site/internal/repository"
+	apperrors "github.com/piplos/site/internal/errors"
+	"github.com/piplos/site/internal/models"
+	"github.com/piplos/site/internal/repository"
 )
 
 type leadNotifier interface {

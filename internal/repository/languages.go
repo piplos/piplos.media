@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/piplos-media/site/internal/models"
+	"github.com/piplos/site/internal/models"
 )
 
 // ListLanguages returns all languages ordered for display.

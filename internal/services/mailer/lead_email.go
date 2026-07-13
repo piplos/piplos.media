@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/piplos-media/site/internal/models"
+	"github.com/piplos/site/internal/models"
 )
 
 type leadField struct {

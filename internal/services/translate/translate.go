@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/piplos-media/site/internal/config"
-	"github.com/piplos-media/site/internal/repository"
-	"github.com/piplos-media/site/internal/services/ai"
+	"github.com/piplos/site/internal/config"
+	"github.com/piplos/site/internal/repository"
+	"github.com/piplos/site/internal/services/ai"
 )
 
 // Language display names for the translation prompt.

@@ -14,17 +14,17 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/rs/zerolog"
 
-	"github.com/piplos-media/site/internal/config"
-	"github.com/piplos-media/site/internal/database"
-	"github.com/piplos-media/site/internal/handlers"
-	"github.com/piplos-media/site/internal/middleware"
-	"github.com/piplos-media/site/internal/models"
-	"github.com/piplos-media/site/internal/repository"
-	"github.com/piplos-media/site/internal/server"
-	authsvc "github.com/piplos-media/site/internal/services/auth"
-	"github.com/piplos-media/site/internal/services/mailer"
-	"github.com/piplos-media/site/internal/services/translate"
-	"github.com/piplos-media/site/internal/utils"
+	"github.com/piplos/site/internal/config"
+	"github.com/piplos/site/internal/database"
+	"github.com/piplos/site/internal/handlers"
+	"github.com/piplos/site/internal/middleware"
+	"github.com/piplos/site/internal/models"
+	"github.com/piplos/site/internal/repository"
+	"github.com/piplos/site/internal/server"
+	authsvc "github.com/piplos/site/internal/services/auth"
+	"github.com/piplos/site/internal/services/mailer"
+	"github.com/piplos/site/internal/services/translate"
+	"github.com/piplos/site/internal/utils"
 )
 
 // Version is the application version.

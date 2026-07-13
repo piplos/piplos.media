@@ -9,8 +9,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/piplos-media/site/internal/models"
-	"github.com/piplos-media/site/internal/utils"
+	"github.com/piplos/site/internal/models"
+	"github.com/piplos/site/internal/utils"
 )
 
 // sqlUpsertSetting upserts a settings row by key, refreshing updated_at on conflict.

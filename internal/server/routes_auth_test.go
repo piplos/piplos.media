@@ -11,10 +11,10 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/rs/zerolog"
 
-	"github.com/piplos-media/site/internal/config"
-	"github.com/piplos-media/site/internal/middleware"
-	"github.com/piplos-media/site/internal/models"
-	authsvc "github.com/piplos-media/site/internal/services/auth"
+	"github.com/piplos/site/internal/config"
+	"github.com/piplos/site/internal/middleware"
+	"github.com/piplos/site/internal/models"
+	authsvc "github.com/piplos/site/internal/services/auth"
 )
 
 type routeCase struct {

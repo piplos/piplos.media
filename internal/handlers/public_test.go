@@ -3,7 +3,7 @@ package handlers
 import (
 	"testing"
 
-	"github.com/piplos-media/site/internal/models"
+	"github.com/piplos/site/internal/models"
 )
 
 func TestPublicProjectsFiltersUnpublished(t *testing.T) {

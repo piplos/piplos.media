@@ -2,9 +2,9 @@ name: Release containers
 
 # Build and publish container images to GHCR whenever a version tag is pushed
 # (e.g. `git tag v1.2.3 && git push origin v1.2.3`):
-#   - ghcr.io/piplos-media/piplos-api     — Go API (docker/Dockerfile.api)
-#   - ghcr.io/piplos-media/piplos-migrate — one-shot goose migrations (docker/Dockerfile.migrate)
-#   - ghcr.io/piplos-media/piplos-admin   — admin panel behind nginx (docker/Dockerfile.admin)
+#   - ghcr.io/piplos/piplos-api     — Go API (docker/Dockerfile.api)
+#   - ghcr.io/piplos/piplos-migrate — one-shot goose migrations (docker/Dockerfile.migrate)
+#   - ghcr.io/piplos/piplos-admin   — admin panel behind nginx (docker/Dockerfile.admin)
 on:
   push:
     tags:
@@ -14,7 +14,7 @@ on:
 # Opt into Node 24 for JS actions (checkout, docker/*) until upstream ships node24.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  GHCR_OWNER: piplos-media
+  GHCR_OWNER: piplos
 
 permissions:
   contents: read
