@@ -4,12 +4,10 @@ export type ProjectLocale = {
 	title: string;
 	subtitle: string;
 	description: string;
-	challenge?: string;
-	solution?: string;
-	result?: string;
-	stack_detail?: string;
-	challenge_title?: string;
-	solution_title?: string;
+	challenge: string;
+	solution: string;
+	result: string;
+	stack_detail: string;
 };
 
 export type PortfolioProject = {
@@ -18,8 +16,7 @@ export type PortfolioProject = {
 	categories: string[];
 	tags: string[];
 	year: number;
-	featured?: boolean;
-	image?: string;
+	featured: boolean;
 	en: ProjectLocale;
 	ru: ProjectLocale;
 };
@@ -34,7 +31,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export function getProjectLocale(project: PortfolioProject, lang: Lang): ProjectLocale {
-	return project[lang] ?? project.en;
+	return project[lang];
 }
 
 export function getCategoryColor(category: string): string {
@@ -42,14 +39,8 @@ export function getCategoryColor(category: string): string {
 }
 
 export function getProjectStackItems(project: PortfolioProject, lang: Lang): string[] {
-	const loc = getProjectLocale(project, lang);
-
-	if (loc.stack_detail) {
-		return loc.stack_detail
-			.split(',')
-			.map((item) => item.trim())
-			.filter(Boolean);
-	}
-
-	return project.tags;
+	return getProjectLocale(project, lang)
+		.stack_detail.split(',')
+		.map((item) => item.trim())
+		.filter(Boolean);
 }

@@ -61,7 +61,7 @@
 		<div class="container">
 			<div class="filter-inner">
 				<span class="filter-label" aria-hidden="true">{langStore.t('portfolio.filter_label')}</span>
-				{#each categories as cat}
+				{#each categories as cat (cat.key)}
 					<button
 						class="filter-btn"
 						class:active={activeFilter === cat.key}
@@ -80,7 +80,7 @@
 		<div class="container">
 			<h2 id="grid-heading" class="sr-only">Project case studies</h2>
 			<div class="portfolio-grid" role="list">
-				{#each filtered as project, i}
+				{#each filtered as project, i (project.id)}
 					{@const loc = getProjectLocale(project, langStore.value)}
 					<article
 						class="portfolio-card"
@@ -101,7 +101,7 @@
 						</h3>
 						<p class="pc-desc" itemprop="description">{loc.description}</p>
 						<div class="pc-tags">
-							{#each project.tags as tag}
+							{#each project.tags as tag (tag)}
 								<span class="pc-tag">{tag}</span>
 							{/each}
 						</div>

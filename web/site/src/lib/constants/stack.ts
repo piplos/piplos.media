@@ -48,7 +48,10 @@ export const STACK_GROUPS = [
 	}
 ] as const;
 
-export type StackGroupId = (typeof STACK_GROUPS)[number]['id'];
 export type StackItemId = (typeof STACK_GROUPS)[number]['items'][number]['id'];
 
-export const STACK_ITEMS = STACK_GROUPS.flatMap((group) => group.items);
+export type StackItem = { readonly id: StackItemId; readonly label: string };
+
+export const STACK_ITEMS: readonly StackItem[] = STACK_GROUPS.flatMap(
+	(group): readonly StackItem[] => group.items
+);

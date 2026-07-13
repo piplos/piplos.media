@@ -50,35 +50,21 @@
 
 					<article class="cs-block">
 						<p class="cs-label">{langStore.t('case_study.challenge')}</p>
-						<h2 class="cs-heading">{loc.challenge_title ?? langStore.t('case_study.challenge')}</h2>
-						<p class="cs-text">{loc.challenge ?? loc.description}</p>
+						<h2 class="cs-heading">{langStore.t('case_study.challenge')}</h2>
+						<p class="cs-text">{loc.challenge}</p>
 					</article>
 
 					<article class="cs-block">
 						<p class="cs-label">{langStore.t('case_study.solution')}</p>
-						<h2 class="cs-heading">{loc.solution_title ?? langStore.t('case_study.solution')}</h2>
-						<p class="cs-text">{loc.solution ?? 'We designed and built a scalable, maintainable solution using modern technologies and best engineering practices.'}</p>
+						<h2 class="cs-heading">{langStore.t('case_study.solution')}</h2>
+						<p class="cs-text">{loc.solution}</p>
 					</article>
 
-					{#if project.metrics}
-						<article class="cs-block">
-							<p class="cs-label">{langStore.t('case_study.result')}</p>
-							<div class="cs-metrics">
-								{#each project.metrics as metric}
-									<div class="cs-metric">
-										<div class="cs-metric-value">{metric.value}</div>
-										<div class="cs-metric-label">{metric.label}</div>
-									</div>
-								{/each}
-							</div>
-						</article>
-					{:else if loc.result}
-						<article class="cs-block">
-							<p class="cs-label">{langStore.t('case_study.result')}</p>
-							<h2 class="cs-heading">{langStore.t('case_study.result')}</h2>
-							<p class="cs-text">{loc.result}</p>
-						</article>
-					{/if}
+					<article class="cs-block">
+						<p class="cs-label">{langStore.t('case_study.result')}</p>
+						<h2 class="cs-heading">{langStore.t('case_study.result')}</h2>
+						<p class="cs-text">{loc.result}</p>
+					</article>
 				</div>
 
 				<aside class="cs-sidebar">
@@ -194,38 +180,6 @@
 		line-height: 1.75;
 	}
 
-	.cs-metrics {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: 1px;
-		background: var(--c-border);
-		border: 1px solid var(--c-border);
-		border-radius: var(--radius);
-		overflow: hidden;
-	}
-
-	.cs-metric {
-		background: var(--c-surface);
-		padding: 28px 24px;
-	}
-
-	.cs-metric-value {
-		font-family: var(--f-display);
-		font-size: 32px;
-		font-weight: 700;
-		color: var(--c-accent);
-		line-height: 1;
-		margin-bottom: 8px;
-	}
-
-	.cs-metric-label {
-		font-family: var(--f-mono);
-		font-size: 11px;
-		color: var(--c-muted);
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
 	.cs-sidebar {
 		display: flex;
 		flex-direction: column;
@@ -302,12 +256,10 @@
 	@media (max-width: 1024px) {
 		.cs-layout { grid-template-columns: 1fr; gap: 48px; }
 		.cs-sidebar { position: static; }
-		.cs-metrics { grid-template-columns: repeat(2, 1fr); }
 	}
 
 	@media (max-width: 768px) {
 		.cs-hero { padding: 48px 0; }
 		.cs-content { padding: 56px 0 80px; }
-		.cs-metrics { grid-template-columns: 1fr; }
 	}
 </style>

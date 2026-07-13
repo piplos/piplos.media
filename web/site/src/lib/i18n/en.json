@@ -109,13 +109,15 @@
     "start_project": "Start a Similar Project"
   },
   "order": {
-    "title": "Start a Project",
     "eyebrow": "Response within 24 hours",
+    "title_1": "Start a",
+    "title_2": "Project",
     "steps": ["Type", "Details", "Budget", "Contact"],
     "step1_title": "What are you building?",
     "step2_title": "Tell us more",
     "step3_title": "Budget & Timeline",
-    "step4_title": "Your Contact",
+    "step4_title": "Your Contact Info",
+    "type_label": "Project Type",
     "types": [
       { "id": "web", "label": "Web App", "hint": "SPA, dashboard, portal, CRM" },
       { "id": "mobile", "label": "Mobile App", "hint": "iOS, Android, cross-platform" },
@@ -125,33 +127,67 @@
       { "id": "consulting", "label": "Consulting", "hint": "Audit, architecture, review" }
     ],
     "fields": {
-      "project_name": "Project Name",
-      "description": "Project Description",
-      "stack": "Preferred Stack (optional)",
-      "references": "References / Inspiration",
-      "name": "Your Name",
-      "email": "Email",
-      "company": "Company (optional)",
-      "phone": "Phone (optional)",
-      "message": "Additional Notes"
+      "project_name": { "label": "Project Name", "placeholder": "e.g. Analytics Platform, Delivery App..." },
+      "description": { "label": "Description", "hint": "What problem does it solve? Who are the users? What's the core functionality?", "placeholder": "Describe your project..." },
+      "stack": { "label": "Preferred Tech Stack", "hint": "Leave blank — we'll recommend the best stack.", "placeholder": "e.g. React, Node.js, PostgreSQL..." },
+      "references": { "label": "References / Inspiration", "placeholder": "URLs to similar products..." },
+      "first_name": { "label": "First Name", "placeholder": "Alex" },
+      "last_name": { "label": "Last Name", "placeholder": "Johnson" },
+      "email": { "label": "Email", "placeholder": "alex@company.com" },
+      "company": { "label": "Company", "placeholder": "Acme Corp" },
+      "phone": { "label": "Phone", "placeholder": "+1 555 000 0000" },
+      "how_found": { "label": "How did you find us?", "placeholder": "— Select —" },
+      "notes": { "label": "Anything else?", "placeholder": "NDA required, specific constraints, preferred communication channel..." }
     },
-    "budget_label": "Budget Range",
-    "timeline_label": "Timeline",
-    "timelines": ["1–2 months", "3–4 months", "5–6 months", "6+ months"],
-    "stage_label": "Project Stage",
-    "stages": ["Idea / MVP", "Existing product", "Redesign / Rebuild", "Scale-up"],
+    "budget_label": "Estimated Budget",
+    "currency_label": "Currency",
+    "timeline_label": "Desired Timeline",
+    "timeline_placeholder": "— Select timeline —",
+    "timelines": [
+      { "value": "1m", "label": "Less than 1 month" },
+      { "value": "1-3m", "label": "1–3 months" },
+      { "value": "3-6m", "label": "3–6 months" },
+      { "value": "6-12m", "label": "6–12 months" },
+      { "value": "12m+", "label": "12+ months / Ongoing" },
+      { "value": "flexible", "label": "Flexible" }
+    ],
+    "stage_label": "Current Stage",
+    "stages": [
+      { "id": "idea", "label": "Just an Idea", "hint": "Starting from scratch" },
+      { "id": "design", "label": "Have Design", "hint": "Wireframes or mockups ready" },
+      { "id": "mvp", "label": "Existing MVP", "hint": "Rebuild or scale" },
+      { "id": "legacy", "label": "Legacy Migration", "hint": "Modernize old system" }
+    ],
+    "how_found_options": [
+      { "value": "google", "label": "Google Search" },
+      { "value": "referral", "label": "Referral" },
+      { "value": "social", "label": "Social Media" },
+      { "value": "github", "label": "GitHub" },
+      { "value": "other", "label": "Other" }
+    ],
     "next": "Next",
     "back": "Back",
-    "submit": "Send Brief",
-    "success_title": "Brief received!",
-    "success_text": "We'll review your project and get back to you within 24 hours.",
+    "step_of": "Step {current} of {total}",
+    "submit": "Send Request",
+    "success_title": "Request Sent!",
+    "success_text": "We've received your project brief. Our team will review it and get back to you within 24 hours with a plan and initial estimate.",
+    "promise_label": "Our Promise",
+    "why_title": "Why",
     "promises": [
-      "24h response — we review every brief personally",
-      "Free estimate — detailed scope and cost breakdown",
-      "No lock-in — you own all code and infrastructure",
-      "Fixed-price or T&M — your preferred model",
-      "NDA on request — before any discussion"
-    ]
+      { "title": "24h response", "text": "— we review every brief personally and reply within one business day." },
+      { "title": "Free estimate", "text": "— detailed scope, timeline and cost breakdown at no charge." },
+      { "title": "No lock-in", "text": "— you own all code, repos and infrastructure from day one." },
+      { "title": "Fixed-price or T&M", "text": "— we adapt to your preferred engagement model." },
+      { "title": "NDA on request", "text": "— confidentiality agreement available before any discussion." }
+    ],
+    "testimonial_label": "Testimonial",
+    "testimonial_text": "\"piplos.media delivered our analytics platform on time and under budget. Their code quality and communication are exceptional — we've been working together for 3 years.\"",
+    "testimonial_author": "— CTO, B2B SaaS Startup",
+    "contact_label": "Direct Contact"
+  },
+  "contact": {
+    "email": "Email",
+    "phone": "Phone"
   },
   "footer": {
     "tagline": "Engineering-first software development.",
@@ -166,12 +202,10 @@
       "consulting": "Tech Consulting",
       "portfolio": "Portfolio",
       "stack": "Tech Stack",
-      "process": "Process",
       "start": "Start a Project",
       "privacy": "Privacy",
       "terms": "Terms"
-    },
-    "copyright": "Piplos Media — Minsk, Belarus"
+    }
   },
   "privacy": {
     "title": "Privacy Policy",

@@ -44,7 +44,7 @@
 
 		<!-- Desktop nav -->
 		<nav class="nav" aria-label="Primary navigation">
-			{#each navLinks as link}
+			{#each navLinks as link (link.href)}
 				<a
 					href={link.href}
 					aria-current={isActive(link.href) ? 'page' : undefined}
@@ -97,7 +97,7 @@
 		></button>
 		<div class="mobile-menu">
 			<nav>
-				{#each navLinks as link}
+				{#each navLinks as link (link.href)}
 					<a
 						href={link.href}
 						onclick={() => menuOpen = false}

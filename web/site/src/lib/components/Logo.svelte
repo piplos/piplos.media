@@ -19,7 +19,6 @@
 <a {href} class="logo logo--{variant}" aria-label={label}>
 	<svg
 		class="logo-mark"
-		id="svg-logo--house_reverse"
 		viewBox="0 0 75 75"
 		xmlns="http://www.w3.org/2000/svg"
 		aria-hidden="true"

@@ -2,27 +2,35 @@ import { browser } from '$app/environment';
 
 type Theme = 'dark' | 'light';
 
+const STORAGE_KEY = 'piplos-theme';
+
+function isTheme(value: unknown): value is Theme {
+	return value === 'dark' || value === 'light';
+}
+
 function createThemeStore() {
 	let theme = $state<Theme>('dark');
 
-	function init() {
-		if (!browser) return;
-		const saved = localStorage.getItem('piplos-theme') as Theme | null;
-		const preferred = saved ?? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-		theme = preferred;
-		apply(preferred);
+	function set(t: Theme) {
+		theme = t;
+		document.documentElement.setAttribute('data-theme', t);
+		document
+			.getElementById('theme-color-meta')
+			?.setAttribute('content', t === 'light' ? '#ffffff' : '#24252a');
+		localStorage.setItem(STORAGE_KEY, t);
 	}
 
-	function apply(t: Theme) {
-		document.documentElement.setAttribute('data-theme', t);
-		const meta = document.getElementById('theme-color-meta');
-		if (meta) meta.setAttribute('content', t === 'light' ? '#ffffff' : '#24252a');
-		if (browser) localStorage.setItem('piplos-theme', t);
+	function init() {
+		if (!browser) return;
+		const saved = localStorage.getItem(STORAGE_KEY);
+		const preferred = window.matchMedia('(prefers-color-scheme: light)').matches
+			? 'light'
+			: 'dark';
+		set(isTheme(saved) ? saved : preferred);
 	}
 
 	function toggle() {
-		theme = theme === 'dark' ? 'light' : 'dark';
-		apply(theme);
+		set(theme === 'dark' ? 'light' : 'dark');
 	}
 
 	return {

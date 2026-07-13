@@ -4,12 +4,17 @@ import ru from '$lib/i18n/ru.json';
 
 export type Lang = 'en' | 'ru';
 
+const STORAGE_KEY = 'piplos-lang';
+
 const translations: Record<Lang, typeof en> = { en, ru: ru as typeof en };
 
+function isLang(value: unknown): value is Lang {
+	return value === 'en' || value === 'ru';
+}
+
 function resolve(lang: Lang, key: string): unknown {
-	const keys = key.split('.');
 	let val: unknown = translations[lang];
-	for (const k of keys) {
+	for (const k of key.split('.')) {
 		if (val == null || typeof val !== 'object') return undefined;
 		val = (val as Record<string, unknown>)[k];
 	}
@@ -19,32 +24,32 @@ function resolve(lang: Lang, key: string): unknown {
 function createLangStore() {
 	let lang = $state<Lang>('en');
 
-	function applyLang(l: Lang) {
+	function set(l: Lang) {
 		lang = l;
 		if (browser) {
-			localStorage.setItem('piplos-lang', l);
+			localStorage.setItem(STORAGE_KEY, l);
 			document.documentElement.setAttribute('lang', l);
 		}
 	}
 
 	function init() {
 		if (!browser) return;
-		const saved = localStorage.getItem('piplos-lang') as Lang | null;
+		const saved = localStorage.getItem(STORAGE_KEY);
 		const browserLang = navigator.language.startsWith('ru') ? 'ru' : 'en';
-		applyLang(saved ?? browserLang);
-	}
-
-	function set(l: Lang) {
-		applyLang(l);
+		set(isLang(saved) ? saved : browserLang);
 	}
 
 	function toggle() {
 		set(lang === 'en' ? 'ru' : 'en');
 	}
 
-	function t(key: string): string {
+	function t(key: string, params?: Record<string, string | number>): string {
 		const val = resolve(lang, key);
-		return typeof val === 'string' ? val : key;
+		if (typeof val !== 'string') return key;
+		if (!params) return val;
+		return val.replace(/\{(\w+)\}/g, (match, name) =>
+			name in params ? String(params[name]) : match
+		);
 	}
 
 	function get<T>(key: string): T | undefined {

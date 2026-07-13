@@ -63,7 +63,7 @@
 		<p class="legal-updated">{langStore.t('terms.last_updated')}</p>
 
 		<div class="legal-sections">
-			{#each sections as section}
+			{#each sections as section (section.title)}
 				<article class="legal-section">
 					<h2>{section.title}</h2>
 					<p>{section.body}</p>

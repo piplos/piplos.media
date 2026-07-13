@@ -105,7 +105,7 @@
 	<!-- ─── TICKER ────────────────────────────────────── -->
 	<div class="ticker" aria-hidden="true">
 		<div class="ticker-track">
-			{#each [...tickerItems, ...tickerItems] as item}
+			{#each [...tickerItems, ...tickerItems] as item, i (i)}
 				<span class="ticker-item">{item}</span>
 			{/each}
 		</div>
@@ -125,14 +125,14 @@
 				</a>
 			</div>
 			<div class="services-grid" role="list">
-				{#each services as svc}
+				{#each services as svc (svc.id)}
 					<article class="service-card" role="listitem" itemscope itemtype="https://schema.org/Service">
 						<div class="service-num">{svc.num}</div>
 						<div class="service-icon" aria-hidden="true">{svc.icon}</div>
 						<h3 class="service-title" itemprop="name">{svc.title}</h3>
 						<p class="service-desc" itemprop="description">{svc.description}</p>
 						<div class="service-tags" aria-label="Technologies">
-							{#each svc.tags as tag}
+							{#each svc.tags as tag (tag)}
 								<span class="tag">{tag}</span>
 							{/each}
 						</div>
@@ -156,7 +156,7 @@
 				</a>
 			</div>
 			<div class="work-grid" role="list">
-				{#each featuredProjects as project}
+				{#each featuredProjects as project (project.id)}
 					{@const loc = getProjectLocale(project, langStore.value)}
 					<article class="work-card" role="listitem" itemscope itemtype="https://schema.org/CreativeWork">
 						<div class="work-type">
@@ -187,7 +187,7 @@
 				</div>
 			</div>
 			<div class="stack-grid" role="list" aria-label="Technologies we work with">
-				{#each STACK_ITEMS as item}
+				{#each STACK_ITEMS as item (item.id)}
 					<div class="stack-item" role="listitem">
 						<StackIcon id={item.id} />
 						<span class="stack-name">{item.label}</span>
@@ -207,7 +207,7 @@
 				</div>
 			</div>
 			<div class="process-grid" role="list">
-				{#each process as step}
+				{#each process as step (step.num)}
 					<div class="process-step" role="listitem">
 						<div class="process-num">{step.num}</div>
 						<h3 class="process-title">{step.title}</h3>
@@ -240,7 +240,7 @@
 					<div class="cta-contact-item">
 						<div class="cta-contact-label">Phone</div>
 						<div class="cta-contact-phones">
-							{#each SITE.phones as phone}
+							{#each SITE.phones as phone (phone.tel)}
 								<a href="tel:{phone.tel}" class="cta-contact-val" aria-label="Call {SITE.name}">{phone.display}</a>
 							{/each}
 						</div>

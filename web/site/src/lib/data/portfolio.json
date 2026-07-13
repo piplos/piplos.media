@@ -2,11 +2,18 @@
   {
     "id": "analytics-dashboard",
     "category": "saas",
-    "categories": ["saas", "web"],
-    "tags": ["React", "Node.js", "PostgreSQL", "Redis"],
+    "categories": [
+      "saas",
+      "web"
+    ],
+    "tags": [
+      "React",
+      "Node.js",
+      "PostgreSQL",
+      "Redis"
+    ],
     "year": 2024,
     "featured": true,
-    "image": "/projects/analytics-dashboard.png",
     "en": {
       "title": "Analytics Dashboard",
       "subtitle": "SaaS Platform",
@@ -29,11 +36,18 @@
   {
     "id": "fintech-wallet",
     "category": "mobile",
-    "categories": ["mobile", "fintech"],
-    "tags": ["React Native", "Expo", "Node.js", "PostgreSQL"],
+    "categories": [
+      "mobile",
+      "fintech"
+    ],
+    "tags": [
+      "React Native",
+      "Expo",
+      "Node.js",
+      "PostgreSQL"
+    ],
     "year": 2024,
     "featured": true,
-    "image": "/projects/fintech-wallet.png",
     "en": {
       "title": "Fintech Wallet",
       "subtitle": "Mobile · Fintech",
@@ -56,11 +70,18 @@
   {
     "id": "marketplace-platform",
     "category": "ecommerce",
-    "categories": ["ecommerce", "web"],
-    "tags": ["Next.js", "TypeScript", "PostgreSQL", "Elasticsearch"],
+    "categories": [
+      "ecommerce",
+      "web"
+    ],
+    "tags": [
+      "Next.js",
+      "TypeScript",
+      "PostgreSQL",
+      "Elasticsearch"
+    ],
     "year": 2023,
     "featured": true,
-    "image": "/projects/marketplace.png",
     "en": {
       "title": "Marketplace Platform",
       "subtitle": "E-commerce",
@@ -83,11 +104,18 @@
   {
     "id": "hr-suite",
     "category": "web",
-    "categories": ["web", "saas"],
-    "tags": ["Vue", "Node.js", "PostgreSQL", "Docker"],
+    "categories": [
+      "web",
+      "saas"
+    ],
+    "tags": [
+      "Vue",
+      "Node.js",
+      "PostgreSQL",
+      "Docker"
+    ],
     "year": 2023,
     "featured": false,
-    "image": "/projects/hr-suite.png",
     "en": {
       "title": "HR Suite",
       "subtitle": "Enterprise Web App",
@@ -110,11 +138,18 @@
   {
     "id": "fleet-tracker",
     "category": "saas",
-    "categories": ["saas", "mobile"],
-    "tags": ["React", "Go", "PostgreSQL", "WebSocket"],
+    "categories": [
+      "saas",
+      "mobile"
+    ],
+    "tags": [
+      "React",
+      "Go",
+      "PostgreSQL",
+      "WebSocket"
+    ],
     "year": 2023,
     "featured": false,
-    "image": "/projects/fleet-tracker.png",
     "en": {
       "title": "Fleet Tracker",
       "subtitle": "IoT · SaaS",
@@ -137,11 +172,18 @@
   {
     "id": "cicd-panel",
     "category": "devops",
-    "categories": ["web"],
-    "tags": ["React", "Python", "Docker", "Kubernetes"],
+    "categories": [
+      "devops",
+      "web"
+    ],
+    "tags": [
+      "React",
+      "Python",
+      "Docker",
+      "Kubernetes"
+    ],
     "year": 2022,
     "featured": false,
-    "image": "/projects/cicd-panel.png",
     "en": {
       "title": "CI/CD Control Panel",
       "subtitle": "DevOps · Internal Tool",

@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
-
 	type Option = {
 		value: string;
 		label: string;
@@ -42,10 +40,21 @@
 		open = !open;
 	}
 
-	function select(next: string) {
+	function commit(next: string) {
+		if (next === value) return;
 		value = next;
-		open = false;
 		onchange?.();
+	}
+
+	function select(next: string) {
+		commit(next);
+		open = false;
+	}
+
+	function moveSelection(delta: number) {
+		const idx = options.findIndex((option) => option.value === value);
+		const next = options[Math.min(Math.max(idx + delta, 0), options.length - 1)];
+		if (next) commit(next.value);
 	}
 
 	function onTriggerKeydown(e: KeyboardEvent) {
@@ -54,21 +63,10 @@
 			return;
 		}
 
-		if (e.key === 'ArrowDown') {
+		if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
 			e.preventDefault();
 			open = true;
-			const idx = options.findIndex((option) => option.value === value);
-			const next = options[Math.min(idx + 1, options.length - 1)] ?? options[0];
-			if (next) value = next.value;
-			return;
-		}
-
-		if (e.key === 'ArrowUp') {
-			e.preventDefault();
-			open = true;
-			const idx = options.findIndex((option) => option.value === value);
-			const prev = options[Math.max(idx - 1, 0)] ?? options[0];
-			if (prev) value = prev.value;
+			moveSelection(e.key === 'ArrowDown' ? 1 : -1);
 			return;
 		}
 
@@ -79,7 +77,7 @@
 	}
 
 	$effect(() => {
-		if (!open || !browser) return;
+		if (!open) return;
 
 		function onDocumentClick(e: MouseEvent) {
 			if (!rootEl?.contains(e.target as Node)) open = false;
