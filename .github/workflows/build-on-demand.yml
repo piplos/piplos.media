@@ -1,0 +1,187 @@
+name: Build containers (on demand)
+
+# Manual, à-la-carte container builds. Pick exactly which images to (re)build,
+# from any branch/tag/commit, and publish them to GHCR — without cutting a
+# version tag. Release tags (v*) stay owned by release.yml.
+#
+# Published packages (same names as release.yml):
+#   - ghcr.io/piplos-media/piplos-api     — Go API (docker/Dockerfile.api)
+#   - ghcr.io/piplos-media/piplos-migrate — goose migrations (docker/Dockerfile.migrate)
+#
+# Tags applied to each pushed image (semver tags are NEVER touched here):
+#   <ref-slug>   e.g. `main`, `feature-foo`  (the built branch/tag, slugified)
+#   sha-<short>  the exact commit that was built
+#   <extra_tag>  defaults to `latest`; clear the input to skip
+#
+# How to run: GitHub → Actions → "Build containers (on demand)" → Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch / tag / commit to build (blank = the branch selected above)"
+        required: false
+        default: ""
+        type: string
+      api:
+        description: "Build piplos-api"
+        type: boolean
+        default: false
+      migrate:
+        description: "Build piplos-migrate"
+        type: boolean
+        default: false
+      platforms:
+        description: "Target platforms (arm64 via QEMU is much slower)"
+        type: choice
+        default: linux/amd64,linux/arm64
+        options:
+          - linux/amd64,linux/arm64
+          - linux/amd64
+          - linux/arm64
+      extra_tag:
+        description: "Extra image tag to also push (optional, e.g. staging)"
+        required: false
+        default: "latest"
+        type: string
+      push:
+        description: "Push to GHCR (uncheck for a build-only dry run)"
+        type: boolean
+        default: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  GHCR_OWNER: piplos-media
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: build-on-demand-${{ github.event.inputs.ref }}-${{ github.event.inputs.api }}-${{ github.event.inputs.migrate }}
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+      ref: ${{ steps.set.outputs.ref }}
+      ref_tag: ${{ steps.set.outputs.ref_tag }}
+    steps:
+      - name: Resolve selection, ref and tag
+        id: set
+        env:
+          IN_REF: ${{ inputs.ref }}
+          DEFAULT_REF: ${{ github.ref_name }}
+          IN_API: ${{ inputs.api }}
+          IN_MIGRATE: ${{ inputs.migrate }}
+        run: |
+          set -euo pipefail
+
+          REF="$IN_REF"
+          [ -n "$REF" ] || REF="$DEFAULT_REF"
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+
+          REF_TAG="$(printf '%s' "$REF" | tr '/' '-' | tr -cs 'A-Za-z0-9._-' '-' | sed 's/^[._-]\+//; s/[._-]\+$//' | cut -c1-100)"
+          [ -n "$REF_TAG" ] || REF_TAG="build"
+          echo "ref_tag=$REF_TAG" >> "$GITHUB_OUTPUT"
+
+          include=""
+          append() { include="${include:+$include,}$1"; }
+          if [ "$IN_API" = "true" ]; then append '{"image":"piplos-api","dockerfile":"docker/Dockerfile.api"}'; fi
+          if [ "$IN_MIGRATE" = "true" ]; then append '{"image":"piplos-migrate","dockerfile":"docker/Dockerfile.migrate"}'; fi
+
+          if [ -z "$include" ]; then
+            echo "::error::No images selected — tick at least one of: api, migrate."
+            exit 1
+          fi
+
+          echo "matrix={\"include\":[$include]}" >> "$GITHUB_OUTPUT"
+          echo "Building from ref '$REF' (tag slug '$REF_TAG'): [$include]"
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    name: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Checkout (${{ needs.prepare.outputs.ref }})
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.ref }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compose image reference and tags
+        id: img
+        env:
+          OWNER: ${{ env.GHCR_OWNER }}
+          IMAGE_NAME: ${{ matrix.image }}
+          REF_TAG: ${{ needs.prepare.outputs.ref_tag }}
+          EXTRA_TAG: ${{ inputs.extra_tag }}
+        run: |
+          set -euo pipefail
+          owner="$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          image="ghcr.io/$owner/$IMAGE_NAME"
+          sha="$(git rev-parse --short HEAD)"
+
+          tags="$image:$REF_TAG"$'\n'"$image:sha-$sha"
+          if [ -n "$EXTRA_TAG" ]; then
+            tags="$tags"$'\n'"$image:$EXTRA_TAG"
+          fi
+
+          {
+            echo "image=$image"
+            echo "sha=$sha"
+            echo "tags<<EOF"
+            echo "$tags"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: ${{ inputs.platforms }}
+          push: ${{ inputs.push }}
+          tags: ${{ steps.img.outputs.tags }}
+          provenance: false
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+      - name: Summary
+        if: always()
+        env:
+          IMAGE_NAME: ${{ matrix.image }}
+          REF: ${{ needs.prepare.outputs.ref }}
+          PLATFORMS: ${{ inputs.platforms }}
+          PUSH: ${{ inputs.push }}
+          SHA: ${{ steps.img.outputs.sha }}
+          TAGS: ${{ steps.img.outputs.tags }}
+        run: |
+          {
+            echo "### $IMAGE_NAME"
+            echo ""
+            echo "- ref: \`$REF\` (commit \`$SHA\`)"
+            echo "- platforms: \`$PLATFORMS\`"
+            echo "- pushed: \`$PUSH\`"
+            echo ""
+            echo "Tags:"
+            echo '```'
+            echo "$TAGS"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
