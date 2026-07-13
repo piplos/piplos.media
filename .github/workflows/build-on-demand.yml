@@ -7,6 +7,7 @@ name: Build containers (on demand)
 # Published packages (same names as release.yml):
 #   - ghcr.io/piplos-media/piplos-api     — Go API (docker/Dockerfile.api)
 #   - ghcr.io/piplos-media/piplos-migrate — goose migrations (docker/Dockerfile.migrate)
+#   - ghcr.io/piplos-media/piplos-admin   — admin panel behind nginx (docker/Dockerfile.admin)
 #
 # Tags applied to each pushed image (semver tags are NEVER touched here):
 #   <ref-slug>   e.g. `main`, `feature-foo`  (the built branch/tag, slugified)
@@ -28,6 +29,10 @@ on:
         default: false
       migrate:
         description: "Build piplos-migrate"
+        type: boolean
+        default: false
+      admin:
+        description: "Build piplos-admin"
         type: boolean
         default: false
       platforms:
@@ -57,7 +62,7 @@ permissions:
   packages: write
 
 concurrency:
-  group: build-on-demand-${{ github.event.inputs.ref }}-${{ github.event.inputs.api }}-${{ github.event.inputs.migrate }}
+  group: build-on-demand-${{ github.event.inputs.ref }}-${{ github.event.inputs.api }}-${{ github.event.inputs.migrate }}-${{ github.event.inputs.admin }}
   cancel-in-progress: true
 
 jobs:
@@ -75,6 +80,7 @@ jobs:
           DEFAULT_REF: ${{ github.ref_name }}
           IN_API: ${{ inputs.api }}
           IN_MIGRATE: ${{ inputs.migrate }}
+          IN_ADMIN: ${{ inputs.admin }}
         run: |
           set -euo pipefail
 
@@ -90,9 +96,10 @@ jobs:
           append() { include="${include:+$include,}$1"; }
           if [ "$IN_API" = "true" ]; then append '{"image":"piplos-api","dockerfile":"docker/Dockerfile.api"}'; fi
           if [ "$IN_MIGRATE" = "true" ]; then append '{"image":"piplos-migrate","dockerfile":"docker/Dockerfile.migrate"}'; fi
+          if [ "$IN_ADMIN" = "true" ]; then append '{"image":"piplos-admin","dockerfile":"docker/Dockerfile.admin"}'; fi
 
           if [ -z "$include" ]; then
-            echo "::error::No images selected — tick at least one of: api, migrate."
+            echo "::error::No images selected — tick at least one of: api, migrate, admin."
             exit 1
           fi
 

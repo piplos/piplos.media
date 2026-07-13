@@ -4,6 +4,7 @@ name: Release containers
 # (e.g. `git tag v1.2.3 && git push origin v1.2.3`):
 #   - ghcr.io/piplos-media/piplos-api     — Go API (docker/Dockerfile.api)
 #   - ghcr.io/piplos-media/piplos-migrate — one-shot goose migrations (docker/Dockerfile.migrate)
+#   - ghcr.io/piplos-media/piplos-admin   — admin panel behind nginx (docker/Dockerfile.admin)
 on:
   push:
     tags:
@@ -30,6 +31,8 @@ jobs:
             dockerfile: docker/Dockerfile.api
           - image: piplos-migrate
             dockerfile: docker/Dockerfile.migrate
+          - image: piplos-admin
+            dockerfile: docker/Dockerfile.admin
     steps:
       - name: Checkout
         uses: actions/checkout@v4

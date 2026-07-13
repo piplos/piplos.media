@@ -1,5 +1,5 @@
-# Production stack — API + PostgreSQL.
-# Site (Cloudflare Pages) and admin (separate host) are not in this compose.
+# Production stack — API + admin + PostgreSQL.
+# Site (Cloudflare Pages) is not in this compose.
 #
 #   cp .env.example .env   # set secrets for production
 #   docker compose pull && docker compose up -d
@@ -111,6 +111,36 @@ services:
       - traefik.http.routers.piplos-api.tls.certresolver=cloudflare
       - traefik.http.routers.piplos-api.service=piplos-api
       - traefik.http.services.piplos-api.loadbalancer.server.port=3001
+    networks:
+      - internal
+      - webproxy
+    logging: *default-logging
+
+  admin:
+    image: ghcr.io/piplos-media/piplos-admin:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.admin
+    restart: unless-stopped
+    init: true
+    <<: *hardening
+    environment:
+      PORT: "3000"
+      HOST: "127.0.0.1"
+      ORIGIN: https://admin.${BASE_DOMAIN}
+      ADMIN_API_URL: http://api:3001
+    depends_on:
+      api:
+        condition: service_started
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=webproxy
+      - traefik.http.routers.piplos-admin.rule=Host(`admin.${BASE_DOMAIN}`)
+      - traefik.http.routers.piplos-admin.entrypoints=websecure
+      - traefik.http.routers.piplos-admin.tls=true
+      - traefik.http.routers.piplos-admin.tls.certresolver=cloudflare
+      - traefik.http.routers.piplos-admin.service=piplos-admin
+      - traefik.http.services.piplos-admin.loadbalancer.server.port=80
     networks:
       - internal
       - webproxy
