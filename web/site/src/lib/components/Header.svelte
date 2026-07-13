@@ -4,8 +4,38 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import Logo from '$lib/components/Logo.svelte';
 	import { SITE } from '$lib/site';
+	import type { Lang } from '$lib/stores/lang.svelte';
 
 	let menuOpen = $state(false);
+	let langOpen = $state(false);
+	let langRootEl = $state<HTMLDivElement | null>(null);
+
+	const langOptions: { value: Lang; label: string }[] = [
+		{ value: 'en', label: 'EN' },
+		{ value: 'ru', label: 'RU' }
+	];
+
+	function toggleLang(e?: Event) {
+		e?.stopPropagation();
+		langOpen = !langOpen;
+	}
+
+	function selectLang(next: Lang) {
+		if (next !== langStore.value) langStore.set(next);
+		langOpen = false;
+	}
+
+	function onLangKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			langOpen = false;
+			return;
+		}
+
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			toggleLang();
+		}
+	}
 
 	const navLinks = [
 		{ key: 'nav.services', href: '/#services' },
@@ -35,6 +65,26 @@
 			document.body.style.overflow = '';
 		};
 	});
+
+	$effect(() => {
+		if (!langOpen) return;
+
+		function onDocumentClick(e: MouseEvent) {
+			if (!langRootEl?.contains(e.target as Node)) langOpen = false;
+		}
+
+		function onDocumentKeydown(e: KeyboardEvent) {
+			if (e.key === 'Escape') langOpen = false;
+		}
+
+		document.addEventListener('click', onDocumentClick);
+		document.addEventListener('keydown', onDocumentKeydown);
+
+		return () => {
+			document.removeEventListener('click', onDocumentClick);
+			document.removeEventListener('keydown', onDocumentKeydown);
+		};
+	});
 </script>
 
 <div class="header-shell">
@@ -57,13 +107,44 @@
 		<!-- Right controls -->
 		<div class="header-right">
 			<!-- Language toggle -->
-			<button
-				class="lang-toggle"
-				onclick={() => langStore.toggle()}
-				aria-label={langStore.t('lang.switch')}
-			>
-				{langStore.t('lang.switch')}
-			</button>
+			<div class="lang-select-root" bind:this={langRootEl}>
+				<button
+					type="button"
+					class="lang-toggle"
+					onclick={toggleLang}
+					onkeydown={onLangKeydown}
+					aria-haspopup="listbox"
+					aria-expanded={langOpen}
+					aria-controls="lang-listbox"
+					aria-label={langStore.t('lang.switch')}
+				>
+					{langStore.value === 'en' ? 'EN' : 'RU'}
+				</button>
+
+				{#if langOpen}
+					<ul
+						id="lang-listbox"
+						class="field-select-menu field-select-menu--inline"
+						role="listbox"
+						aria-label={langStore.t('lang.switch')}
+					>
+						{#each langOptions as option (option.value)}
+							<li role="presentation">
+								<button
+									type="button"
+									role="option"
+									class="field-select-option"
+									class:selected={langStore.value === option.value}
+									aria-selected={langStore.value === option.value}
+									onclick={() => selectLang(option.value)}
+								>
+									{option.label}
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
 
 			<ThemeToggle />
 
@@ -112,6 +193,10 @@
 </div>
 
 <style>
+	.lang-select-root {
+		position: relative;
+		display: inline-block;
+	}
 	.hamburger {
 		display: none;
 		position: relative;
