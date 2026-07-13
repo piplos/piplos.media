@@ -1,0 +1,36 @@
+# syntax=docker/dockerfile:1
+
+# Database migration image: goose + SQL migrations from migrations/.
+# One-shot job on `docker compose up` (before api starts) or on demand:
+#
+#   docker compose run --rm migrate            # apply all pending (goose up)
+#   docker compose run --rm migrate status     # show migration status
+#   docker compose run --rm migrate down       # roll back the last migration
+#
+# Connection: DATABASE_URL (or DSN, or POSTGRES_* — see docker/migrate/entrypoint.sh).
+
+# --- build goose (cross-compiled per arch) ---------------------------------
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS build
+ARG TARGETOS
+ARG TARGETARCH
+ARG GOOSE_VERSION=v3.27.2
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go install -trimpath -ldflags="-s -w" \
+      -tags='no_sqlite3 no_clickhouse no_mssql no_mysql no_vertica no_ydb no_libsql no_duckdb no_turso' \
+      github.com/pressly/goose/v3/cmd/goose@${GOOSE_VERSION} && \
+    mkdir -p /out && \
+    cp "$(find /go/bin -type f -name goose | head -n1)" /out/goose
+
+# --- runtime stage (per target platform) -----------------------------------
+FROM alpine:3.21
+RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 app
+COPY --from=build /out/goose /usr/local/bin/goose
+COPY migrations /migrations
+COPY --chmod=0755 docker/migrate/entrypoint.sh /entrypoint.sh
+ENV GOOSE_DRIVER=postgres \
+    GOOSE_MIGRATION_DIR=/migrations
+USER app
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["up"]

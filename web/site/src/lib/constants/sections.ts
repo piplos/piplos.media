@@ -3,7 +3,17 @@ export const SERVICE_ICONS: Record<string, string> = {
 	mobile: '◈',
 	backend: '⬢',
 	data: '◫',
-	devops: '⬟'
+	devops: '⬟',
+	saas: '◆',
+	fintech: '⬤',
+	ecommerce: '▣',
+	design: '⬠',
+	analytics: '◉',
+	cloud: '◬',
+	security: '⬣',
+	ai: '◐',
+	integration: '◇',
+	consulting: '⧫'
 };
 
 export const PORTFOLIO_FILTER_KEYS = [

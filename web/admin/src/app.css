@@ -1,0 +1,285 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: #1a1a1a;
+}
+
+/* Боковое меню + контент (settings AI, и др.) */
+.admin-sidebar-row {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: flex-start;
+  width: 100%;
+}
+.admin-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  width: 12rem;
+  flex-shrink: 0;
+  padding: 0.25rem;
+  border-radius: 10px;
+  background: #f4f4f5;
+  gap: 0.25rem;
+}
+.admin-sidebar-nav a {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #71717a;
+  background: transparent;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+  text-align: start;
+}
+.admin-sidebar-nav a:hover {
+  color: #1a1a1a;
+}
+.admin-sidebar-nav a:focus,
+.admin-sidebar-nav a:focus-visible {
+  outline: none;
+}
+.admin-sidebar-nav a.active {
+  color: #1a1a1a;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.admin-sidebar-content {
+  flex: 1;
+  min-width: 0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 1.5rem;
+}
+.admin-sidebar-content--no-box {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* Обёртка таблицы списков (leads, projects, services, stack, seo, users) */
+.admin-table-wrap {
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.admin-table-wrap--empty {
+  overflow: visible;
+  padding: 1.5rem;
+}
+.admin-table-wrap--empty .text-muted {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #71717a;
+}
+
+.chart-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  background: #fff;
+}
+.chart-table th,
+.chart-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e4e4e7;
+  background: #fff;
+}
+.chart-table th {
+  font-weight: 600;
+  color: #52525b;
+  background: #e4e4e7;
+}
+.chart-table tbody tr:hover,
+.chart-table tbody tr:hover td {
+  background: #fafafa;
+}
+.chart-cell-main {
+  font-weight: 500;
+  color: #18181b;
+}
+.chart-cell-muted {
+  color: #71717a;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+/* Колонка и кнопки действий в таблицах */
+.admin-table-cell-actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+.admin-actions-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+.admin-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #71717a;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+.admin-action-btn:hover {
+  color: #18181b;
+  background: #f4f4f5;
+}
+.admin-action-btn:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.admin-action-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.admin-action-form {
+  display: inline-block;
+}
+
+/* Drag-and-drop сортировка строк в таблицах */
+.admin-table-cell-drag {
+  width: 2.5rem;
+  padding-left: 0.75rem !important;
+  padding-right: 0 !important;
+}
+.admin-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  color: #a1a1aa;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: grab;
+  transition: color 0.15s, background 0.15s;
+}
+.admin-drag-handle:hover:not(:disabled) {
+  color: #52525b;
+  background: #f4f4f5;
+}
+.admin-drag-handle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.admin-drag-handle:active {
+  cursor: grabbing;
+}
+.admin-table-row--dragging {
+  opacity: 0.45;
+}
+.admin-table-row--over td {
+  background: #faf5ff;
+  box-shadow: inset 0 2px 0 #7c3aed;
+}
+.admin-table-wrap--busy {
+  opacity: 0.85;
+  pointer-events: none;
+}
+.admin-action-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: admin-action-spin 0.7s linear infinite;
+}
+@keyframes admin-action-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Текстовые ссылки в контенте */
+.admin-text-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.admin-text-link:hover {
+  color: #2563eb;
+}
+
+/* Панель AI-перевода (как в luna — иконка у языков, раскрывающийся блок) */
+.practice-edit-badges-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.practice-edit-lang-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.practice-edit-badges-row .admin-action-btn {
+  flex-shrink: 0;
+}
+.practice-edit-ai-trigger--active {
+  color: #18181b;
+  background: #e4e4e7;
+}
+.practice-edit-translate-panel {
+  padding: 1rem;
+  background: #f4f4f5;
+  border-radius: 8px;
+  border: 1px solid #e4e4e7;
+}
+.practice-edit-translate-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+.practice-edit-translate-row .practice-edit-label {
+  margin: 0;
+}
+.practice-edit-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #52525b;
+}
+.practice-edit-source-select {
+  min-height: 2.25rem;
+  padding: 0.375rem 2rem 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  appearance: none;
+  cursor: pointer;
+}
+
+.text-muted {
+  color: #71717a;
+  font-size: 0.875rem;
+}

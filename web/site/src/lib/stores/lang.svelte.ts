@@ -1,4 +1,3 @@
-import { browser } from '$app/environment';
 import en from '$lib/i18n/en.json';
 import ru from '$lib/i18n/ru.json';
 import {
@@ -9,19 +8,20 @@ import {
 	termsEn,
 	termsRu
 } from '$lib/i18n/legal';
+import { isLang, persistLang } from '$lib/i18n/routing';
 
 export type Lang = 'en' | 'ru';
 
-const STORAGE_KEY = 'piplos-lang';
-
-const translations: Record<Lang, typeof en> = {
-	en: { ...en, privacy: privacyEn, terms: termsEn, cookies: cookiesEn },
-	ru: { ...ru, privacy: privacyRu, terms: termsRu, cookies: cookiesRu } as typeof en
+type Messages = typeof en & {
+	privacy: typeof privacyEn;
+	terms: typeof termsEn;
+	cookies: typeof cookiesEn;
 };
 
-function isLang(value: unknown): value is Lang {
-	return value === 'en' || value === 'ru';
-}
+const translations: Record<Lang, Messages> = {
+	en: { ...en, privacy: privacyEn, terms: termsEn, cookies: cookiesEn },
+	ru: { ...ru, privacy: privacyRu, terms: termsRu, cookies: cookiesRu } as unknown as Messages
+};
 
 function resolve(lang: Lang, key: string): unknown {
 	let val: unknown = translations[lang];
@@ -37,21 +37,7 @@ function createLangStore() {
 
 	function set(l: Lang) {
 		lang = l;
-		if (browser) {
-			localStorage.setItem(STORAGE_KEY, l);
-			document.documentElement.setAttribute('lang', l);
-		}
-	}
-
-	function init() {
-		if (!browser) return;
-		const saved = localStorage.getItem(STORAGE_KEY);
-		const browserLang = navigator.language.startsWith('ru') ? 'ru' : 'en';
-		set(isLang(saved) ? saved : browserLang);
-	}
-
-	function toggle() {
-		set(lang === 'en' ? 'ru' : 'en');
+		persistLang(l);
 	}
 
 	function t(key: string, params?: Record<string, string | number>): string {
@@ -69,9 +55,7 @@ function createLangStore() {
 
 	return {
 		get value() { return lang; },
-		init,
 		set,
-		toggle,
 		t,
 		get
 	};

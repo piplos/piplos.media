@@ -1,0 +1,117 @@
+# Production stack — API + PostgreSQL.
+# Site (Cloudflare Pages) and admin (separate host) are not in this compose.
+#
+#   cp .env.example .env   # set secrets for production
+#   docker compose pull && docker compose up -d
+#
+# Requires Traefik on external network `webproxy` (entrypoint `websecure`,
+# cert resolver `cloudflare`). Tunables: repo-root `.env`.
+
+networks:
+  webproxy:
+    external: true
+  internal:
+
+volumes:
+  pgdata: {}
+  uploads: {}
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "20M"
+    max-file: "10"
+
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    <<: *hardening
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-piplos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-piplos}
+    command:
+      - postgres
+      - -c
+      - max_connections=100
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - effective_cache_size=384MB
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    stop_grace_period: 30s
+    labels:
+      - traefik.enable=false
+    networks:
+      - internal
+    logging: *default-logging
+
+  migrate:
+    image: ghcr.io/piplos-media/piplos-migrate:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.migrate
+    restart: "no"
+    <<: *hardening
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-piplos}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-piplos}?sslmode=${POSTGRES_SSLMODE:-disable}"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+    logging: *default-logging
+
+  api:
+    image: ghcr.io/piplos-media/piplos-api:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    restart: unless-stopped
+    init: true
+    <<: *hardening
+    environment:
+      PORT: "3001"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-piplos}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-piplos}?sslmode=${POSTGRES_SSLMODE:-disable}"
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-15}
+      JWT_REFRESH_EXPIRATION_HOURS: ${JWT_REFRESH_EXPIRATION_HOURS:-168}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://piplos.media,https://admin.piplos.media}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      UPLOAD_DIR: /app/data/uploads
+      PUBLIC_API_URL: https://api.${BASE_DOMAIN}
+      ADMIN_URL: https://admin.${BASE_DOMAIN}
+    volumes:
+      - uploads:/app/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=webproxy
+      - traefik.http.routers.piplos-api.rule=Host(`api.${BASE_DOMAIN}`)
+      - traefik.http.routers.piplos-api.entrypoints=websecure
+      - traefik.http.routers.piplos-api.tls=true
+      - traefik.http.routers.piplos-api.tls.certresolver=cloudflare
+      - traefik.http.routers.piplos-api.service=piplos-api
+      - traefik.http.services.piplos-api.loadbalancer.server.port=3001
+    networks:
+      - internal
+      - webproxy
+    logging: *default-logging

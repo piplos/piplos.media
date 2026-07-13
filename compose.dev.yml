@@ -1,0 +1,32 @@
+# Local development. Compose reads ${VAR} from repo-root `.env`.
+#
+#   cp .env.example .env
+#   docker compose -f compose.dev.yml up -d db
+#   ./scripts/migrate up
+#
+# API on the host (after sourcing .env):
+#   set -a && source .env && set +a
+#   go run ./cmd/piplos
+#   # or: go build -o bin/piplos ./cmd/piplos && ./bin/piplos
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: piplos-postgres
+    restart: "no"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-piplos}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

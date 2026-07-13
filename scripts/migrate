@@ -1,0 +1,170 @@
+#!/usr/bin/env bash
+
+# Database migrations for Piplos (PostgreSQL + goose).
+# Migrations are applied manually in dev — they do NOT run on API startup.
+#
+# Usage: ./scripts/migrate [command] [options]
+#
+# Commands:
+#   up                 Apply all pending migrations
+#   up-by-one          Apply next pending migration
+#   up-to VERSION      Apply migrations up to specific version
+#   down               Roll back last applied migration
+#   down-to VERSION    Roll back to specific version
+#   reset              Roll back all migrations
+#   redo               Re-run last migration
+#   status             Show migration status
+#   version            Show current database version
+#   create NAME sql    Create a new migration file (goose)
+#
+# Connection (first match wins):
+#   DATABASE_URL, DSN, or localhost DSN from POSTGRES_* (.env or defaults)
+#
+# Examples:
+#   ./scripts/migrate up
+#   ./scripts/migrate status
+#   ./scripts/migrate create add_foo_index sql
+
+set -euo pipefail
+
+ROOT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+MIGRATIONS_DIR="${ROOT_PATH}/migrations"
+
+load_database_url() {
+    local env_file="${ROOT_PATH}/.env"
+    if [ -f "$env_file" ]; then
+        set -a
+        # shellcheck disable=SC1090
+        source "$env_file"
+        set +a
+    fi
+
+    if [ -n "${DATABASE_URL:-}" ]; then
+        return 0
+    fi
+
+    if [ -n "${DSN:-}" ]; then
+        DATABASE_URL="${DSN}"
+        return 0
+    fi
+
+    local user="${POSTGRES_USER:-postgres}"
+    local pass="${POSTGRES_PASSWORD:-postgres}"
+    local db="${POSTGRES_DB:-piplos}"
+    local host="${POSTGRES_HOST:-localhost}"
+    local port="${POSTGRES_PORT:-5433}"
+    local sslmode="${POSTGRES_SSLMODE:-disable}"
+    DATABASE_URL="postgres://${user}:${pass}@${host}:${port}/${db}?sslmode=${sslmode}"
+}
+
+check_goose() {
+    if command -v goose >/dev/null 2>&1; then
+        return 0
+    fi
+
+    local gobin
+    gobin="$(go env GOPATH 2>/dev/null)/bin"
+    if [ -x "${gobin}/goose" ]; then
+        export PATH="${PATH}:${gobin}"
+        return 0
+    fi
+
+    echo "Error: goose is not installed" >&2
+    echo "Install: go install github.com/pressly/goose/v3/cmd/goose@v3.27.2" >&2
+    exit 1
+}
+
+run_goose() {
+    local command=$1
+    shift
+
+    echo "Running: goose -dir ${MIGRATIONS_DIR} postgres \"${DATABASE_URL}\" ${command} $*"
+
+    if goose -dir "${MIGRATIONS_DIR}" postgres "${DATABASE_URL}" "${command}" "$@"; then
+        echo "✓ Migration command '${command} $*' completed successfully"
+    else
+        echo "✗ Migration command '${command} $*' failed" >&2
+        exit 1
+    fi
+}
+
+run_goose_create() {
+    local name=$1
+    local kind=${2:-sql}
+
+    if [ -z "$name" ]; then
+        echo "Error: migration name required" >&2
+        echo "Usage: $0 create <descriptive_name> [sql]" >&2
+        exit 1
+    fi
+
+    echo "Creating migration: ${name}.${kind}"
+
+    if goose -dir "${MIGRATIONS_DIR}" create "${name}" "${kind}"; then
+        echo "✓ Created in ${MIGRATIONS_DIR}/"
+    else
+        echo "✗ goose create failed" >&2
+        exit 1
+    fi
+}
+
+show_usage() {
+    echo "Piplos Database Migration Script (PostgreSQL + goose)"
+    echo "Usage: $0 [command] [options]"
+    echo ""
+    echo "Commands:"
+    echo "  up                 Apply all pending migrations"
+    echo "  up-by-one          Apply next pending migration"
+    echo "  up-to VERSION      Apply migrations up to specific version"
+    echo "  down               Roll back last applied migration"
+    echo "  down-to VERSION    Roll back to specific version"
+    echo "  reset              Roll back all migrations"
+    echo "  redo               Re-run last migration"
+    echo "  status             Show migration status"
+    echo "  version            Show current database version"
+    echo "  create NAME sql    Create new migration (default type: sql)"
+    echo ""
+    echo "Environment:"
+    echo "  DATABASE_URL  - PostgreSQL DSN (preferred)"
+    echo "  DSN           - alias for DATABASE_URL"
+    echo "  POSTGRES_*    - credentials, db name, port (defaults match compose.dev.yml)"
+    echo "  Optional .env in repo root (same POSTGRES_* as compose.yml)"
+    echo ""
+    echo "Migrations directory: ${MIGRATIONS_DIR}"
+}
+
+main() {
+    if [ $# -eq 0 ]; then
+        show_usage
+        exit 1
+    fi
+
+    local command=$1
+    shift
+
+    case $command in
+        "help"|"-h"|"--help")
+            show_usage
+            exit 0
+            ;;
+        "create")
+            echo "=== Database Migration: create ==="
+            check_goose
+            run_goose_create "$@"
+            ;;
+        "up"|"up-by-one"|"up-to"|"down"|"down-to"|"reset"|"redo"|"status"|"version")
+            echo "=== Database Migration: $command ==="
+            load_database_url
+            check_goose
+            run_goose "$command" "$@"
+            ;;
+        *)
+            echo "Error: Unknown command '$command'" >&2
+            echo ""
+            show_usage
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

@@ -1,0 +1,15 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Backend (piplos)",
+			"type": "go",
+			"request": "launch",
+			"mode": "auto",
+			"program": "${workspaceFolder}/cmd/piplos",
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal",
+			"envFile": "${workspaceFolder}/.env"
+		}
+	]
+}

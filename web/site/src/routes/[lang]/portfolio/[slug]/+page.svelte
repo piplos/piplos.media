@@ -1,26 +1,29 @@
 <script lang="ts">
+	import { l } from '$lib/i18n/link';
 	import { langStore } from '$lib/stores/lang.svelte';
 	import { SITE } from '$lib/site';
 	import { getProjectLocale, getProjectStackItems, type PortfolioProject } from '$lib/portfolio';
+	import { sanitizeCaseHtml } from '$lib/sanitize-html';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 	let project = $derived(data.project as PortfolioProject);
 	let loc = $derived(getProjectLocale(project, langStore.value));
 	let stackItems = $derived(getProjectStackItems(project, langStore.value));
+	let solutionHtml = $derived(sanitizeCaseHtml(loc.solution));
 </script>
 
 <svelte:head>
 	<title>{loc.title} — Case Study | {SITE.name}</title>
 	<meta name="description" content={loc.description} />
-	<link rel="canonical" href="{SITE.url}/portfolio/{project.id}" />
+	<link rel="canonical" href="{SITE.url}{l(`/portfolio/${project.id}`)}" />
 </svelte:head>
 
 <nav class="breadcrumb-bar" aria-label="Breadcrumb">
 	<div class="container">
-		<a href="/">{langStore.t('nav.home')}</a>
+		<a href={l('/')}>{langStore.t('nav.home')}</a>
 		<span class="sep" aria-hidden="true">/</span>
-		<a href="/portfolio">{langStore.t('nav.portfolio')}</a>
+		<a href={l('/portfolio')}>{langStore.t('nav.portfolio')}</a>
 		<span class="sep" aria-hidden="true">/</span>
 		<span class="current" aria-current="page">{loc.title}</span>
 	</div>
@@ -30,7 +33,7 @@
 
 	<section class="cs-hero" aria-labelledby="cs-title">
 		<div class="container">
-			<a href="/portfolio" class="cs-back">
+			<a href={l('/portfolio')} class="cs-back">
 				<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
 					<path d="M7 2L3 6l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 				</svg>
@@ -57,7 +60,11 @@
 					<article class="cs-block">
 						<p class="cs-label">{langStore.t('case_study.solution')}</p>
 						<h2 class="cs-heading">{langStore.t('case_study.solution')}</h2>
-						<p class="cs-text">{loc.solution}</p>
+						{#if solutionHtml}
+							<div class="cs-text cs-rich">{@html solutionHtml}</div>
+						{:else}
+							<p class="cs-text"></p>
+						{/if}
 					</article>
 
 					<article class="cs-block">
@@ -92,7 +99,7 @@
 						</dl>
 					</div>
 
-					<a href="/order?from={project.id}" class="cs-cta">
+					<a href="{l('/order')}?from={project.id}" class="cs-cta">
 						{langStore.t('case_study.start_project')}
 						<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
 							<path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -178,6 +185,41 @@
 		font-size: 16px;
 		color: var(--c-muted);
 		line-height: 1.75;
+	}
+
+	.cs-rich :global(p) {
+		margin: 0 0 1rem;
+	}
+
+	.cs-rich :global(p:last-child) {
+		margin-bottom: 0;
+	}
+
+	.cs-rich :global(img) {
+		display: block;
+		max-width: 100%;
+		height: auto;
+		margin: 1.25rem 0;
+		border-radius: var(--radius);
+		border: 1px solid var(--c-border2);
+	}
+
+	.cs-rich :global(ul),
+	.cs-rich :global(ol) {
+		margin: 0 0 1rem 1.25rem;
+		padding: 0;
+	}
+
+	.cs-rich :global(a) {
+		color: var(--c-accent);
+		text-decoration: underline;
+	}
+
+	.cs-rich :global(h2),
+	.cs-rich :global(h3) {
+		font-family: var(--f-display);
+		color: var(--c-white);
+		margin: 1.5rem 0 0.75rem;
 	}
 
 	.cs-sidebar {

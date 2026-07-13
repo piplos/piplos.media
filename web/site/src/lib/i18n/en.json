@@ -24,6 +24,7 @@
     "section_label": "01 / What we do",
     "title": "Services",
     "cta": "Start a project",
+    "coming_soon": "Something new is coming soon",
     "ticker": [
       "Web Applications",
       "Mobile Apps",
@@ -184,6 +185,8 @@
     "back": "Back",
     "step_of": "Step {current} of {total}",
     "submit": "Send Request",
+    "sending": "Sending...",
+    "submit_error": "Failed to send the request. Please try again or email us directly.",
     "success_title": "Request Sent!",
     "success_text": "We've received your project brief. Our team will review it and get back to you within 24 hours with a plan and initial estimate.",
     "promise_label": "Our Promise",

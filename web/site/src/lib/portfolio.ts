@@ -39,6 +39,7 @@ export function getCategoryColor(category: string): string {
 }
 
 export function getProjectStackItems(project: PortfolioProject, lang: Lang): string[] {
+	if (project.tags?.length) return project.tags;
 	return getProjectLocale(project, lang)
 		.stack_detail.split(',')
 		.map((item) => item.trim())

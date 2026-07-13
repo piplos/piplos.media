@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { l } from '$lib/i18n/link';
 	import { langStore } from '$lib/stores/lang.svelte';
 	import Logo from '$lib/components/Logo.svelte';
 	import { SITE } from '$lib/site';
@@ -10,7 +11,7 @@
 	<div class="container">
 		<div class="footer-main">
 			<div class="footer-brand">
-				<Logo variant="footer" label="{SITE.displayName} home" />
+				<Logo variant="footer" href={l('/')} label="{SITE.displayName} home" />
 				<p class="footer-tagline">
 					© {year} {SITE.displayName} <br>
 					{langStore.t('footer.tagline')}
@@ -20,30 +21,30 @@
 			<nav class="footer-nav" aria-label="Services">
 				<h3>{langStore.t('footer.services')}</h3>
 				<ul>
-					<li><a href="/#services">{langStore.t('footer.links.web')}</a></li>
-					<li><a href="/#services">{langStore.t('footer.links.mobile')}</a></li>
-					<li><a href="/#services">{langStore.t('footer.links.backend')}</a></li>
-					<li><a href="/#services">{langStore.t('footer.links.data')}</a></li>
-					<li><a href="/#services">{langStore.t('footer.links.devops')}</a></li>
+					<li><a href={l('/#services')}>{langStore.t('footer.links.web')}</a></li>
+					<li><a href={l('/#services')}>{langStore.t('footer.links.mobile')}</a></li>
+					<li><a href={l('/#services')}>{langStore.t('footer.links.backend')}</a></li>
+					<li><a href={l('/#services')}>{langStore.t('footer.links.data')}</a></li>
+					<li><a href={l('/#services')}>{langStore.t('footer.links.devops')}</a></li>
 				</ul>
 			</nav>
 
 			<nav class="footer-nav" aria-label="Company">
 				<h3>{langStore.t('footer.company')}</h3>
 				<ul>
-					<li><a href="/portfolio">{langStore.t('footer.links.portfolio')}</a></li>
-					<li><a href="/#stack">{langStore.t('footer.links.stack')}</a></li>
-					<li><a href="/#about">{langStore.t('nav.about')}</a></li>
-					<li><a href="/order">{langStore.t('footer.links.start')}</a></li>
+					<li><a href={l('/portfolio')}>{langStore.t('footer.links.portfolio')}</a></li>
+					<li><a href={l('/#stack')}>{langStore.t('footer.links.stack')}</a></li>
+					<li><a href={l('/#about')}>{langStore.t('nav.about')}</a></li>
+					<li><a href={l('/order')}>{langStore.t('footer.links.start')}</a></li>
 				</ul>
 			</nav>
 
 			<nav class="footer-nav" aria-label="Legal">
 				<h3>{langStore.t('footer.legal')}</h3>
 				<ul>
-					<li><a href="/privacy">{langStore.t('footer.links.privacy')}</a></li>
-					<li><a href="/cookies">{langStore.t('footer.links.cookies')}</a></li>
-					<li><a href="/terms">{langStore.t('footer.links.terms')}</a></li>
+					<li><a href={l('/legal/privacy')}>{langStore.t('footer.links.privacy')}</a></li>
+					<li><a href={l('/legal/cookies')}>{langStore.t('footer.links.cookies')}</a></li>
+					<li><a href={l('/legal/terms')}>{langStore.t('footer.links.terms')}</a></li>
 				</ul>
 			</nav>
 		</div>

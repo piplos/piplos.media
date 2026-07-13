@@ -1,5 +1,8 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { l } from '$lib/i18n/link';
+	import { switchLangHref } from '$lib/i18n/routing';
 	import { langStore } from '$lib/stores/lang.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import Logo from '$lib/components/Logo.svelte';
@@ -21,8 +24,11 @@
 	}
 
 	function selectLang(next: Lang) {
-		if (next !== langStore.value) langStore.set(next);
 		langOpen = false;
+		// Язык всегда следует из URL: layout синхронизирует langStore после навигации.
+		if (page.params.lang !== next) {
+			goto(switchLangHref(page.url.pathname, page.url.search, page.url.hash, next));
+		}
 	}
 
 	function onLangKeydown(e: KeyboardEvent) {
@@ -45,15 +51,20 @@
 	];
 
 	function isActive(href: string) {
+		const localized = l(href);
+		const [path, fragment] = localized.split('#');
 		const { pathname, hash } = page.url;
-		const [path, fragment] = href.split('#');
+		const langPrefix = `/${page.params.lang}`;
 
-		if (!path || path === '/') {
-			if (!fragment) return pathname === '/';
-			return pathname === '/' && hash === `#${fragment}`;
+		if (fragment) {
+			return (pathname === langPrefix || pathname === `${langPrefix}/`) && hash === `#${fragment}`;
 		}
 
-		return pathname.startsWith(path);
+		if (path === langPrefix || path === `${langPrefix}/`) {
+			return pathname === langPrefix || pathname === `${langPrefix}/`;
+		}
+
+		return pathname === path || pathname.startsWith(`${path}/`);
 	}
 
 	$effect(() => {
@@ -90,13 +101,13 @@
 <div class="header-shell">
 	<header class="header">
 	<div class="container">
-		<Logo label="{SITE.displayName} — home" />
+		<Logo href={l('/')} label="{SITE.displayName} — home" />
 
 		<!-- Desktop nav -->
 		<nav class="nav" aria-label="Primary navigation">
 			{#each navLinks as link (link.href)}
 				<a
-					href={link.href}
+					href={l(link.href)}
 					aria-current={isActive(link.href) ? 'page' : undefined}
 				>
 					{langStore.t(link.key)}
@@ -149,7 +160,7 @@
 			<ThemeToggle />
 
 				<!-- CTA -->
-				<a href="/order" class="btn-nav" aria-label="Start a project with {SITE.name}">
+				<a href={l('/order')} class="btn-nav" aria-label="Start a project with {SITE.name}">
 					{langStore.t('nav.start_project')}
 				</a>
 
@@ -180,7 +191,7 @@
 			<nav>
 				{#each navLinks as link (link.href)}
 					<a
-						href={link.href}
+						href={l(link.href)}
 						onclick={() => menuOpen = false}
 						aria-current={isActive(link.href) ? 'page' : undefined}
 					>

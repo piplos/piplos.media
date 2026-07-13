@@ -1,20 +1,19 @@
 <script lang="ts">
 	import { themeStore } from '$lib/stores/theme.svelte';
-	import type { StackItemId } from '$lib/constants/stack';
 
 	type Props = {
-		id: StackItemId;
+		slug: string;
 	};
 
-	let { id }: Props = $props();
+	let { slug }: Props = $props();
 
-	const themeAware = new Set<StackItemId>(['nextjs']);
+	const themeAware = new Set(['nextjs']);
 
 	let src = $derived.by(() => {
-		if (themeAware.has(id) && themeStore.value === 'dark') {
-			return `/stack/${id}-light.svg`;
+		if (themeAware.has(slug) && themeStore.value === 'dark') {
+			return `/stack/${slug}-light.svg`;
 		}
-		return `/stack/${id}.svg`;
+		return `/stack/${slug}.svg`;
 	});
 </script>
 
