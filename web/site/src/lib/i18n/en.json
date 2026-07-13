@@ -230,6 +230,22 @@
   "site": {
     "location": "Minsk, Belarus"
   },
+  "error": {
+    "404": {
+      "label": "Error 404",
+      "title": "Page not found",
+      "description": "Our cat searched every corner of the server but couldn't find this page. It may have been moved, renamed or never existed.",
+      "alt": "Piplos Media cat mascot puzzled by a missing page"
+    },
+    "500": {
+      "label": "Error 500",
+      "title": "Something broke",
+      "description": "Our cat knocked something over in the server room. We're already fixing it — please try again in a minute.",
+      "alt": "Piplos Media cat mascot next to a crashed server"
+    },
+    "home": "Back to Home",
+    "portfolio": "View Portfolio"
+  },
   "theme": {
     "toggle_dark": "Switch to dark theme",
     "toggle_light": "Switch to light theme"
