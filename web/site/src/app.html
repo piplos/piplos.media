@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en" data-theme="dark" dir="ltr">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#08080C" id="theme-color-meta" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" />
+		<script>
+			(function() {
+				var saved = localStorage.getItem('piplos-theme');
+				var preferred = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+				document.documentElement.setAttribute('data-theme', preferred);
+				var meta = document.getElementById('theme-color-meta');
+				if (meta) meta.content = preferred === 'light' ? '#F7F8FA' : '#08080C';
+			})();
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<a href="#main" class="skip">Skip to main content</a>
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>

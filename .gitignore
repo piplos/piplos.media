@@ -1,0 +1,36 @@
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Web (web/site, web/admin — у каждого свой .gitignore; дублируем для надёжности)
+**/node_modules/
+**/.svelte-kit/
+web/*/build/
+
+# Go API (repo root)
+.env
+!.env.example
+/bin/
+*.out
+
+graphify-out/

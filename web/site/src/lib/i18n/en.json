@@ -1,0 +1,191 @@
+{
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "portfolio": "Portfolio",
+    "stack": "Stack",
+    "about": "About",
+    "start_project": "Start Project"
+  },
+  "hero": {
+    "eyebrow": "Engineering division of Piplos Media",
+    "headline_1": "We build software",
+    "headline_2": "that ships.",
+    "description": "piplos.dev is an engineering-first studio building web applications, mobile apps and backend systems for startups and enterprises. Clean code. Real delivery.",
+    "cta_primary": "View Portfolio",
+    "cta_secondary": "Start a Project"
+  },
+  "stats": {
+    "projects": "Projects Delivered",
+    "experience": "Engineering Experience",
+    "technologies": "Technologies",
+    "retention": "Client Retention"
+  },
+  "services": {
+    "section_label": "01 / What we do",
+    "title": "Services",
+    "cta": "Start a project",
+    "items": [
+      {
+        "id": "web",
+        "title": "Web Applications",
+        "description": "Complex SPAs, dashboards, admin panels and enterprise platforms. Built with modern frameworks, clean architecture and performance in mind.",
+        "tags": ["React", "Next.js", "TypeScript", "Vue"]
+      },
+      {
+        "id": "mobile",
+        "title": "Mobile Apps",
+        "description": "Native and cross-platform mobile applications for iOS and Android. Performance-first approach, seamless UX and full App Store / Play Market deployment.",
+        "tags": ["React Native", "Expo", "Swift", "Kotlin"]
+      },
+      {
+        "id": "backend",
+        "title": "Backend & APIs",
+        "description": "Scalable microservices, RESTful and GraphQL APIs, real-time systems and data pipelines. Built to handle growth from day one.",
+        "tags": ["Node.js", "PostgreSQL", "Redis", "GraphQL"]
+      },
+      {
+        "id": "devops",
+        "title": "DevOps & Cloud",
+        "description": "CI/CD pipelines, container orchestration, cloud infrastructure and monitoring. We set up systems that deploy themselves and scale automatically.",
+        "tags": ["Docker", "Kubernetes", "AWS", "Terraform"]
+      }
+    ]
+  },
+  "work": {
+    "section_label": "02 / Selected work",
+    "title": "Recent Projects",
+    "cta": "Full portfolio",
+    "case_study": "Case Study"
+  },
+  "stack": {
+    "section_label": "03 / Technology",
+    "title": "Tech Stack"
+  },
+  "process": {
+    "section_label": "04 / How we work",
+    "title": "Our Process",
+    "steps": [
+      { "title": "Discovery", "description": "We dig into your goals, constraints and technical requirements before writing a single line of code." },
+      { "title": "Architecture", "description": "System design, tech stack selection, and a clear roadmap agreed upon before development starts." },
+      { "title": "Build & Iterate", "description": "Agile sprints with weekly demos. You see progress, give feedback, and stay in control throughout." },
+      { "title": "Ship & Support", "description": "Deployment, monitoring setup, and ongoing support. We stay with you after launch." }
+    ]
+  },
+  "cta": {
+    "title": "Ready to build something great?",
+    "description": "Tell us about your project. We'll get back within 24 hours with a plan and an estimate.",
+    "button": "Start a Project"
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "eyebrow": "120+ projects delivered",
+    "filter_label": "Filter:",
+    "cta_title": "Your project could be next.",
+    "cta_sub": "Tell us about your idea — we'll get back within 24 hours with a plan and estimate.",
+    "description": "120+ projects delivered across web, mobile, SaaS, fintech and enterprise software.",
+    "filters": {
+      "all": "All",
+      "web": "Web Apps",
+      "mobile": "Mobile",
+      "saas": "SaaS",
+      "fintech": "Fintech",
+      "ecommerce": "E-commerce",
+      "devops": "DevOps"
+    },
+    "case_study": "View Case Study",
+    "stats": {
+      "projects": "Projects",
+      "years": "Years",
+      "technologies": "Technologies",
+      "retention": "Retention"
+    }
+  },
+  "case_study": {
+    "back": "Back to Portfolio",
+    "challenge": "The Challenge",
+    "solution": "Our Solution",
+    "result": "The Result",
+    "stack": "Tech Stack",
+    "start_project": "Start a Similar Project"
+  },
+  "order": {
+    "title": "Start a Project",
+    "eyebrow": "Response within 24 hours",
+    "steps": ["Type", "Details", "Budget", "Contact"],
+    "step1_title": "What are you building?",
+    "step2_title": "Tell us more",
+    "step3_title": "Budget & Timeline",
+    "step4_title": "Your Contact",
+    "types": [
+      { "id": "web", "label": "Web App", "hint": "SPA, dashboard, portal, CRM" },
+      { "id": "mobile", "label": "Mobile App", "hint": "iOS, Android, cross-platform" },
+      { "id": "backend", "label": "Backend / API", "hint": "Microservices, REST, GraphQL" },
+      { "id": "devops", "label": "DevOps", "hint": "CI/CD, cloud, containers" },
+      { "id": "saas", "label": "SaaS Product", "hint": "Multi-tenant, subscriptions" },
+      { "id": "consulting", "label": "Consulting", "hint": "Audit, architecture, review" }
+    ],
+    "fields": {
+      "project_name": "Project Name",
+      "description": "Project Description",
+      "stack": "Preferred Stack (optional)",
+      "references": "References / Inspiration",
+      "name": "Your Name",
+      "email": "Email",
+      "company": "Company (optional)",
+      "phone": "Phone (optional)",
+      "message": "Additional Notes"
+    },
+    "budget_label": "Budget Range",
+    "timeline_label": "Timeline",
+    "timelines": ["1–2 months", "3–4 months", "5–6 months", "6+ months"],
+    "stage_label": "Project Stage",
+    "stages": ["Idea / MVP", "Existing product", "Redesign / Rebuild", "Scale-up"],
+    "next": "Next",
+    "back": "Back",
+    "submit": "Send Brief",
+    "success_title": "Brief received!",
+    "success_text": "We'll review your project and get back to you within 24 hours.",
+    "promises": [
+      "24h response — we review every brief personally",
+      "Free estimate — detailed scope and cost breakdown",
+      "No lock-in — you own all code and infrastructure",
+      "Fixed-price or T&M — your preferred model",
+      "NDA on request — before any discussion"
+    ]
+  },
+  "footer": {
+    "tagline": "Engineering-first software development studio. Part of Piplos Media Group.",
+    "services": "Services",
+    "company": "Company",
+    "links": {
+      "web": "Web Applications",
+      "mobile": "Mobile Apps",
+      "backend": "Backend & APIs",
+      "devops": "DevOps & Cloud",
+      "consulting": "Tech Consulting",
+      "portfolio": "Portfolio",
+      "stack": "Tech Stack",
+      "process": "Process",
+      "start": "Start a Project",
+      "privacy": "Privacy",
+      "terms": "Terms"
+    },
+    "copyright": "piplos.dev — Minsk, Belarus"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "last_updated": "Last updated: January 2025"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "last_updated": "Last updated: January 2025"
+  },
+  "theme": {
+    "toggle_dark": "Switch to dark theme",
+    "toggle_light": "Switch to light theme"
+  },
+  "lang": {
+    "switch": "RU"
+  }
+}
