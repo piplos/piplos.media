@@ -14,17 +14,17 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/rs/zerolog"
 
-	"github.com/piplos/site/internal/config"
-	"github.com/piplos/site/internal/database"
-	"github.com/piplos/site/internal/handlers"
-	"github.com/piplos/site/internal/middleware"
-	"github.com/piplos/site/internal/models"
-	"github.com/piplos/site/internal/repository"
-	"github.com/piplos/site/internal/server"
-	authsvc "github.com/piplos/site/internal/services/auth"
-	"github.com/piplos/site/internal/services/mailer"
-	"github.com/piplos/site/internal/services/translate"
-	"github.com/piplos/site/internal/utils"
+	"github.com/piplos/piplos.media/internal/config"
+	"github.com/piplos/piplos.media/internal/database"
+	"github.com/piplos/piplos.media/internal/handlers"
+	"github.com/piplos/piplos.media/internal/middleware"
+	"github.com/piplos/piplos.media/internal/models"
+	"github.com/piplos/piplos.media/internal/repository"
+	"github.com/piplos/piplos.media/internal/server"
+	authsvc "github.com/piplos/piplos.media/internal/services/auth"
+	"github.com/piplos/piplos.media/internal/services/mailer"
+	"github.com/piplos/piplos.media/internal/services/translate"
+	"github.com/piplos/piplos.media/internal/utils"
 )
 
 // Version is the application version.

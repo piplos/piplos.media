@@ -9,14 +9,14 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/piplos/site/internal/config"
-	apperrors "github.com/piplos/site/internal/errors"
-	"github.com/piplos/site/internal/models"
-	"github.com/piplos/site/internal/repository"
-	"github.com/piplos/site/internal/services/ai"
-	"github.com/piplos/site/internal/services/mailer"
-	"github.com/piplos/site/internal/services/translate"
-	"github.com/piplos/site/internal/utils"
+	"github.com/piplos/piplos.media/internal/config"
+	apperrors "github.com/piplos/piplos.media/internal/errors"
+	"github.com/piplos/piplos.media/internal/models"
+	"github.com/piplos/piplos.media/internal/repository"
+	"github.com/piplos/piplos.media/internal/services/ai"
+	"github.com/piplos/piplos.media/internal/services/mailer"
+	"github.com/piplos/piplos.media/internal/services/translate"
+	"github.com/piplos/piplos.media/internal/utils"
 )
 
 const maskedValue = "****"

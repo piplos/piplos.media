@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/piplos/site/internal/models"
+	"github.com/piplos/piplos.media/internal/models"
 )
 
 func TestBuildLeadEmail_Russian(t *testing.T) {

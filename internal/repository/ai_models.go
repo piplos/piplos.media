@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/piplos/site/internal/models"
+	"github.com/piplos/piplos.media/internal/models"
 )
 
 const aiProviderModelColumns = `id, provider, model_id, display_name, enabled`

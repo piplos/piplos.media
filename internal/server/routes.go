@@ -4,9 +4,9 @@ package server
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/piplos/site/internal/handlers"
-	"github.com/piplos/site/internal/middleware"
-	"github.com/piplos/site/internal/models"
+	"github.com/piplos/piplos.media/internal/handlers"
+	"github.com/piplos/piplos.media/internal/middleware"
+	"github.com/piplos/piplos.media/internal/models"
 )
 
 // Handlers groups all route handlers.

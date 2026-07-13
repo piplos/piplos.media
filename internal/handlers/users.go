@@ -5,11 +5,11 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	apperrors "github.com/piplos/site/internal/errors"
-	"github.com/piplos/site/internal/middleware"
-	"github.com/piplos/site/internal/models"
-	"github.com/piplos/site/internal/repository"
-	authsvc "github.com/piplos/site/internal/services/auth"
+	apperrors "github.com/piplos/piplos.media/internal/errors"
+	"github.com/piplos/piplos.media/internal/middleware"
+	"github.com/piplos/piplos.media/internal/models"
+	"github.com/piplos/piplos.media/internal/repository"
+	authsvc "github.com/piplos/piplos.media/internal/services/auth"
 )
 
 // UsersHandler manages admin panel accounts (admin role only).

@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/piplos/site/internal/models"
+	"github.com/piplos/piplos.media/internal/models"
 )
 
 const seoColumns = "id, path, translations, created_at, updated_at"

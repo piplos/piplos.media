@@ -3,7 +3,7 @@ package middleware
 import (
 	"context"
 
-	"github.com/piplos/site/internal/models"
+	"github.com/piplos/piplos.media/internal/models"
 )
 
 // UserLookup loads users for JWT authentication (implemented by repository.Repository).

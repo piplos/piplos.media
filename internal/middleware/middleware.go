@@ -10,9 +10,9 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/rs/zerolog"
 
-	apperrors "github.com/piplos/site/internal/errors"
-	"github.com/piplos/site/internal/models"
-	authsvc "github.com/piplos/site/internal/services/auth"
+	apperrors "github.com/piplos/piplos.media/internal/errors"
+	"github.com/piplos/piplos.media/internal/models"
+	authsvc "github.com/piplos/piplos.media/internal/services/auth"
 )
 
 // CORS returns configured CORS middleware.

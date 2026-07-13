@@ -11,7 +11,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 
-	apperrors "github.com/piplos/site/internal/errors"
+	apperrors "github.com/piplos/piplos.media/internal/errors"
 )
 
 const maxUploadBytes = 5 << 20 // 5 MiB

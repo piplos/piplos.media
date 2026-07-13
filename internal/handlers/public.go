@@ -3,9 +3,9 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v3"
 
-	apperrors "github.com/piplos/site/internal/errors"
-	"github.com/piplos/site/internal/models"
-	"github.com/piplos/site/internal/repository"
+	apperrors "github.com/piplos/piplos.media/internal/errors"
+	"github.com/piplos/piplos.media/internal/models"
+	"github.com/piplos/piplos.media/internal/repository"
 )
 
 // PublicHandler exposes published content to the site (no auth).

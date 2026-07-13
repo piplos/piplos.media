@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/piplos/site/internal/config"
+	"github.com/piplos/piplos.media/internal/config"
 )
 
 // SMTPConfig holds outbound mail server settings.
