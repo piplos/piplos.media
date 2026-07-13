@@ -1,17 +1,19 @@
 <script lang="ts">
 	import { langStore } from '$lib/stores/lang.svelte';
-	import { getProjectLocale, type PortfolioProject } from '$lib/portfolio';
+	import { SITE } from '$lib/site';
+	import { getProjectLocale, getProjectStackItems, type PortfolioProject } from '$lib/portfolio';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 	let project = $derived(data.project as PortfolioProject);
 	let loc = $derived(getProjectLocale(project, langStore.value));
+	let stackItems = $derived(getProjectStackItems(project, langStore.value));
 </script>
 
 <svelte:head>
-	<title>{loc.title} — Case Study | piplos.dev</title>
+	<title>{loc.title} — Case Study | {SITE.name}</title>
 	<meta name="description" content={loc.description} />
-	<link rel="canonical" href="https://piplos.dev/portfolio/{project.id}" />
+	<link rel="canonical" href="{SITE.url}/portfolio/{project.id}" />
 </svelte:head>
 
 <nav class="breadcrumb-bar" aria-label="Breadcrumb">
@@ -34,11 +36,6 @@
 				</svg>
 				{langStore.t('case_study.back')}
 			</a>
-
-			<div class="cs-meta">
-				<span class="cs-subtitle">{loc.subtitle}</span>
-				<span class="cs-year">{project.year}</span>
-			</div>
 
 			<h1 class="cs-title" id="cs-title">{loc.title}</h1>
 			<p class="cs-desc">{loc.description}</p>
@@ -89,13 +86,10 @@
 					<div class="cs-card">
 						<p class="cs-label">{langStore.t('case_study.stack')}</p>
 						<div class="cs-stack-tags">
-							{#each project.tags as tag}
-								<span class="cs-stack-tag">{tag}</span>
+							{#each stackItems as item (item)}
+								<span class="cs-stack-tag">{item}</span>
 							{/each}
 						</div>
-						{#if loc.stack_detail}
-							<p class="cs-stack-detail">{loc.stack_detail}</p>
-						{/if}
 					</div>
 
 					<div class="cs-card">
@@ -112,7 +106,7 @@
 						</dl>
 					</div>
 
-					<a href="/order" class="cs-cta">
+					<a href="/order?from={project.id}" class="cs-cta">
 						{langStore.t('case_study.start_project')}
 						<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
 							<path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -146,32 +140,6 @@
 	}
 
 	.cs-back:hover { color: var(--c-white); }
-
-	.cs-meta {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 12px;
-		margin-bottom: 24px;
-	}
-
-	.cs-subtitle {
-		font-family: var(--f-mono);
-		font-size: 11px;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--c-muted);
-		background: var(--c-surface2);
-		padding: 6px 12px;
-		border-radius: var(--radius);
-	}
-
-	.cs-year {
-		font-family: var(--f-mono);
-		font-size: 11px;
-		color: var(--c-dim);
-		letter-spacing: 0.1em;
-	}
 
 	.cs-title {
 		font-family: var(--f-display);
@@ -277,7 +245,6 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 8px;
-		margin-bottom: 16px;
 	}
 
 	.cs-stack-tag {
@@ -287,12 +254,6 @@
 		border: 1px solid var(--c-border);
 		padding: 4px 10px;
 		border-radius: 100px;
-	}
-
-	.cs-stack-detail {
-		font-size: 13px;
-		color: var(--c-dim);
-		line-height: 1.6;
 	}
 
 	.cs-info {
@@ -328,7 +289,7 @@
 		font-weight: 700;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: #000;
+		color: #fff;
 		background: var(--c-accent);
 		border-radius: var(--radius);
 		transition: opacity 0.2s, transform 0.2s;

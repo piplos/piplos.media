@@ -1,18 +1,19 @@
 <script lang="ts">
 	import { langStore } from '$lib/stores/lang.svelte';
+	import { SITE } from '$lib/site';
 
 	const sections = [
 		{
 			title: '1. Acceptance of Terms',
-			body: 'By accessing and using the piplos.dev website, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our website or services.'
+			body: `By accessing and using the ${SITE.name} website, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our website or services.`
 		},
 		{
 			title: '2. Services',
-			body: 'piplos.dev provides software development services including web application development, mobile application development, backend and API development, DevOps infrastructure, and technology consulting. The specific terms of any engagement are governed by a separate project agreement or statement of work.'
+			body: `${SITE.name} provides software development services including web application development, mobile application development, backend and API development, DevOps infrastructure, and technology consulting. The specific terms of any engagement are governed by a separate project agreement or statement of work.`
 		},
 		{
 			title: '3. Intellectual Property',
-			body: 'Upon full payment, clients receive full ownership of all custom code, designs, and deliverables created specifically for their project. piplos.dev retains the right to use general methodologies, frameworks, and non-client-specific code. We may reference completed projects in our portfolio unless otherwise agreed in writing.'
+			body: `Upon full payment, clients receive full ownership of all custom code, designs, and deliverables created specifically for their project. ${SITE.name} retains the right to use general methodologies, frameworks, and non-client-specific code. We may reference completed projects in our portfolio unless otherwise agreed in writing.`
 		},
 		{
 			title: '4. Confidentiality',
@@ -20,7 +21,7 @@
 		},
 		{
 			title: '5. Limitation of Liability',
-			body: 'piplos.dev shall not be liable for any indirect, incidental, special, or consequential damages arising from the use of our services. Our total liability for any claim shall not exceed the total fees paid by the client for the specific project giving rise to the claim.'
+			body: `${SITE.name} shall not be liable for any indirect, incidental, special, or consequential damages arising from the use of our services. Our total liability for any claim shall not exceed the total fees paid by the client for the specific project giving rise to the claim.`
 		},
 		{
 			title: '6. Payment Terms',
@@ -36,15 +37,15 @@
 		},
 		{
 			title: '9. Contact',
-			body: 'For questions about these Terms of Service, contact us at dev@piplos.media.'
+			body: `For questions about these Terms of Service, contact us at ${SITE.email}.`
 		}
 	];
 </script>
 
 <svelte:head>
-	<title>Terms of Service — piplos.dev</title>
-	<meta name="description" content="Terms of Service for piplos.dev — the terms governing use of our website and services." />
-	<link rel="canonical" href="https://piplos.dev/terms" />
+	<title>Terms of Service — {SITE.name}</title>
+	<meta name="description" content="Terms of Service for {SITE.name} — the terms governing use of our website and services." />
+	<link rel="canonical" href="{SITE.url}/terms" />
 </svelte:head>
 
 <nav class="breadcrumb-bar" aria-label="Breadcrumb">
@@ -56,7 +57,7 @@
 </nav>
 
 <main id="main" class="legal-page">
-	<div class="legal-inner">
+	<div class="container">
 		<p class="legal-label">Legal</p>
 		<h1 class="legal-title">{langStore.t('terms.title')}</h1>
 		<p class="legal-updated">{langStore.t('terms.last_updated')}</p>

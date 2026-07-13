@@ -40,3 +40,16 @@ export function getProjectLocale(project: PortfolioProject, lang: Lang): Project
 export function getCategoryColor(category: string): string {
 	return CATEGORY_COLORS[category] ?? 'var(--c-accent)';
 }
+
+export function getProjectStackItems(project: PortfolioProject, lang: Lang): string[] {
+	const loc = getProjectLocale(project, lang);
+
+	if (loc.stack_detail) {
+		return loc.stack_detail
+			.split(',')
+			.map((item) => item.trim())
+			.filter(Boolean);
+	}
+
+	return project.tags;
+}

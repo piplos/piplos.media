@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { langStore } from '$lib/stores/lang.svelte';
+	import { SITE, getCompanyYears } from '$lib/site';
 	import { PORTFOLIO_FILTER_KEYS } from '$lib/constants/sections';
 	import { getCategoryColor, getProjectLocale, type PortfolioProject } from '$lib/portfolio';
 	import portfolioData from '$lib/data/portfolio.json';
@@ -25,12 +26,14 @@
 		if (key === 'all') return projects.length;
 		return projects.filter((p) => p.categories?.includes(key)).length;
 	}
+
+	const companyYears = getCompanyYears();
 </script>
 
 <svelte:head>
-	<title>Portfolio — piplos.dev | Software Development Projects</title>
-	<meta name="description" content="Browse piplos.dev portfolio of 120+ software development projects: web apps, mobile apps, SaaS platforms, fintech and enterprise systems." />
-	<link rel="canonical" href="https://piplos.dev/portfolio" />
+	<title>Portfolio — {SITE.name}</title>
+	<meta name="description" content="Browse {SITE.name} portfolio of 240+ projects: web apps, mobile apps, SaaS platforms, fintech and enterprise systems." />
+	<link rel="canonical" href="{SITE.url}/portfolio" />
 </svelte:head>
 
 <!-- Breadcrumb -->
@@ -93,7 +96,9 @@
 							</span>
 							<span class="pc-year">{project.year}</span>
 						</div>
-						<h3 class="pc-title" itemprop="name">{loc.title}</h3>
+						<h3 class="pc-title" itemprop="name">
+							<a href="/portfolio/{project.id}" class="pc-title-link" aria-label="View {loc.title} case study">{loc.title}</a>
+						</h3>
 						<p class="pc-desc" itemprop="description">{loc.description}</p>
 						<div class="pc-tags">
 							{#each project.tags as tag}
@@ -115,11 +120,11 @@
 		<div class="container">
 			<div class="stats-inner">
 				<div class="stat-item">
-					<div class="stat-num">120<span class="a">+</span></div>
+					<div class="stat-num">240<span class="a">+</span></div>
 					<div class="stat-label">{langStore.t('portfolio.stats.projects')}</div>
 				</div>
 				<div class="stat-item">
-					<div class="stat-num">8<span class="a">yr</span></div>
+					<div class="stat-num">{companyYears}<span class="a">yr</span></div>
 					<div class="stat-label">{langStore.t('portfolio.stats.years')}</div>
 				</div>
 				<div class="stat-item">
@@ -142,7 +147,7 @@
 					<h2 class="cta-title" id="cta-h">{langStore.t('portfolio.cta_title')}</h2>
 					<p class="cta-sub">{langStore.t('portfolio.cta_sub')}</p>
 				</div>
-				<a href="/order" class="btn-primary" aria-label="Start a software development project with piplos.dev">
+				<a href="/order" class="btn-primary" aria-label="Start a project with {SITE.name}">
 					{langStore.t('nav.start_project')}
 					<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M1 7h12M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 				</a>

@@ -1,8 +1,24 @@
 <script lang="ts">
+	import { page } from '$app/state';
+	import { browser } from '$app/environment';
 	import { langStore } from '$lib/stores/lang.svelte';
+	import { SITE } from '$lib/site';
+	import FieldSelect from '$lib/components/FieldSelect.svelte';
+	import { getOrderPrefillFromProject } from '$lib/order-prefill';
+	import type { PortfolioProject } from '$lib/portfolio';
+	import portfolioData from '$lib/data/portfolio.json';
+
+	type Currency = 'USD' | 'BYN' | 'EUR';
+
+	const BUDGET_MIN = 3000;
+	const BUDGET_MAX = 50000;
+	const BUDGET_STEP = 1000;
 
 	let step = $state(1);
 	let submitted = $state(false);
+	let prefillApplied = $state(false);
+	let currencyManual = $state(false);
+	let currency = $state<Currency>('USD');
 
 	let form = $state({
 		types: [] as string[],
@@ -31,11 +47,36 @@
 		{ id: 'consulting', label: 'Consulting',      desc: 'Audit, architecture, review' }
 	];
 
+	const currencyOptions = [
+		{ value: 'USD', label: 'USD' },
+		{ value: 'EUR', label: 'EUR' },
+		{ value: 'BYN', label: 'BYN' }
+	];
+
 	const stageOptions = [
 		{ id: 'idea',   label: 'Just an Idea',     desc: 'Starting from scratch' },
 		{ id: 'design', label: 'Have Design',       desc: 'Wireframes or mockups ready' },
 		{ id: 'mvp',    label: 'Existing MVP',      desc: 'Rebuild or scale' },
 		{ id: 'legacy', label: 'Legacy Migration',  desc: 'Modernize old system' }
+	];
+
+	const timelineOptions = [
+		{ value: '', label: '— Select timeline —' },
+		{ value: '1m', label: 'Less than 1 month' },
+		{ value: '1-3m', label: '1–3 months' },
+		{ value: '3-6m', label: '3–6 months' },
+		{ value: '6-12m', label: '6–12 months' },
+		{ value: '12m+', label: '12+ months / Ongoing' },
+		{ value: 'flexible', label: 'Flexible' }
+	];
+
+	const howFoundOptions = [
+		{ value: '', label: '— Select —' },
+		{ value: 'google', label: 'Google Search' },
+		{ value: 'referral', label: 'Referral' },
+		{ value: 'social', label: 'Social Media' },
+		{ value: 'github', label: 'GitHub' },
+		{ value: 'other', label: 'Other' }
 	];
 
 	const promises = [
@@ -46,9 +87,29 @@
 		{ bold: 'NDA on request', text: '— confidentiality agreement available before any discussion.' }
 	];
 
-	function formatBudget(v: number) {
-		if (v >= 200000) return '$200,000+';
-		return '$' + v.toLocaleString('en-US');
+	function formatBudgetAmount(v: number) {
+		const locale = langStore.value === 'ru' ? 'ru-BY' : 'en-US';
+		const amount =
+			v >= BUDGET_MAX
+				? `${BUDGET_MAX.toLocaleString(locale)}+`
+				: v.toLocaleString(locale);
+
+		if (currency === 'USD') return `$${amount}`;
+		if (currency === 'EUR') return `€${amount}`;
+		return amount;
+	}
+
+	function formatRangeLabel(v: number) {
+		const suffix = v >= BUDGET_MAX ? '+' : '';
+		const short = v >= 1000 ? `${v / 1000}k` : `${v}`;
+
+		if (currency === 'USD') return `$${short}${suffix}`;
+		if (currency === 'EUR') return `€${short}${suffix}`;
+		return `${short}${suffix}`;
+	}
+
+	function onCurrencyChange() {
+		currencyManual = true;
 	}
 
 	function toggleType(id: string) {
@@ -57,25 +118,105 @@
 		else form.types = [...form.types, id];
 	}
 
-	function goTo(n: number) { step = n; }
-	function next() { step++; }
-	function back() { step--; }
-	function submit(e: Event) { e.preventDefault(); submitted = true; }
+	function isStep1Valid() {
+		return form.types.length > 0;
+	}
+
+	function isStep2Valid() {
+		return !!form.projectName.trim() && !!form.description.trim();
+	}
+
+	function isStep3Valid() {
+		return !!form.timeline && !!form.stage;
+	}
+
+	function isStep4Valid() {
+		return !!form.firstName.trim() && !!form.email.trim();
+	}
+
+	function canGoTo(n: number) {
+		if (n === 1) return true;
+		if (n === 2) return isStep1Valid();
+		if (n === 3) return isStep1Valid() && isStep2Valid();
+		if (n === 4) return isStep1Valid() && isStep2Valid() && isStep3Valid();
+		return false;
+	}
+
+	function goTo(n: number) {
+		if (canGoTo(n)) step = n;
+	}
+
+	function next() {
+		if (canNext) step++;
+	}
+
+	function back() {
+		if (step > 1) step--;
+	}
+
+	function submit(e: Event) {
+		e.preventDefault();
+		submitted = true;
+	}
 
 	let canNext = $derived(
-		step === 1 ? form.types.length > 0 :
-		step === 2 ? !!form.projectName && !!form.description :
-		step === 3 ? !!form.timeline && !!form.stage :
-		!!form.firstName && !!form.email
+		step === 1 ? isStep1Valid() :
+		step === 2 ? isStep2Valid() :
+		step === 3 ? isStep3Valid() :
+		isStep4Valid()
 	);
+
+	$effect(() => {
+		if (!browser || prefillApplied) return;
+
+		const fromId = page.url.searchParams.get('from');
+		if (!fromId) return;
+
+		const project = (portfolioData as PortfolioProject[]).find((item) => item.id === fromId);
+		if (!project) return;
+
+		const prefill = getOrderPrefillFromProject(project, langStore.value);
+		form.types = prefill.types;
+		form.projectName = prefill.projectName;
+		form.description = prefill.description;
+		form.stack = prefill.stack;
+		form.references = prefill.references;
+		prefillApplied = true;
+	});
+
+	$effect(() => {
+		langStore.value;
+
+		if (!currencyManual) {
+			currency = langStore.value === 'ru' ? 'BYN' : 'USD';
+		}
+	});
+
+	$effect(() => {
+		if (form.budget > BUDGET_MAX) form.budget = BUDGET_MAX;
+		if (form.budget < BUDGET_MIN) form.budget = BUDGET_MIN;
+	});
+
+	$effect(() => {
+		if (canGoTo(step)) return;
+
+		for (let n = step - 1; n >= 1; n--) {
+			if (canGoTo(n)) {
+				step = n;
+				return;
+			}
+		}
+
+		step = 1;
+	});
 
 	const stepLabels = ['Type', 'Details', 'Budget', 'Contact'];
 </script>
 
 <svelte:head>
-	<title>Start a Project — piplos.dev</title>
+	<title>Start a Project — {SITE.name}</title>
 	<meta name="description" content="Tell us about your project — web app, mobile app, backend or DevOps. Get a free estimate within 24 hours." />
-	<link rel="canonical" href="https://piplos.dev/order" />
+	<link rel="canonical" href="{SITE.url}/order" />
 </svelte:head>
 
 <!-- Breadcrumb -->
@@ -112,17 +253,21 @@
 				<!-- STEP TABS -->
 				<div class="steps" role="tablist" aria-label="Form steps">
 					{#each stepLabels as label, i}
+						{@const stepNum = i + 1}
 						<button
 							type="button"
 							class="step-tab"
-							class:active={step === i + 1}
-							class:done={step > i + 1}
+							class:active={step === stepNum}
+							class:done={step > stepNum}
+							class:locked={!canGoTo(stepNum)}
 							role="tab"
-							aria-selected={step === i + 1}
-							id="tab-{i+1}"
-							onclick={() => goTo(i + 1)}
+							aria-selected={step === stepNum}
+							aria-disabled={!canGoTo(stepNum)}
+							id="tab-{stepNum}"
+							disabled={!canGoTo(stepNum)}
+							onclick={() => goTo(stepNum)}
 						>
-							<span class="step-n">0{i+1}</span>
+							<span class="step-n">0{stepNum}</span>
 							<span class="step-lbl">{label}</span>
 						</button>
 					{/each}
@@ -198,25 +343,45 @@
 							<h2 class="step-title">Budget & Timeline</h2>
 							<div class="field">
 								<span class="field-label" id="budget-lbl">Estimated Budget</span>
-								<div class="budget-val" aria-live="polite">{formatBudget(form.budget)} <span class="a">USD</span></div>
-								<input type="range" id="budget_range" name="budget_range" min="3000" max="200000" step="1000" bind:value={form.budget} aria-labelledby="budget-lbl" />
+								<div class="budget-val" aria-live="polite">
+									<span class="budget-amount">{formatBudgetAmount(form.budget)}</span>
+									<FieldSelect
+										id="budget_currency"
+										name="budget_currency"
+										variant="inline"
+										placeholder=""
+										ariaLabel="Currency"
+										options={currencyOptions}
+										bind:value={currency}
+										onchange={onCurrencyChange}
+									/>
+								</div>
+								<input
+									type="range"
+									id="budget_range"
+									name="budget_range"
+									min={BUDGET_MIN}
+									max={BUDGET_MAX}
+									step={BUDGET_STEP}
+									bind:value={form.budget}
+									aria-labelledby="budget-lbl"
+								/>
 								<div class="range-labels">
-									<span>$3k</span><span>$50k</span><span>$100k</span><span>$200k+</span>
+									<span>{formatRangeLabel(BUDGET_MIN)}</span>
+									<span>{formatRangeLabel(20000)}</span>
+									<span>{formatRangeLabel(35000)}</span>
+									<span>{formatRangeLabel(BUDGET_MAX)}</span>
 								</div>
 							</div>
 							<div class="field">
 								<label class="field-label" for="timeline">Desired Timeline</label>
-								<div class="field-select-wrap">
-									<select id="timeline" name="timeline" class="field-select" bind:value={form.timeline}>
-										<option value="">— Select timeline —</option>
-										<option value="1m">Less than 1 month</option>
-										<option value="1-3m">1–3 months</option>
-										<option value="3-6m">3–6 months</option>
-										<option value="6-12m">6–12 months</option>
-										<option value="12m+">12+ months / Ongoing</option>
-										<option value="flexible">Flexible</option>
-									</select>
-								</div>
+								<FieldSelect
+									id="timeline"
+									name="timeline"
+									placeholder="— Select timeline —"
+									options={timelineOptions}
+									bind:value={form.timeline}
+								/>
 							</div>
 							<div class="field">
 								<span class="field-label" id="stage-lbl">Current Stage</span>
@@ -274,17 +439,13 @@
 							</div>
 							<div class="field">
 								<label class="field-label" for="how_found">How did you find us?</label>
-								<div class="field-select-wrap">
-									<select id="how_found" name="how_found" class="field-select" bind:value={form.howFound}>
-										<option value="">— Select —</option>
-										<option value="google">Google Search</option>
-										<option value="referral">Referral</option>
-										<option value="social">Social Media</option>
-										<option value="piplos_media">piplos.media</option>
-										<option value="github">GitHub</option>
-										<option value="other">Other</option>
-									</select>
-								</div>
+								<FieldSelect
+									id="how_found"
+									name="how_found"
+									placeholder="— Select —"
+									options={howFoundOptions}
+									bind:value={form.howFound}
+								/>
 							</div>
 							<div class="field">
 								<label class="field-label" for="extra_notes">Anything else?</label>
@@ -306,11 +467,11 @@
 		</div>
 
 		<!-- ─── INFO SIDE ─────────────────────────────── -->
-		<aside class="info-side" aria-label="Why work with piplos.dev">
+		<aside class="info-side" aria-label="Why work with {SITE.name}">
 
 			<div class="info-block">
 				<p class="info-label">Our Promise</p>
-				<h2 class="info-title">Why piplos.dev</h2>
+				<h2 class="info-title">Why {SITE.name}</h2>
 				<ul class="promise-list" role="list">
 					{#each promises as p}
 						<li class="promise-item">
@@ -324,7 +485,7 @@
 			<div class="info-block">
 				<p class="info-label">Testimonial</p>
 				<blockquote class="testimonial">
-					<p class="testimonial-text">"piplos.dev delivered our analytics platform on time and under budget. Their code quality and communication are exceptional — we've been working together for 3 years."</p>
+					<p class="testimonial-text">"{SITE.name} delivered our analytics platform on time and under budget. Their code quality and communication are exceptional — we've been working together for 3 years."</p>
 					<cite class="testimonial-author">— CTO, B2B SaaS Startup</cite>
 				</blockquote>
 			</div>
@@ -334,15 +495,15 @@
 				<div class="contact-list">
 					<div class="contact-item">
 						<div class="contact-item-lbl">Email</div>
-						<a href="mailto:dev@piplos.media" class="contact-item-val">dev@piplos.media</a>
+						<a href="mailto:{SITE.email}" class="contact-item-val">{SITE.email}</a>
 					</div>
 					<div class="contact-item">
 						<div class="contact-item-lbl">Phone</div>
-						<a href="tel:+375172499897" class="contact-item-val">+375 17 249-98-97</a>
-					</div>
-					<div class="contact-item">
-						<div class="contact-item-lbl">Telegram</div>
-						<a href="https://t.me/piplosdev" class="contact-item-val" rel="noopener" target="_blank">@piplosdev</a>
+						<div class="contact-phones">
+							{#each SITE.phones as phone}
+								<a href="tel:{phone.tel}" class="contact-item-val">{phone.display}</a>
+							{/each}
+						</div>
 					</div>
 				</div>
 			</div>
@@ -363,10 +524,15 @@
 	.step-tab { flex: 1; padding: 14px 16px; border: none; border-right: 1px solid var(--c-border); display: flex; align-items: center; gap: 10px; background: var(--c-surface); transition: background 0.2s; cursor: pointer; font: inherit; color: inherit; text-align: left; }
 	.step-tab:last-child { border-right: none; }
 	.step-tab.active { background: var(--c-surface2); }
-	.step-tab.done { background: rgba(205,255,0,0.06); }
+	.step-tab.done { background: var(--c-accent-soft); }
+	.step-tab:disabled,
+	.step-tab.locked {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
 	.step-n { font-family: var(--f-mono); font-size: 18px; font-weight: 700; color: var(--c-dim); line-height: 1; }
 	.step-tab.active .step-n { color: var(--c-accent); }
-	.step-tab.done .step-n { color: rgba(205,255,0,0.4); }
+	.step-tab.done .step-n { color: rgba(253, 83, 63, 0.45); }
 	.step-lbl { font-family: var(--f-mono); font-size: 11px; color: var(--c-dim); letter-spacing: 0.1em; text-transform: uppercase; }
 	.step-tab.active .step-lbl { color: var(--c-muted); }
 	.step-title { font-family: var(--f-display); font-size: 24px; font-weight: 600; color: var(--c-white); margin-bottom: 32px; letter-spacing: -0.01em; }
@@ -374,23 +540,32 @@
 	.step-prog { font-family: var(--f-mono); font-size: 12px; color: var(--c-dim); }
 	.btn-prev { font-family: var(--f-mono); font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--c-muted); border: 1px solid var(--c-border2); padding: 12px 24px; border-radius: var(--radius); transition: color 0.2s, border-color 0.2s; background: transparent; cursor: pointer; }
 	.btn-prev:hover { color: var(--c-white); border-color: var(--c-muted); }
-	.btn-next { font-family: var(--f-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #000; background: var(--c-accent); padding: 12px 28px; border-radius: var(--radius); transition: opacity 0.2s; display: flex; align-items: center; gap: 8px; cursor: pointer; border: none; }
+	.btn-next { font-family: var(--f-brand); font-size: 12px; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; background: var(--c-accent); padding: 12px 28px; border-radius: var(--radius); transition: opacity 0.2s; display: flex; align-items: center; gap: 8px; cursor: pointer; border: none; }
 	.btn-next:hover { opacity: 0.88; }
 	.btn-next:disabled { opacity: 0.35; pointer-events: none; }
-	.btn-submit { font-family: var(--f-mono); font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #000; background: var(--c-accent); padding: 14px 36px; border-radius: var(--radius); transition: opacity 0.2s; display: flex; align-items: center; gap: 8px; cursor: pointer; border: none; }
+	.btn-submit { font-family: var(--f-brand); font-size: 13px; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; background: var(--c-accent); padding: 14px 36px; border-radius: var(--radius); transition: opacity 0.2s; display: flex; align-items: center; gap: 8px; cursor: pointer; border: none; }
 	.btn-submit:hover { opacity: 0.88; }
 	.btn-submit:disabled { opacity: 0.35; pointer-events: none; }
-	.budget-val { font-family: var(--f-display); font-size: 48px; font-weight: 700; color: var(--c-white); line-height: 1; margin-bottom: 16px; }
-	.budget-val .a { color: var(--c-accent); }
+	.budget-val {
+		display: flex;
+		align-items: baseline;
+		gap: 10px;
+		flex-wrap: wrap;
+		font-family: var(--f-display);
+		font-size: 48px;
+		font-weight: 700;
+		color: var(--c-white);
+		line-height: 1;
+		margin-bottom: 16px;
+	}
+	.budget-amount { letter-spacing: -0.02em; }
 	input[type="range"] { -webkit-appearance: none; width: 100%; height: 3px; background: var(--c-border2); outline: none; cursor: pointer; border-radius: 2px; }
 	input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: var(--c-accent); border: 2px solid var(--c-bg); border-radius: 50%; cursor: pointer; transition: transform 0.2s; }
 	input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 	.range-labels { display: flex; justify-content: space-between; margin-top: 8px; }
 	.range-labels span { font-family: var(--f-mono); font-size: 11px; color: var(--c-dim); }
-	.field-select-wrap { position: relative; }
-	.field-select-wrap::after { content: '▾'; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--c-dim); pointer-events: none; }
 	.success-state { padding: 80px 0; text-align: center; }
-	.success-icon { width: 80px; height: 80px; background: rgba(205,255,0,0.1); border: 1px solid rgba(205,255,0,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 32px; font-size: 32px; }
+	.success-icon { width: 80px; height: 80px; background: var(--c-accent-soft); border: 1px solid var(--c-accent-ring); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 32px; font-size: 32px; }
 	.success-h2 { font-family: var(--f-display); font-size: 40px; font-weight: 700; color: var(--c-white); letter-spacing: -0.02em; margin-bottom: 16px; }
 	.success-text { font-size: 16px; color: var(--c-muted); line-height: 1.7; max-width: 440px; margin: 0 auto 36px; }
 	.info-block { padding-bottom: 36px; margin-bottom: 36px; border-bottom: 1px solid var(--c-border); }

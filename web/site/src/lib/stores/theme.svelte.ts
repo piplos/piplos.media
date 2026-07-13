@@ -16,7 +16,7 @@ function createThemeStore() {
 	function apply(t: Theme) {
 		document.documentElement.setAttribute('data-theme', t);
 		const meta = document.getElementById('theme-color-meta');
-		if (meta) meta.setAttribute('content', t === 'light' ? '#F7F8FA' : '#08080C');
+		if (meta) meta.setAttribute('content', t === 'light' ? '#ffffff' : '#24252a');
 		if (browser) localStorage.setItem('piplos-theme', t);
 	}
 

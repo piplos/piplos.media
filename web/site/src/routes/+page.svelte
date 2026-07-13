@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { langStore } from '$lib/stores/lang.svelte';
+	import { SITE, getCompanyYears } from '$lib/site';
 	import { SERVICE_ICONS } from '$lib/constants/sections';
+	import { STACK_ITEMS } from '$lib/constants/stack';
+	import StackIcon from '$lib/components/StackIcon.svelte';
 	import { getCategoryColor, getProjectLocale, type PortfolioProject } from '$lib/portfolio';
 	import portfolioData from '$lib/data/portfolio.json';
 
@@ -9,25 +12,6 @@
 
 	type ServiceItem = { id: string; title: string; description: string; tags: string[] };
 	type ProcessStep = { title: string; description: string };
-
-	const stack = [
-		{ icon: '⚛', label: 'React' },
-		{ icon: '▲', label: 'Next.js' },
-		{ icon: 'TS', label: 'TypeScript' },
-		{ icon: '⬡', label: 'Node.js' },
-		{ icon: '🐘', label: 'PostgreSQL' },
-		{ icon: '⚡', label: 'Redis' },
-		{ icon: '🐳', label: 'Docker' },
-		{ icon: '☸', label: 'Kubernetes' },
-		{ icon: '☁', label: 'AWS' },
-		{ icon: '📱', label: 'React Native' },
-		{ icon: '◈', label: 'GraphQL' },
-		{ icon: '🦀', label: 'Rust' },
-		{ icon: '🐍', label: 'Python' },
-		{ icon: '⚙', label: 'Terraform' },
-		{ icon: '🔄', label: 'GitHub Actions' },
-		{ icon: '🎨', label: 'Figma' }
-	];
 
 	const tickerItems = ['Web Applications', 'Mobile Apps', 'Backend Systems', 'DevOps & Cloud', 'API Development', 'Tech Consulting', 'UI/UX Engineering', 'SaaS Platforms'];
 
@@ -45,16 +29,18 @@
 			...step
 		}))
 	);
+
+	const companyYears = getCompanyYears();
 </script>
 
 <svelte:head>
-	<title>piplos.dev — Software Development Studio | Web, Mobile & Backend</title>
-	<meta name="description" content="piplos.dev is an engineering-first software development studio. We build web applications, mobile apps, backend systems and DevOps infrastructure for startups and enterprises." />
-	<meta property="og:title" content="piplos.dev — Software Development Studio" />
-	<meta property="og:description" content="Engineering-first studio building web apps, mobile apps and backend systems." />
-	<meta property="og:url" content="https://piplos.dev" />
+	<title>{SITE.name} — Web, Mobile & Backend</title>
+	<meta name="description" content="{SITE.name} builds web applications, mobile apps, backend systems and DevOps infrastructure for startups and enterprises." />
+	<meta property="og:title" content="{SITE.name} — Web, Mobile & Backend" />
+	<meta property="og:description" content="Engineering-first team building web apps, mobile apps and backend systems." />
+	<meta property="og:url" content={SITE.url} />
 	<meta property="og:type" content="website" />
-	<link rel="canonical" href="https://piplos.dev" />
+	<link rel="canonical" href={SITE.url} />
 </svelte:head>
 
 <main id="main">
@@ -64,10 +50,6 @@
 		<div class="container">
 			<div class="hero-inner">
 				<div class="hero-content">
-					<div class="hero-eyebrow" aria-hidden="true">
-						<span class="hero-eyebrow-dot"></span>
-						<span>{langStore.t('hero.eyebrow')}</span>
-					</div>
 					<h1 class="hero-title" id="hero-heading">
 						{langStore.t('hero.headline_1')}<br>
 							<span class="line-accent">{langStore.t('hero.headline_2')}</span>
@@ -80,17 +62,17 @@
 							{langStore.t('hero.cta_primary')}
 							<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M1 7h12M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 						</a>
-						<a href="/order" class="btn-secondary" aria-label="Start a project with piplos.dev">
+						<a href="/order" class="btn-secondary" aria-label="Start a project with {SITE.name}">
 							{langStore.t('hero.cta_secondary')}
 						</a>
 					</div>
 				</div>
 				<div class="hero-illustration">
 					<img
-						src="/hero-illustration.png"
-						alt="Software development illustration"
-						width="520"
-						height="420"
+						src="/hero-cat-isometric.png"
+						alt="Piplos Media — cat mascot on a stack of software interfaces"
+						width="640"
+						height="660"
 						loading="eager"
 					/>
 				</div>
@@ -102,11 +84,11 @@
 	<div class="stats" role="region" aria-label="Company statistics">
 		<div class="container">
 			<div class="stat">
-				<div class="stat-num">120<span class="accent">+</span></div>
+				<div class="stat-num">240<span class="accent">+</span></div>
 				<div class="stat-label">{langStore.t('stats.projects')}</div>
 			</div>
 			<div class="stat">
-				<div class="stat-num">8<span class="accent">yr</span></div>
+				<div class="stat-num">{companyYears}<span class="accent">yr</span></div>
 				<div class="stat-label">{langStore.t('stats.experience')}</div>
 			</div>
 			<div class="stat">
@@ -181,7 +163,9 @@
 							<span class="work-type-dot" style="background:{getCategoryColor(project.category)}" aria-hidden="true"></span>
 							{loc.subtitle}
 						</div>
-						<h3 class="work-title" itemprop="name">{loc.title}</h3>
+						<h3 class="work-title" itemprop="name">
+							<a href="/portfolio/{project.id}" class="work-title-link" aria-label="View {loc.title} case study">{loc.title}</a>
+						</h3>
 						<p class="work-desc" itemprop="description">{loc.description}</p>
 						<a href="/portfolio/{project.id}" class="work-link" itemprop="url" aria-label="View {loc.title} case study">
 								{langStore.t('work.case_study')}
@@ -203,9 +187,9 @@
 				</div>
 			</div>
 			<div class="stack-grid" role="list" aria-label="Technologies we work with">
-				{#each stack as item}
+				{#each STACK_ITEMS as item}
 					<div class="stack-item" role="listitem">
-						<span class="stack-icon" aria-hidden="true">{item.icon}</span>
+						<StackIcon id={item.id} />
 						<span class="stack-name">{item.label}</span>
 					</div>
 				{/each}
@@ -243,7 +227,7 @@
 						{langStore.t('cta.title')}
 					</h2>
 					<p class="cta-sub">{langStore.t('cta.description')}</p>
-					<a href="/order" class="btn-primary" style="margin-top:32px;display:inline-flex" aria-label="Start a project with piplos.dev">
+					<a href="/order" class="btn-primary" style="margin-top:32px;display:inline-flex" aria-label="Start a project with {SITE.name}">
 						{langStore.t('cta.button')}
 						<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M1 7h12M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 					</a>
@@ -251,15 +235,15 @@
 				<div class="cta-contacts">
 					<div class="cta-contact-item">
 						<div class="cta-contact-label">Email</div>
-						<a href="mailto:dev@piplos.media" class="cta-contact-val" aria-label="Email piplos.dev">dev@piplos.media</a>
+						<a href="mailto:{SITE.email}" class="cta-contact-val" aria-label="Email {SITE.name}">{SITE.email}</a>
 					</div>
 					<div class="cta-contact-item">
 						<div class="cta-contact-label">Phone</div>
-						<a href="tel:+375172499897" class="cta-contact-val" aria-label="Call piplos.dev">+375 17 249-98-97</a>
-					</div>
-					<div class="cta-contact-item">
-						<div class="cta-contact-label">Telegram</div>
-						<a href="https://t.me/piplosdev" class="cta-contact-val" rel="noopener" target="_blank" aria-label="Message piplos.dev on Telegram">@piplosdev</a>
+						<div class="cta-contact-phones">
+							{#each SITE.phones as phone}
+								<a href="tel:{phone.tel}" class="cta-contact-val" aria-label="Call {SITE.name}">{phone.display}</a>
+							{/each}
+						</div>
 					</div>
 				</div>
 			</div>

@@ -8,10 +8,9 @@
     "start_project": "Start Project"
   },
   "hero": {
-    "eyebrow": "Engineering division of Piplos Media",
     "headline_1": "We build software",
     "headline_2": "that ships.",
-    "description": "piplos.dev is an engineering-first studio building web applications, mobile apps and backend systems for startups and enterprises. Clean code. Real delivery.",
+    "description": "piplos.media builds web applications, mobile apps and backend systems for startups and enterprises. Clean code. Real delivery.",
     "cta_primary": "View Portfolio",
     "cta_secondary": "Start a Project"
   },
@@ -79,11 +78,11 @@
   },
   "portfolio": {
     "title": "Portfolio",
-    "eyebrow": "120+ projects delivered",
+    "eyebrow": "240+ projects delivered",
     "filter_label": "Filter:",
     "cta_title": "Your project could be next.",
     "cta_sub": "Tell us about your idea — we'll get back within 24 hours with a plan and estimate.",
-    "description": "120+ projects delivered across web, mobile, SaaS, fintech and enterprise software.",
+    "description": "240+ projects delivered across web, mobile, SaaS, fintech and enterprise software.",
     "filters": {
       "all": "All",
       "web": "Web Apps",
@@ -155,9 +154,10 @@
     ]
   },
   "footer": {
-    "tagline": "Engineering-first software development studio. Part of Piplos Media Group.",
+    "tagline": "Engineering-first software development.",
     "services": "Services",
     "company": "Company",
+    "legal": "Legal",
     "links": {
       "web": "Web Applications",
       "mobile": "Mobile Apps",
@@ -171,7 +171,7 @@
       "privacy": "Privacy",
       "terms": "Terms"
     },
-    "copyright": "piplos.dev — Minsk, Belarus"
+    "copyright": "Piplos Media — Minsk, Belarus"
   },
   "privacy": {
     "title": "Privacy Policy",

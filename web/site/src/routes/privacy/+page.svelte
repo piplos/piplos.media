@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { langStore } from '$lib/stores/lang.svelte';
+	import { SITE } from '$lib/site';
 
 	const sections = [
 		{
@@ -24,19 +25,19 @@
 		},
 		{
 			title: '6. Your Rights',
-			body: 'You have the right to access, correct, or delete your personal data. You may also object to processing or request data portability. To exercise these rights, contact us at dev@piplos.media. We will respond to your request within 30 days.'
+			body: `You have the right to access, correct, or delete your personal data. You may also object to processing or request data portability. To exercise these rights, contact us at ${SITE.email}. We will respond to your request within 30 days.`
 		},
 		{
 			title: '7. Contact',
-			body: 'If you have questions about this Privacy Policy or our data practices, please contact us at dev@piplos.media or by post at: piplos.dev, Minsk, Belarus.'
+			body: `If you have questions about this Privacy Policy or our data practices, please contact us at ${SITE.email} or by post at: ${SITE.name}, ${SITE.location}.`
 		}
 	];
 </script>
 
 <svelte:head>
-	<title>Privacy Policy — piplos.dev</title>
-	<meta name="description" content="Privacy Policy for piplos.dev — how we collect, use and protect your data." />
-	<link rel="canonical" href="https://piplos.dev/privacy" />
+	<title>Privacy Policy — {SITE.name}</title>
+	<meta name="description" content="Privacy Policy for {SITE.name} — how we collect, use and protect your data." />
+	<link rel="canonical" href="{SITE.url}/privacy" />
 </svelte:head>
 
 <nav class="breadcrumb-bar" aria-label="Breadcrumb">
@@ -48,7 +49,7 @@
 </nav>
 
 <main id="main" class="legal-page">
-	<div class="legal-inner">
+	<div class="container">
 		<p class="legal-label">Legal</p>
 		<h1 class="legal-title">{langStore.t('privacy.title')}</h1>
 		<p class="legal-updated">{langStore.t('privacy.last_updated')}</p>

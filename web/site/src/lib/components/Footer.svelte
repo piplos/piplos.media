@@ -1,22 +1,20 @@
 <script lang="ts">
 	import { langStore } from '$lib/stores/lang.svelte';
+	import Logo from '$lib/components/Logo.svelte';
+	import { SITE } from '$lib/site';
 
 	const year = new Date().getFullYear();
 </script>
 
-<footer class="footer" role="contentinfo">
+<footer class="footer">
 	<div class="container">
 		<div class="footer-main">
 			<div class="footer-brand">
-				<a href="/" class="footer-logo" aria-label="piplos.dev home">
-					piplos<span class="dot">.</span>dev
-				</a>
+				<Logo variant="footer" label="{SITE.displayName} home" />
 				<p class="footer-tagline">
+					© {year} {SITE.displayName} <br>
 					{langStore.t('footer.tagline')}
 				</p>
-				<a href="https://piplos.media" class="footer-parent" rel="noopener" target="_blank">
-					↗ piplos.media
-				</a>
 			</div>
 
 			<nav class="footer-nav" aria-label="Services">
@@ -37,16 +35,15 @@
 					<li><a href="/#stack">{langStore.t('footer.links.stack')}</a></li>
 					<li><a href="/#about">{langStore.t('nav.about')}</a></li>
 					<li><a href="/order">{langStore.t('footer.links.start')}</a></li>
-					<li><a href="https://piplos.media" rel="noopener" target="_blank">piplos.media →</a></li>
 				</ul>
 			</nav>
-		</div>
 
-		<div class="footer-bottom">
-			<p class="footer-copy">© {year} {langStore.t('footer.copyright')}</p>
-			<nav class="footer-legal" aria-label="Legal">
-				<a href="/privacy">{langStore.t('footer.links.privacy')}</a>
-				<a href="/terms">{langStore.t('footer.links.terms')}</a>
+			<nav class="footer-nav" aria-label="Legal">
+				<h3>{langStore.t('footer.legal')}</h3>
+				<ul>
+					<li><a href="/privacy">{langStore.t('footer.links.privacy')}</a></li>
+					<li><a href="/terms">{langStore.t('footer.links.terms')}</a></li>
+				</ul>
 			</nav>
 		</div>
 	</div>
