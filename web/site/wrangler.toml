@@ -2,5 +2,10 @@
 # Docs: docs/deployment-cloudflare.md
 
 name = "piplos-media"
-compatibility_date = "2025-01-01"
-pages_build_output_dir = "build"
+compatibility_date = "2026-06-19"
+workers_dev = false
+preview_urls = false
+
+[assets]
+directory = "./build"
+not_found_handling = "404-page"
