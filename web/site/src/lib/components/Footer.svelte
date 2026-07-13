@@ -23,8 +23,8 @@
 					<li><a href="/#services">{langStore.t('footer.links.web')}</a></li>
 					<li><a href="/#services">{langStore.t('footer.links.mobile')}</a></li>
 					<li><a href="/#services">{langStore.t('footer.links.backend')}</a></li>
+					<li><a href="/#services">{langStore.t('footer.links.data')}</a></li>
 					<li><a href="/#services">{langStore.t('footer.links.devops')}</a></li>
-					<li><a href="/order">{langStore.t('footer.links.consulting')}</a></li>
 				</ul>
 			</nav>
 
@@ -42,6 +42,7 @@
 				<h3>{langStore.t('footer.legal')}</h3>
 				<ul>
 					<li><a href="/privacy">{langStore.t('footer.links.privacy')}</a></li>
+					<li><a href="/cookies">{langStore.t('footer.links.cookies')}</a></li>
 					<li><a href="/terms">{langStore.t('footer.links.terms')}</a></li>
 				</ul>
 			</nav>

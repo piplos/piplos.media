@@ -24,30 +24,44 @@
     "section_label": "01 / Что мы делаем",
     "title": "Услуги",
     "cta": "Начать проект",
+    "ticker": [
+      "Веб-приложения",
+      "Мобильные приложения",
+      "Бэкенд и API",
+      "Данные и аналитика",
+      "DevOps и облако",
+      "UI/UX дизайн"
+    ],
     "items": [
       {
         "id": "web",
         "title": "Веб-приложения",
-        "description": "Сложные SPA, дашборды, административные панели и корпоративные платформы. Современные фреймворки, чистая архитектура и высокая производительность.",
-        "tags": ["React", "Next.js", "TypeScript", "Vue"]
+        "description": "SPA, дашборды, админ-панели и корпоративные платформы. React, Svelte, Vue и Next.js на TypeScript — от прототипа в Figma до продакшн-интерфейса.",
+        "tags": ["React", "Svelte", "Vue", "Next.js"]
       },
       {
         "id": "mobile",
         "title": "Мобильные приложения",
-        "description": "Нативные и кроссплатформенные приложения для iOS и Android. Производительность на первом месте, плавный UX и полный деплой в App Store / Play Market.",
-        "tags": ["React Native", "Expo", "Swift", "Kotlin"]
+        "description": "Кроссплатформенные приложения на Flutter и нативный iOS на Swift. Производительный UX, офлайн-сценарии и полный деплой в App Store.",
+        "tags": ["Flutter", "Swift", "iOS", "Android"]
       },
       {
         "id": "backend",
         "title": "Бэкенд и API",
-        "description": "Масштабируемые микросервисы, RESTful и GraphQL API, системы реального времени и пайплайны данных. Готовы к росту с первого дня.",
-        "tags": ["Node.js", "PostgreSQL", "Redis", "GraphQL"]
+        "description": "Микросервисы, REST и GraphQL API, real-time и интеграции. Node.js, Go, Python, Java и Rust — архитектура, готовая к росту с первого дня.",
+        "tags": ["Node.js", "Go", "Python", "GraphQL"]
+      },
+      {
+        "id": "data",
+        "title": "Данные и аналитика",
+        "description": "Проектирование БД, оптимизация запросов, кэширование и аналитические пайплайны. OLTP и OLAP на PostgreSQL, ClickHouse и Redis.",
+        "tags": ["PostgreSQL", "ClickHouse", "Redis", "MySQL"]
       },
       {
         "id": "devops",
         "title": "DevOps и облако",
-        "description": "CI/CD пайплайны, оркестрация контейнеров, облачная инфраструктура и мониторинг. Системы, которые деплоятся и масштабируются сами.",
-        "tags": ["Docker", "Kubernetes", "AWS", "Terraform"]
+        "description": "CI/CD, оркестрация контейнеров, облачная инфраструктура и мониторинг. Docker, Kubernetes, AWS и Terraform с GitHub Actions.",
+        "tags": ["Docker", "Kubernetes", "AWS", "GitHub Actions"]
       }
     ]
   },
@@ -119,17 +133,18 @@
     "step4_title": "Ваши контакты",
     "type_label": "Тип проекта",
     "types": [
-      { "id": "web", "label": "Веб-приложение", "hint": "SPA, дашборд, портал, CRM" },
-      { "id": "mobile", "label": "Мобильное приложение", "hint": "iOS, Android, кроссплатформа" },
-      { "id": "backend", "label": "Бэкенд / API", "hint": "Микросервисы, REST, GraphQL" },
-      { "id": "devops", "label": "DevOps", "hint": "CI/CD, облако, контейнеры" },
+      { "id": "web", "label": "Веб-приложение", "hint": "React, Svelte, Vue, Next.js" },
+      { "id": "mobile", "label": "Мобильное приложение", "hint": "Flutter, Swift, iOS и Android" },
+      { "id": "backend", "label": "Бэкенд / API", "hint": "Node.js, Go, Python, GraphQL" },
+      { "id": "data", "label": "Данные и аналитика", "hint": "PostgreSQL, ClickHouse, Redis" },
+      { "id": "devops", "label": "DevOps", "hint": "Docker, Kubernetes, AWS, CI/CD" },
       { "id": "saas", "label": "SaaS продукт", "hint": "Мультитенант, подписки" },
       { "id": "consulting", "label": "Консалтинг", "hint": "Аудит, архитектура, ревью" }
     ],
     "fields": {
       "project_name": { "label": "Название проекта", "placeholder": "напр. Аналитическая платформа, Приложение доставки..." },
       "description": { "label": "Описание", "hint": "Какую проблему решает? Кто пользователи? Какова основная функциональность?", "placeholder": "Опишите ваш проект..." },
-      "stack": { "label": "Предпочтительный стек", "hint": "Оставьте пустым — мы порекомендуем лучший стек.", "placeholder": "напр. React, Node.js, PostgreSQL..." },
+      "stack": { "label": "Предпочтительный стек", "hint": "Оставьте пустым — мы порекомендуем лучший стек.", "placeholder": "напр. Svelte, Go, PostgreSQL, ClickHouse..." },
       "references": { "label": "Референсы / вдохновение", "placeholder": "Ссылки на похожие продукты..." },
       "first_name": { "label": "Имя", "placeholder": "Алекс" },
       "last_name": { "label": "Фамилия", "placeholder": "Иванов" },
@@ -198,22 +213,19 @@
       "web": "Веб-приложения",
       "mobile": "Мобильные приложения",
       "backend": "Бэкенд и API",
+      "data": "Данные и аналитика",
       "devops": "DevOps и облако",
       "consulting": "Консалтинг",
       "portfolio": "Портфолио",
       "stack": "Технологический стек",
       "start": "Начать проект",
-      "privacy": "Конфиденциальность",
-      "terms": "Условия"
+      "privacy": "Персональные данные",
+      "cookies": "Cookie",
+      "terms": "Пользовательское соглашение"
     }
   },
-  "privacy": {
-    "title": "Политика конфиденциальности",
-    "last_updated": "Последнее обновление: январь 2025"
-  },
-  "terms": {
-    "title": "Условия использования",
-    "last_updated": "Последнее обновление: январь 2025"
+  "site": {
+    "location": "Минск, Беларусь"
   },
   "theme": {
     "toggle_dark": "Тёмная тема",

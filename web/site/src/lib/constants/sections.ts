@@ -2,6 +2,7 @@ export const SERVICE_ICONS: Record<string, string> = {
 	web: '⬡',
 	mobile: '◈',
 	backend: '⬢',
+	data: '◫',
 	devops: '⬟'
 };
 

@@ -13,15 +13,20 @@
 	type ServiceItem = { id: string; title: string; description: string; tags: string[] };
 	type ProcessStep = { title: string; description: string };
 
-	const tickerItems = ['Web Applications', 'Mobile Apps', 'Backend Systems', 'DevOps & Cloud', 'API Development', 'Tech Consulting', 'UI/UX Engineering', 'SaaS Platforms'];
+	let tickerTrack = $derived.by(() => {
+		langStore.value;
+		const items = langStore.get<string[]>('services.ticker') ?? [];
+		return [...items, ...items];
+	});
 
-	let services = $derived(
-		(langStore.get<ServiceItem[]>('services.items') ?? []).map((item, i) => ({
+	let services = $derived.by(() => {
+		langStore.value;
+		return (langStore.get<ServiceItem[]>('services.items') ?? []).map((item, i) => ({
 			num: String(i + 1).padStart(2, '0'),
 			icon: SERVICE_ICONS[item.id] ?? '⬡',
 			...item
-		}))
-	);
+		}));
+	});
 
 	let process = $derived(
 		(langStore.get<ProcessStep[]>('process.steps') ?? []).map((step, i) => ({
@@ -105,7 +110,7 @@
 	<!-- ─── TICKER ────────────────────────────────────── -->
 	<div class="ticker" aria-hidden="true">
 		<div class="ticker-track">
-			{#each [...tickerItems, ...tickerItems] as item, i (i)}
+			{#each tickerTrack as item, i (i)}
 				<span class="ticker-item">{item}</span>
 			{/each}
 		</div>

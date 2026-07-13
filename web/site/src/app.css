@@ -595,6 +595,7 @@ ul, ol { list-style: none; }
 .legal-sections { display: flex; flex-direction: column; gap: 40px; }
 .legal-section h2 { font-family: var(--f-display); font-size: 22px; font-weight: 600; color: var(--c-white); letter-spacing: -0.01em; margin-bottom: 12px; }
 .legal-section p { font-size: 16px; color: var(--c-muted); line-height: 1.75; }
+.legal-section p + p { margin-top: 12px; }
 
 /* ─── PORTFOLIO PAGE ────────────────────────────── */
 .filter-bar { position: sticky; top: var(--nav-h); z-index: 50; background: var(--c-surface); border-bottom: 1px solid var(--c-border); }

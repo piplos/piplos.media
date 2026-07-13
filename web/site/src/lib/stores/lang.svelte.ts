@@ -1,12 +1,23 @@
 import { browser } from '$app/environment';
 import en from '$lib/i18n/en.json';
 import ru from '$lib/i18n/ru.json';
+import {
+	cookiesEn,
+	cookiesRu,
+	privacyEn,
+	privacyRu,
+	termsEn,
+	termsRu
+} from '$lib/i18n/legal';
 
 export type Lang = 'en' | 'ru';
 
 const STORAGE_KEY = 'piplos-lang';
 
-const translations: Record<Lang, typeof en> = { en, ru: ru as typeof en };
+const translations: Record<Lang, typeof en> = {
+	en: { ...en, privacy: privacyEn, terms: termsEn, cookies: cookiesEn },
+	ru: { ...ru, privacy: privacyRu, terms: termsRu, cookies: cookiesRu } as typeof en
+};
 
 function isLang(value: unknown): value is Lang {
 	return value === 'en' || value === 'ru';

@@ -24,30 +24,44 @@
     "section_label": "01 / What we do",
     "title": "Services",
     "cta": "Start a project",
+    "ticker": [
+      "Web Applications",
+      "Mobile Apps",
+      "Backend & APIs",
+      "Data & Analytics",
+      "DevOps & Cloud",
+      "UI/UX Design"
+    ],
     "items": [
       {
         "id": "web",
         "title": "Web Applications",
-        "description": "Complex SPAs, dashboards, admin panels and enterprise platforms. Built with modern frameworks, clean architecture and performance in mind.",
-        "tags": ["React", "Next.js", "TypeScript", "Vue"]
+        "description": "SPAs, dashboards, admin panels and enterprise platforms. React, Svelte, Vue and Next.js with TypeScript — from Figma prototypes to production UI.",
+        "tags": ["React", "Svelte", "Vue", "Next.js"]
       },
       {
         "id": "mobile",
         "title": "Mobile Apps",
-        "description": "Native and cross-platform mobile applications for iOS and Android. Performance-first approach, seamless UX and full App Store / Play Market deployment.",
-        "tags": ["React Native", "Expo", "Swift", "Kotlin"]
+        "description": "Cross-platform apps with Flutter and native iOS with Swift. Performance-first UX, offline-ready flows and full App Store deployment.",
+        "tags": ["Flutter", "Swift", "iOS", "Android"]
       },
       {
         "id": "backend",
         "title": "Backend & APIs",
-        "description": "Scalable microservices, RESTful and GraphQL APIs, real-time systems and data pipelines. Built to handle growth from day one.",
-        "tags": ["Node.js", "PostgreSQL", "Redis", "GraphQL"]
+        "description": "Microservices, REST and GraphQL APIs, real-time systems and integrations. Node.js, Go, Python, Java and Rust — built to scale from day one.",
+        "tags": ["Node.js", "Go", "Python", "GraphQL"]
+      },
+      {
+        "id": "data",
+        "title": "Data & Analytics",
+        "description": "Database design, query optimization, caching layers and analytics pipelines. OLTP and OLAP workloads with PostgreSQL, ClickHouse and Redis.",
+        "tags": ["PostgreSQL", "ClickHouse", "Redis", "MySQL"]
       },
       {
         "id": "devops",
         "title": "DevOps & Cloud",
-        "description": "CI/CD pipelines, container orchestration, cloud infrastructure and monitoring. We set up systems that deploy themselves and scale automatically.",
-        "tags": ["Docker", "Kubernetes", "AWS", "Terraform"]
+        "description": "CI/CD pipelines, container orchestration, cloud infrastructure and monitoring. Docker, Kubernetes, AWS and Terraform with GitHub Actions.",
+        "tags": ["Docker", "Kubernetes", "AWS", "GitHub Actions"]
       }
     ]
   },
@@ -119,17 +133,18 @@
     "step4_title": "Your Contact Info",
     "type_label": "Project Type",
     "types": [
-      { "id": "web", "label": "Web App", "hint": "SPA, dashboard, portal, CRM" },
-      { "id": "mobile", "label": "Mobile App", "hint": "iOS, Android, cross-platform" },
-      { "id": "backend", "label": "Backend / API", "hint": "Microservices, REST, GraphQL" },
-      { "id": "devops", "label": "DevOps", "hint": "CI/CD, cloud, containers" },
+      { "id": "web", "label": "Web App", "hint": "React, Svelte, Vue, Next.js" },
+      { "id": "mobile", "label": "Mobile App", "hint": "Flutter, Swift, iOS & Android" },
+      { "id": "backend", "label": "Backend / API", "hint": "Node.js, Go, Python, GraphQL" },
+      { "id": "data", "label": "Data & Analytics", "hint": "PostgreSQL, ClickHouse, Redis" },
+      { "id": "devops", "label": "DevOps", "hint": "Docker, Kubernetes, AWS, CI/CD" },
       { "id": "saas", "label": "SaaS Product", "hint": "Multi-tenant, subscriptions" },
       { "id": "consulting", "label": "Consulting", "hint": "Audit, architecture, review" }
     ],
     "fields": {
       "project_name": { "label": "Project Name", "placeholder": "e.g. Analytics Platform, Delivery App..." },
       "description": { "label": "Description", "hint": "What problem does it solve? Who are the users? What's the core functionality?", "placeholder": "Describe your project..." },
-      "stack": { "label": "Preferred Tech Stack", "hint": "Leave blank — we'll recommend the best stack.", "placeholder": "e.g. React, Node.js, PostgreSQL..." },
+      "stack": { "label": "Preferred Tech Stack", "hint": "Leave blank — we'll recommend the best stack.", "placeholder": "e.g. Svelte, Go, PostgreSQL, ClickHouse..." },
       "references": { "label": "References / Inspiration", "placeholder": "URLs to similar products..." },
       "first_name": { "label": "First Name", "placeholder": "Alex" },
       "last_name": { "label": "Last Name", "placeholder": "Johnson" },
@@ -198,22 +213,19 @@
       "web": "Web Applications",
       "mobile": "Mobile Apps",
       "backend": "Backend & APIs",
+      "data": "Data & Analytics",
       "devops": "DevOps & Cloud",
       "consulting": "Tech Consulting",
       "portfolio": "Portfolio",
       "stack": "Tech Stack",
       "start": "Start a Project",
-      "privacy": "Privacy",
-      "terms": "Terms"
+      "privacy": "Personal Data",
+      "cookies": "Cookies",
+      "terms": "User Agreement"
     }
   },
-  "privacy": {
-    "title": "Privacy Policy",
-    "last_updated": "Last updated: January 2025"
-  },
-  "terms": {
-    "title": "Terms of Service",
-    "last_updated": "Last updated: January 2025"
+  "site": {
+    "location": "Minsk, Belarus"
   },
   "theme": {
     "toggle_dark": "Switch to dark theme",

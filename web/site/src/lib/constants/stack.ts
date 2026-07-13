@@ -11,7 +11,10 @@ export const STACK_GROUPS = [
 	},
 	{
 		id: 'mobile',
-		items: [{ id: 'flutter', label: 'Flutter' }]
+		items: [
+			{ id: 'flutter', label: 'Flutter' },
+			{ id: 'swift', label: 'Swift' }
+		]
 	},
 	{
 		id: 'backend',
@@ -20,6 +23,7 @@ export const STACK_GROUPS = [
 			{ id: 'bun', label: 'Bun' },
 			{ id: 'golang', label: 'Go' },
 			{ id: 'python', label: 'Python' },
+			{ id: 'java', label: 'Java' },
 			{ id: 'rust', label: 'Rust' },
 			{ id: 'graphql', label: 'GraphQL' }
 		]
@@ -29,6 +33,7 @@ export const STACK_GROUPS = [
 		items: [
 			{ id: 'postgresql', label: 'PostgreSQL' },
 			{ id: 'mysql', label: 'MySQL' },
+			{ id: 'clickhouse', label: 'ClickHouse' },
 			{ id: 'redis', label: 'Redis' }
 		]
 	},

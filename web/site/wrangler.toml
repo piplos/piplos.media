@@ -1,0 +1,6 @@
+# Cloudflare Pages — static SvelteKit build output
+# Docs: docs/deployment-cloudflare.md
+
+name = "piplos-media"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "build"

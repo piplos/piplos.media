@@ -1,0 +1,16 @@
+/_app/immutable/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/stack/*
+  Cache-Control: public, max-age=2592000
+
+/fonts/*
+  Cache-Control: public, max-age=2592000
+
+/illustrations/*
+  Cache-Control: public, max-age=2592000
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
