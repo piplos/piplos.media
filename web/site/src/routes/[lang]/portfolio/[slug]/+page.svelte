@@ -89,7 +89,7 @@
 					<article class="cs-block">
 						<h2 class="cs-heading">{langStore.t('case_study.solution')}</h2>
 						{#if solutionParts.html.trim()}
-							<SafeHtml html={solutionParts.html} class="cs-text cs-rich" />
+							<SafeHtml html={solutionParts.html} class="rich-text" />
 						{:else}
 							<p class="cs-text"></p>
 						{/if}
@@ -236,47 +236,6 @@
 		font-size: 16px;
 		color: var(--c-muted);
 		line-height: 1.75;
-	}
-
-	.cs-rich :global(p) {
-		margin: 0 0 1rem;
-	}
-
-	.cs-rich :global(p:last-child) {
-		margin-bottom: 0;
-	}
-
-	.cs-rich :global(img) {
-		display: block;
-		max-width: 100%;
-		height: auto;
-		margin: 1.25rem 0;
-		border-radius: var(--radius);
-	}
-
-	.cs-rich :global(ul),
-	.cs-rich :global(ol) {
-		margin: 0 0 1rem 1.25rem;
-		padding: 0;
-	}
-
-	.cs-rich :global(ul) { list-style: disc; }
-	.cs-rich :global(ol) { list-style: decimal; }
-
-	.cs-rich :global(li::marker) {
-		color: var(--c-accent);
-	}
-
-	.cs-rich :global(a) {
-		color: var(--c-accent);
-		text-decoration: underline;
-	}
-
-	.cs-rich :global(h2),
-	.cs-rich :global(h3) {
-		font-family: var(--f-display);
-		color: var(--c-white);
-		margin: 1.5rem 0 0.75rem;
 	}
 
 	.cs-sidebar {

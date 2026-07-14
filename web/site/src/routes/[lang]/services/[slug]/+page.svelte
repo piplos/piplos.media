@@ -83,7 +83,7 @@
 				<div class="svc-main">
 					{#if service.body?.trim()}
 						<div class="svc-block">
-							<SafeHtml html={service.body} class="svc-rich" />
+							<SafeHtml html={service.body} class="rich-text" />
 						</div>
 					{/if}
 				</div>
@@ -232,62 +232,13 @@
 
 	.svc-block {
 		flex: 1;
-	}
-
-	.svc-rich {
-		font-size: 16px;
-		color: var(--c-muted);
-		line-height: 1.75;
 		max-width: 720px;
 	}
 
-	.svc-rich :global(p) {
-		margin: 0 0 1rem;
-	}
-
-	.svc-rich :global(p:last-child) {
-		margin-bottom: 0;
-	}
-
-	.svc-rich :global(img) {
-		display: block;
+	/* Иллюстрации услуг — компактные и по центру, в отличие от общих правил rich-text */
+	.svc-block :global(img) {
 		max-width: min(360px, 100%);
-		height: auto;
 		margin: 2rem auto;
-		border-radius: var(--radius);
-	}
-
-	.svc-rich :global(ul),
-	.svc-rich :global(ol) {
-		margin: 0 0 1rem 1.25rem;
-		padding: 0;
-	}
-
-	.svc-rich :global(ul) { list-style: disc; }
-	.svc-rich :global(ol) { list-style: decimal; }
-
-	.svc-rich :global(li) {
-		margin-bottom: 0.5rem;
-	}
-
-	.svc-rich :global(li::marker) {
-		color: var(--c-accent);
-	}
-
-	.svc-rich :global(h3) {
-		font-size: 17px;
-	}
-
-	.svc-rich :global(a) {
-		color: var(--c-accent);
-		text-decoration: underline;
-	}
-
-	.svc-rich :global(h2),
-	.svc-rich :global(h3) {
-		font-family: var(--f-display);
-		color: var(--c-white);
-		margin: 1.5rem 0 0.75rem;
 	}
 
 	.svc-sidebar {
