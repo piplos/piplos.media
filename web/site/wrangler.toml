@@ -19,3 +19,6 @@ preview_urls = false
 directory = "./build"
 not_found_handling = "404-page"
 html_handling = "auto-trailing-slash"
+
+[vars]
+PUBLIC_API_URL = "https://api.piplos.media"
