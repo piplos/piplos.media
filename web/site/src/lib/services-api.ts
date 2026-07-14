@@ -1,4 +1,5 @@
 import { API_URL } from '$lib/api';
+import { DEFAULT_LANG } from '$lib/i18n/routing';
 
 export interface ServiceTranslation {
 	title: string;
@@ -25,10 +26,12 @@ export interface ServiceDisplayItem {
 
 type FetchFn = typeof fetch;
 
-/** Опубликованные услуги для секции на главной. */
-export async function fetchServices(fetchFn: FetchFn = fetch): Promise<ServiceItem[]> {
+/** Опубликованные услуги для секции на главной.
+ *  lang — вернуть только этот перевод (фильтрация на сервере). */
+export async function fetchServices(fetchFn: FetchFn = fetch, lang?: string): Promise<ServiceItem[]> {
 	try {
-		const res = await fetchFn(`${API_URL}/api/v1/public/services`);
+		const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
+		const res = await fetchFn(`${API_URL}/api/v1/public/services${qs}`);
 		if (!res.ok) return [];
 		const data = (await res.json()) as { services: ServiceItem[] };
 		return (data.services ?? []).filter((item) => item.published);
@@ -37,7 +40,8 @@ export async function fetchServices(fetchFn: FetchFn = fetch): Promise<ServiceIt
 	}
 }
 
-/** Преобразует API-записи в формат для UI с учётом языка. */
+/** Преобразует API-записи в формат для UI с учётом языка.
+ *  Fallback: запрошенный язык → язык по умолчанию → любой доступный перевод. */
 export function toServiceDisplayItems(
 	services: ServiceItem[],
 	lang: string
@@ -45,7 +49,10 @@ export function toServiceDisplayItems(
 	return [...services]
 		.sort((a, b) => a.sort_order - b.sort_order)
 		.map((item) => {
-			const locale = item.translations[lang] ?? item.translations.ru ?? item.translations.en;
+			const locale =
+				item.translations[lang] ??
+				item.translations[DEFAULT_LANG] ??
+				Object.values(item.translations)[0];
 			return {
 				id: item.slug,
 				title: locale?.title ?? item.slug,

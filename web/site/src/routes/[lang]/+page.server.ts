@@ -7,11 +7,12 @@ import type { EntryGenerator, PageServerLoad } from './$types';
 
 export const entries: EntryGenerator = () => SUPPORTED_LANGS.map((lang) => ({ lang }));
 
-export const load: PageServerLoad = async ({ fetch }) => {
+export const load: PageServerLoad = async ({ params, fetch }) => {
+	// Главной нужны только featured-проекты и перевод текущего языка.
 	const [stackFromApi, servicesFromApi, projects] = await Promise.all([
 		fetchStackItems(fetch),
-		fetchServices(fetch),
-		loadPortfolioProjects(fetch)
+		fetchServices(fetch, params.lang),
+		loadPortfolioProjects(fetch, { lang: params.lang, featured: true })
 	]);
 
 	const stackItems =

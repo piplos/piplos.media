@@ -30,13 +30,31 @@ export function isLegalSlug(value: string): value is LegalSlug {
 
 type FetchFn = typeof fetch;
 
-export async function fetchLegalPages(fetchFn: FetchFn = fetch): Promise<LegalPage[]> {
+export async function fetchLegalPages(fetchFn: FetchFn = fetch, lang?: string): Promise<LegalPage[]> {
 	try {
-		const res = await fetchFn(`${API_URL}/api/v1/public/legal`);
+		const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
+		const res = await fetchFn(`${API_URL}/api/v1/public/legal${qs}`);
 		if (!res.ok) return [];
 		const data = (await res.json()) as { pages: LegalPage[] };
-		return data.pages ?? [];
+		return (data.pages ?? []).sort((a, b) => a.sort_order - b.sort_order);
 	} catch {
 		return [];
+	}
+}
+
+/** Один правовой документ по slug или null (lang — только этот перевод). */
+export async function fetchLegalPage(
+	slug: LegalSlug,
+	fetchFn: FetchFn = fetch,
+	lang?: string
+): Promise<LegalPage | null> {
+	try {
+		const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
+		const res = await fetchFn(`${API_URL}/api/v1/public/legal/${slug}${qs}`);
+		if (!res.ok) return null;
+		const data = (await res.json()) as { page: LegalPage };
+		return data.page ?? null;
+	} catch {
+		return null;
 	}
 }

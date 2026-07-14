@@ -18,32 +18,88 @@ func NewPublicHandler(repo *repository.Repository) *PublicHandler {
 	return &PublicHandler{repo: repo}
 }
 
+// filteredTranslations keeps only the requested language. If the language is
+// missing, the full set is returned so the client can apply its own fallback.
+func filteredTranslations(t models.Translations, lang string) models.Translations {
+	if lang == "" {
+		return t
+	}
+	if tr, ok := t[lang]; ok {
+		return models.Translations{lang: tr}
+	}
+	return t
+}
+
+// filteredLegalTranslations is filteredTranslations for legal documents.
+func filteredLegalTranslations(t models.LegalTranslations, lang string) models.LegalTranslations {
+	if lang == "" {
+		return t
+	}
+	if tr, ok := t[lang]; ok {
+		return models.LegalTranslations{lang: tr}
+	}
+	return t
+}
+
+// publishedProjects filters projects by published status and, optionally, featured flag.
+func publishedProjects(items []models.Project, featuredOnly bool) []models.Project {
+	out := []models.Project{}
+	for _, p := range items {
+		if !p.Published {
+			continue
+		}
+		if featuredOnly && !p.Featured {
+			continue
+		}
+		out = append(out, p)
+	}
+	return out
+}
+
 // Projects returns published projects.
+// Query: lang — return only this translation; featured=true — featured only.
 func (h *PublicHandler) Projects(c fiber.Ctx) error {
 	items, err := h.repo.ListProjects(c.Context())
 	if err != nil {
 		return apperrors.ErrInternal("failed to load projects")
 	}
-	published := []models.Project{}
-	for _, p := range items {
-		if p.Published {
-			published = append(published, p)
-		}
+	published := publishedProjects(items, c.Query("featured") == "true")
+	lang := c.Query("lang")
+	for i := range published {
+		published[i].Translations = filteredTranslations(published[i].Translations, lang)
 	}
 	return c.JSON(fiber.Map{"projects": published})
 }
 
+// Project returns a single published project by slug.
+// Query: lang — return only this translation.
+func (h *PublicHandler) Project(c fiber.Ctx) error {
+	p, err := h.repo.GetProject(c.Context(), c.Params("slug"))
+	if err != nil {
+		return apperrors.ErrInternal("failed to load project")
+	}
+	if p == nil || !p.Published {
+		return apperrors.ErrNotFound("project not found")
+	}
+	p.Translations = filteredTranslations(p.Translations, c.Query("lang"))
+	return c.JSON(fiber.Map{"project": p})
+}
+
 // Services returns published services.
+// Query: lang — return only this translation.
 func (h *PublicHandler) Services(c fiber.Ctx) error {
 	items, err := h.repo.ListServices(c.Context())
 	if err != nil {
 		return apperrors.ErrInternal("failed to load services")
 	}
+	lang := c.Query("lang")
 	published := []models.Service{}
 	for _, s := range items {
-		if s.Published {
-			published = append(published, s)
+		if !s.Published {
+			continue
 		}
+		s.Translations = filteredTranslations(s.Translations, lang)
+		published = append(published, s)
 	}
 	return c.JSON(fiber.Map{"services": published})
 }
@@ -73,12 +129,31 @@ func (h *PublicHandler) SEO(c fiber.Ctx) error {
 }
 
 // Legal returns all legal documents for the public site.
+// Query: lang — return only this translation.
 func (h *PublicHandler) Legal(c fiber.Ctx) error {
 	items, err := h.repo.ListLegalPages(c.Context())
 	if err != nil {
 		return apperrors.ErrInternal("failed to load legal pages")
 	}
+	lang := c.Query("lang")
+	for i := range items {
+		items[i].Translations = filteredLegalTranslations(items[i].Translations, lang)
+	}
 	return c.JSON(fiber.Map{"pages": items})
+}
+
+// LegalPage returns a single legal document by slug.
+// Query: lang — return only this translation.
+func (h *PublicHandler) LegalPage(c fiber.Ctx) error {
+	p, err := h.repo.GetLegalPageBySlug(c.Context(), c.Params("slug"))
+	if err != nil {
+		return apperrors.ErrInternal("failed to load legal page")
+	}
+	if p == nil {
+		return apperrors.ErrNotFound("legal page not found")
+	}
+	p.Translations = filteredLegalTranslations(p.Translations, c.Query("lang"))
+	return c.JSON(fiber.Map{"page": p})
 }
 
 // Languages returns enabled content languages.

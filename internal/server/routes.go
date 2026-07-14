@@ -32,10 +32,12 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	api.Post("/leads", h.Leads.Create)
 	pub := api.Group("/public")
 	pub.Get("/projects", h.Public.Projects)
+	pub.Get("/projects/:slug", h.Public.Project)
 	pub.Get("/services", h.Public.Services)
 	pub.Get("/stack", h.Public.Stack)
 	pub.Get("/seo", h.Public.SEO)
 	pub.Get("/legal", h.Public.Legal)
+	pub.Get("/legal/:slug", h.Public.LegalPage)
 	pub.Get("/languages", h.Public.Languages)
 
 	// Auth.
