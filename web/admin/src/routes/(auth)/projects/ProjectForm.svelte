@@ -108,7 +108,7 @@
 		{ key: 'keywords', label: 'Keywords' },
 		{ key: 'og_title', label: 'OG Title' },
 		{ key: 'og_description', label: 'OG Description', type: 'textarea' as const, rows: 2 },
-		{ key: 'og_image', label: 'OG Image URL' }
+		{ key: 'og_image', label: 'OG Image URL', type: 'image' as const }
 	];
 
 	type ContentTab = 'content' | 'seo';
