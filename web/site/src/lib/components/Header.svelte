@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
+	import { tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { l } from '$lib/i18n/link';
@@ -12,6 +14,14 @@
 	let menuOpen = $state(false);
 	let langOpen = $state(false);
 	let langRootEl = $state<HTMLDivElement | null>(null);
+	/** Секция главной в зоне видимости (services / stack / about). */
+	let visibleSection = $state<string | null>(null);
+
+	const HOME_SECTIONS = ['services', 'stack', 'about'] as const;
+
+	function isHomePath(pathname: string, langPrefix: string) {
+		return pathname === langPrefix || pathname === `${langPrefix}/`;
+	}
 
 	const langOptions: { value: Lang; label: string }[] = [
 		{ value: 'en', label: 'EN' },
@@ -53,11 +63,11 @@
 	function isActive(href: string) {
 		const localized = l(href);
 		const [path, fragment] = localized.split('#');
-		const { pathname, hash } = page.url;
+		const { pathname } = page.url;
 		const langPrefix = `/${page.params.lang}`;
 
 		if (fragment) {
-			return (pathname === langPrefix || pathname === `${langPrefix}/`) && hash === `#${fragment}`;
+			return isHomePath(pathname, langPrefix) && visibleSection === fragment;
 		}
 
 		if (path === langPrefix || path === `${langPrefix}/`) {
@@ -66,6 +76,61 @@
 
 		return pathname === path || pathname.startsWith(`${path}/`);
 	}
+
+	$effect(() => {
+		if (!browser) return;
+
+		const langPrefix = `/${page.params.lang}`;
+		if (!isHomePath(page.url.pathname, langPrefix)) {
+			visibleSection = null;
+			return;
+		}
+
+		let observer: IntersectionObserver | undefined;
+		let cancelled = false;
+
+		const setup = async () => {
+			await tick();
+			if (cancelled) return;
+
+			const elements = HOME_SECTIONS.map((id) => document.getElementById(id)).filter(
+				(el): el is HTMLElement => el != null
+			);
+			if (!elements.length || cancelled) return;
+
+			const ratios = new Map(elements.map((el) => [el.id, 0]));
+
+			observer = new IntersectionObserver(
+				(entries) => {
+					for (const entry of entries) {
+						ratios.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0);
+					}
+					let bestId: string | null = null;
+					let bestRatio = 0;
+					for (const [id, ratio] of ratios) {
+						if (ratio > bestRatio) {
+							bestRatio = ratio;
+							bestId = id;
+						}
+					}
+					visibleSection = bestRatio > 0 ? bestId : null;
+				},
+				{
+					rootMargin: '-20% 0px -50% 0px',
+					threshold: [0, 0.1, 0.25, 0.5, 0.75, 1]
+				}
+			);
+
+			for (const el of elements) observer.observe(el);
+		};
+
+		setup();
+
+		return () => {
+			cancelled = true;
+			observer?.disconnect();
+		};
+	});
 
 	$effect(() => {
 		document.body.classList.toggle('menu-open', menuOpen);

@@ -3,6 +3,8 @@
 	import { langStore } from '$lib/stores/lang.svelte';
 	import { SITE } from '$lib/site';
 	import { getProjectLocale, getProjectStackItems, type PortfolioProject } from '$lib/portfolio';
+	import { extractAndStripProjectLinks } from '$lib/project-links';
+	import ProjectLinkIcon from '$lib/components/ProjectLinkIcon.svelte';
 	import { sanitizeCaseHtml } from '$lib/sanitize-html';
 	import type { PageData } from './$types';
 
@@ -10,7 +12,9 @@
 	let project = $derived(data.project as PortfolioProject);
 	let loc = $derived(getProjectLocale(project, langStore.value));
 	let stackItems = $derived(getProjectStackItems(project, langStore.value));
-	let solutionHtml = $derived(sanitizeCaseHtml(loc.solution));
+	let solutionParts = $derived(extractAndStripProjectLinks(loc.solution));
+	let projectLinks = $derived(solutionParts.links);
+	let solutionHtml = $derived(sanitizeCaseHtml(solutionParts.html));
 </script>
 
 <svelte:head>
@@ -52,13 +56,11 @@
 				<div class="cs-main">
 
 					<article class="cs-block">
-						<p class="cs-label">{langStore.t('case_study.challenge')}</p>
 						<h2 class="cs-heading">{langStore.t('case_study.challenge')}</h2>
 						<p class="cs-text">{loc.challenge}</p>
 					</article>
 
 					<article class="cs-block">
-						<p class="cs-label">{langStore.t('case_study.solution')}</p>
 						<h2 class="cs-heading">{langStore.t('case_study.solution')}</h2>
 						{#if solutionHtml}
 							<div class="cs-text cs-rich">{@html solutionHtml}</div>
@@ -68,13 +70,36 @@
 					</article>
 
 					<article class="cs-block">
-						<p class="cs-label">{langStore.t('case_study.result')}</p>
 						<h2 class="cs-heading">{langStore.t('case_study.result')}</h2>
 						<p class="cs-text">{loc.result}</p>
 					</article>
 				</div>
 
 				<aside class="cs-sidebar">
+
+					{#if projectLinks.length}
+						<div class="cs-card">
+							<p class="cs-label">{langStore.t('case_study.links')}</p>
+							<div class="cs-links">
+								{#each projectLinks as link (link.url)}
+									<a
+										href={link.url}
+										class="cs-link"
+										target="_blank"
+										rel="noopener noreferrer"
+									>
+										<span class="cs-link-main">
+											<ProjectLinkIcon kind={link.kind} />
+											<span class="cs-link-label">{link.label}</span>
+										</span>
+										<svg class="cs-link-arrow" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+											<path d="M3.5 8.5L8.5 3.5M8.5 3.5H4.5M8.5 3.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+									</a>
+								{/each}
+							</div>
+						</div>
+					{/if}
 
 					<div class="cs-card">
 						<p class="cs-label">{langStore.t('case_study.stack')}</p>
@@ -201,7 +226,6 @@
 		height: auto;
 		margin: 1.25rem 0;
 		border-radius: var(--radius);
-		border: 1px solid var(--c-border2);
 	}
 
 	.cs-rich :global(ul),
@@ -235,6 +259,52 @@
 		border: 1px solid var(--c-border2);
 		border-radius: var(--radius);
 		padding: 28px 24px;
+	}
+
+	.cs-links {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.cs-link {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 10px 12px;
+		font-size: 13px;
+		font-weight: 500;
+		color: var(--c-text);
+		background: var(--c-bg);
+		border: 1px solid var(--c-border);
+		border-radius: var(--radius);
+		transition: color 0.2s, border-color 0.2s, background 0.2s;
+	}
+
+	.cs-link:hover {
+		color: var(--c-white);
+		border-color: var(--c-accent);
+		background: color-mix(in srgb, var(--c-accent) 12%, transparent);
+	}
+
+	.cs-link-main {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-width: 0;
+	}
+
+	.cs-link-arrow {
+		flex-shrink: 0;
+		color: var(--c-dim);
+	}
+
+	.cs-link-label {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.cs-stack-tags {

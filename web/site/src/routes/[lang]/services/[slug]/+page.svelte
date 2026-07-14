@@ -227,7 +227,6 @@
 		height: auto;
 		margin: 1.25rem 0;
 		border-radius: var(--radius);
-		border: 1px solid var(--c-border2);
 	}
 
 	.svc-rich :global(ul),

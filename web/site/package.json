@@ -4,7 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "PUBLIC_API_URL=http://localhost:3001 vite dev",
+		"dev": "PUBLIC_API_URL=http://localhost:3001 vite dev --port 5173 --strictPort",
 		"build": "vite build",
 		"deploy": "wrangler deploy",
 		"preview": "wrangler dev .svelte-kit/cloudflare/_worker.js",

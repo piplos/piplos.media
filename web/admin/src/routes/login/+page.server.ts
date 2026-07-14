@@ -29,7 +29,7 @@ export const load: PageServerLoad = async ({ url }) => {
 };
 
 export const actions: Actions = {
-	login: async ({ request, cookies, url, fetch }) => {
+	login: async ({ request, cookies, url, fetch, platform }) => {
 		const formData = await request.formData();
 		const email = (formData.get('email') as string)?.trim() ?? '';
 		const password = (formData.get('password') as string) ?? '';
@@ -38,7 +38,7 @@ export const actions: Actions = {
 			return fail(400, { email, error: 'Введите email и пароль' });
 		}
 
-		const base = getApiBaseUrl();
+		const base = getApiBaseUrl({ platform });
 		let res: Response;
 		let data: unknown;
 		try {

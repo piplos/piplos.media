@@ -89,6 +89,5 @@
 		height: auto;
 		margin: 1rem 0;
 		border-radius: var(--radius);
-		border: 1px solid var(--c-border2);
 	}
 </style>

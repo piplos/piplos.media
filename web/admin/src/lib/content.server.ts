@@ -44,7 +44,7 @@ export function firstServiceSlug(services: Service[]): string | null {
 export function nextProjectSortOrder(projects: Project[], category: string): number {
 	const inGroup = projects.filter((project) => project.category === category);
 	if (!inGroup.length) return 0;
-	return Math.max(...inGroup.map((project) => project.sort_order)) + 1;
+	return Math.min(...inGroup.map((project) => project.sort_order)) - 1;
 }
 
 export function projectSaveBody(
