@@ -10,19 +10,22 @@
 	import TagSelect from '$lib/components/TagSelect.svelte';
 	import TranslationsEditor from '$lib/components/TranslationsEditor.svelte';
 	import { DEFAULT_SERVICE_ICON, SERVICE_ICON_OPTIONS } from '$lib/service-icons';
-	import type { Language, Service, StackItem, Translations } from '$lib/types';
+	import type { Language, SEOPage, Service, StackItem, Translations } from '$lib/types';
 
 	interface Props {
 		service?: Partial<Service>;
+		seo?: Partial<SEOPage> | null;
 		languages: Language[];
 		stack: StackItem[];
 		submitLabel: string;
 	}
-	let { service = {}, languages, stack, submitLabel }: Props = $props();
+	let { service = {}, seo = null, languages, stack, submitLabel }: Props = $props();
 
 	let submitting = $state(false);
 	// svelte-ignore state_referenced_locally
 	const initial = $state.snapshot(service) as Partial<Service>;
+	// svelte-ignore state_referenced_locally
+	const initialSeo = $state.snapshot(seo) as Partial<SEOPage> | null;
 	const isEdit = Boolean(initial.id);
 	let slug = $state(initial.slug ?? '');
 	let icon = $state(initial.icon || DEFAULT_SERVICE_ICON);
@@ -30,12 +33,27 @@
 	let sortOrder = $state(String(initial.sort_order ?? 0));
 	let published = $state(initial.published ?? true);
 	let translations = $state<Translations>((initial.translations ?? {}) as Translations);
+	let seoTranslations = $state<Translations>((initialSeo?.translations ?? {}) as Translations);
+
+	const seoPath = $derived(isEdit && slug ? `/services/${slug}` : '');
 
 	const translationFields = [
 		{ key: 'title', label: 'Название' },
 		{ key: 'description', label: 'Краткое описание', type: 'textarea' as const, rows: 3 },
 		{ key: 'body', label: 'Подробное описание страницы (Markdown)', type: 'markdown' as const }
 	];
+
+	const seoFields = [
+		{ key: 'title', label: 'Title' },
+		{ key: 'description', label: 'Meta description', type: 'textarea' as const, rows: 3 },
+		{ key: 'keywords', label: 'Keywords' },
+		{ key: 'og_title', label: 'OG Title' },
+		{ key: 'og_description', label: 'OG Description', type: 'textarea' as const, rows: 2 },
+		{ key: 'og_image', label: 'OG Image URL' }
+	];
+
+	type ContentTab = 'content' | 'seo';
+	let activeTab = $state<ContentTab>('content');
 
 	const stackOptions = $derived(stack.map((item) => ({ value: item.label, label: item.label })));
 
@@ -65,6 +83,11 @@
 >
 	<input type="hidden" name="id" value={initial.id ?? ''} />
 	<input type="hidden" name="translations" value={JSON.stringify(translations)} />
+	{#if seoPath}
+		<input type="hidden" name="seo_id" value={initialSeo?.id ?? ''} />
+		<input type="hidden" name="seo_path" value={seoPath} />
+		<input type="hidden" name="seo_translations" value={JSON.stringify(seoTranslations)} />
+	{/if}
 
 	<Card padding="sm">
 		<div class="fields">
@@ -102,12 +125,53 @@
 
 	<Card padding="sm">
 		<div class="fields">
-			<h2 class="section-title">Контент по языкам</h2>
-			<p class="section-hint">
-				Краткое описание — для карточек и шапки страницы. Подробное описание — Markdown с
-				картинками для отдельной страницы услуги на сайте.
-			</p>
-			<TranslationsEditor {languages} fields={translationFields} bind:translations idPrefix="svc" />
+			{#if seoPath}
+				<div class="form-tabs" aria-label="Разделы контента" role="tablist">
+					<button
+						type="button"
+						role="tab"
+						class="form-tab"
+						class:form-tab--active={activeTab === 'content'}
+						aria-selected={activeTab === 'content'}
+						onclick={() => (activeTab = 'content')}
+					>
+						Контент по языкам
+					</button>
+					<button
+						type="button"
+						role="tab"
+						class="form-tab"
+						class:form-tab--active={activeTab === 'seo'}
+						aria-selected={activeTab === 'seo'}
+						onclick={() => (activeTab = 'seo')}
+					>
+						SEO
+					</button>
+				</div>
+			{:else}
+				<h2 class="section-title">Контент по языкам</h2>
+			{/if}
+
+			{#if !seoPath || activeTab === 'content'}
+				<p class="section-hint">
+					Краткое описание — для карточек и шапки страницы. Подробное описание — Markdown с
+					картинками для отдельной страницы услуги на сайте.
+				</p>
+				<TranslationsEditor {languages} fields={translationFields} bind:translations idPrefix="svc" />
+			{:else}
+				<FormField label="Путь страницы" id="svc-seo-path">
+					<p class="seo-path">{seoPath}</p>
+				</FormField>
+				<div class="seo-editor">
+					<h3 class="subsection-title">Meta-теги по языкам</h3>
+					<TranslationsEditor
+						{languages}
+						fields={seoFields}
+						bind:translations={seoTranslations}
+						idPrefix="svc-seo"
+					/>
+				</div>
+			{/if}
 		</div>
 	</Card>
 </form>
@@ -185,6 +249,59 @@
 		font-size: 0.8125rem;
 		color: #71717a;
 		line-height: 1.5;
+	}
+	.form-tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+		padding: 0.25rem;
+		margin: 0;
+		border-radius: 10px;
+		background: #f4f4f5;
+	}
+	.form-tab {
+		padding: 0.5rem 0.875rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: #71717a;
+		background: transparent;
+		border: none;
+		border-radius: 8px;
+		cursor: pointer;
+		transition: color 0.15s, background 0.15s;
+	}
+	.form-tab:hover {
+		color: #1a1a1a;
+	}
+	.form-tab--active {
+		color: #1a1a1a;
+		background: #fff;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	}
+	.form-tab:focus,
+	.form-tab:focus-visible {
+		outline: none;
+	}
+	.subsection-title {
+		margin: 0;
+		font-size: 0.9375rem;
+		font-weight: 600;
+		color: #18181b;
+	}
+	.seo-editor {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+	.seo-path {
+		margin: 0;
+		padding: 0.375rem 0.75rem;
+		font-size: 0.875rem;
+		line-height: 1.5;
+		color: #52525b;
+		background: #f4f4f5;
+		border: 1px solid #e5e7eb;
+		border-radius: 8px;
 	}
 	.form-actions {
 		display: flex;

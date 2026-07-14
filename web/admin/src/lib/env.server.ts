@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/private';
+import { building, dev } from '$app/environment';
 import type { RequestEvent } from '@sveltejs/kit';
 
 type ApiEnvContext = Pick<RequestEvent, 'platform'>;
@@ -10,10 +11,13 @@ export function normalizeApiOrigin(raw: string): string {
 
 const DEV_ORIGIN = 'http://localhost:3001';
 
-/** Базовый URL API backend'а (Go, Fiber). */
+/** Базовый URL API backend'а (Go, Fiber).
+ *  В dev эмуляция platform.env берёт прод-URL из wrangler.toml [vars] — пропускаем её. */
 export function getApiBaseUrl(ctx?: ApiEnvContext): string {
-	const platformUrl = ctx?.platform?.env?.ADMIN_API_URL?.trim();
-	if (platformUrl) return normalizeApiOrigin(platformUrl);
+	if (!building && !dev) {
+		const platformUrl = ctx?.platform?.env?.ADMIN_API_URL?.trim();
+		if (platformUrl) return normalizeApiOrigin(platformUrl);
+	}
 
 	const configured = env.ADMIN_API_URL?.trim();
 	if (configured) return normalizeApiOrigin(configured);

@@ -4,6 +4,7 @@ import { apiLoadErrorMessage, fetchWithAuth } from '$lib/api.server';
 import { servicePayload } from '$lib/content.server';
 import { loadLanguages } from '$lib/languages.server';
 import { loadServices, loadStack } from '$lib/lists.server';
+import { loadSeoByPath, saveSeoFromForm, serviceSeoPath } from '$lib/seo.server';
 import { toggleServicePublished } from '$lib/toggle.server';
 import type { Service } from '$lib/types';
 import { findServiceBySlug } from './_services';
@@ -45,7 +46,11 @@ export const createServiceEditLoad = (): ServerLoad => async (event) => {
 	const parentData = await event.parent();
 	const service = findServiceBySlug(parentData.services, event.params.slug ?? '');
 	if (!service) throw error(404, 'Услуга не найдена');
-	return { service, activeSlug: service.slug };
+	return {
+		service,
+		seo: await loadSeoByPath(event, serviceSeoPath(service.slug)),
+		activeSlug: service.slug
+	};
 };
 
 export const createServiceNewLoad = (): ServerLoad => async () => ({
@@ -73,6 +78,14 @@ export const servicesActions: Actions = {
 			const data = (await res.json().catch(() => ({}))) as { message?: string };
 			return fail(res.status, { error: data.message ?? 'Не удалось сохранить услугу' });
 		}
+
+		const seoError = await saveSeoFromForm(event, fd);
+		if (seoError) {
+			return fail(seoError.status, {
+				error: seoError.message || 'Услуга сохранена, но не удалось сохранить SEO'
+			});
+		}
+
 		throw redirect(303, `/services/${payload.slug}`);
 	},
 	delete: async (event) => {

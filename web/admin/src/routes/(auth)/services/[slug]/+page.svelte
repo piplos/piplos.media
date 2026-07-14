@@ -18,6 +18,7 @@
 		{#key data.service.slug}
 			<ServiceForm
 				service={data.service}
+				seo={data.seo}
 				languages={data.languages}
 				stack={data.stack}
 				submitLabel="Сохранить"

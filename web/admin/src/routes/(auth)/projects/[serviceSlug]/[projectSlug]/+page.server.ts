@@ -1,10 +1,10 @@
 import { error, fail, isRedirect, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { fetchWithAuth } from '$lib/api.server';
-import { projectPayload, projectSaveBody, projectSeoPayload, shouldSaveProjectSeo } from '$lib/content.server';
+import { projectPayload, projectSaveBody } from '$lib/content.server';
 import { loadLanguages } from '$lib/languages.server';
 import { loadServices, loadStack } from '$lib/lists.server';
-import { loadSeoByPath, projectSeoPath } from '$lib/seo.server';
+import { loadSeoByPath, projectSeoPath, saveSeoFromForm } from '$lib/seo.server';
 import type { Project } from '$lib/types';
 import { projectHref, serviceUrlSlug } from '../../_projects';
 
@@ -69,21 +69,11 @@ export const actions: Actions = {
 			return fail(res.status, { error: data.message ?? 'Не удалось сохранить проект' });
 		}
 
-		const seo = projectSeoPayload(fd);
-		if (seo && shouldSaveProjectSeo(seo)) {
-			const seoRes = await fetchWithAuth(
-				event,
-				seo.id ? `/v1/seo/${seo.id}` : '/v1/seo',
-				{
-					method: seo.id ? 'PUT' : 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ path: seo.path, translations: seo.translations })
-				}
-			);
-			if (!seoRes.ok) {
-				const data = (await seoRes.json().catch(() => ({}))) as { message?: string };
-				return fail(seoRes.status, { error: data.message ?? 'Проект сохранён, но не удалось сохранить SEO' });
-			}
+		const seoError = await saveSeoFromForm(event, fd);
+		if (seoError) {
+			return fail(seoError.status, {
+				error: seoError.message || 'Проект сохранён, но не удалось сохранить SEO'
+			});
 		}
 
 		const nextServiceSlug = serviceUrlSlug(payload.category, serviceSlugs);

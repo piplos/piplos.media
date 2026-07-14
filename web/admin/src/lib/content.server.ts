@@ -86,7 +86,7 @@ export function servicePayload(fd: FormData) {
 	};
 }
 
-export function projectSeoPayload(fd: FormData) {
+export function seoPayload(fd: FormData) {
 	const path = fd.get('seo_path')?.toString().trim() ?? '';
 	if (!path) return null;
 	return {
@@ -102,7 +102,7 @@ function seoTranslationsFilled(translations: Translations): boolean {
 	);
 }
 
-export function shouldSaveProjectSeo(seo: { id: string; translations: Translations }): boolean {
+export function shouldSaveSeo(seo: { id: string; translations: Translations }): boolean {
 	return Boolean(seo.id) || seoTranslationsFilled(seo.translations);
 }
 
