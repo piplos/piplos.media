@@ -55,7 +55,7 @@ export const load: PageServerLoad = async (event): Promise<AiModelsPageData> => 
 	};
 	try {
 		const [res, aiModels] = await Promise.all([
-			fetchWithAuth(event, '/api/v1/settings'),
+			fetchWithAuth(event, '/v1/settings'),
 			loadAIModels(event)
 		]);
 		if (!res.ok) {
@@ -107,7 +107,7 @@ async function applyModelUpdate(event: ActionEvent, compositeKey: string, parsed
 	if (parsed.apiKeyDirty) {
 		payload.apiKey = parsed.apiKey;
 	} else {
-		const res = await fetchWithAuth(event, `/api/v1/settings/${encodeURIComponent(compositeKey)}`);
+		const res = await fetchWithAuth(event, `/v1/settings/${encodeURIComponent(compositeKey)}`);
 		if (res.ok) {
 			const data = (await res.json()) as { value?: string };
 			try {
@@ -134,7 +134,7 @@ async function testApiKey(
 		if (apiKeyValue) {
 			payload.value = JSON.stringify({ enable: true, apiKey: apiKeyValue });
 		}
-		const res = await fetchWithAuth(event, '/api/v1/settings/test', {
+		const res = await fetchWithAuth(event, '/v1/settings/test', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload)
@@ -225,7 +225,7 @@ export const actions: Actions = {
 			return fail(400, { createError: 'Все поля обязательны' });
 		}
 		try {
-			const res = await fetchWithAuth(event, '/api/v1/ai-models', {
+			const res = await fetchWithAuth(event, '/v1/ai-models', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ provider, model_id: modelId, display_name: displayName })
@@ -248,7 +248,7 @@ export const actions: Actions = {
 		const enabled = fd.get('enabled') === 'true';
 		if (!id) return fail(400, { updateError: 'ID обязателен' });
 		try {
-			const res = await fetchWithAuth(event, `/api/v1/ai-models/${id}`, {
+			const res = await fetchWithAuth(event, `/v1/ai-models/${id}`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ display_name: displayName || undefined, enabled })
@@ -268,7 +268,7 @@ export const actions: Actions = {
 		const id = (fd.get('id') as string) ?? '';
 		if (!id) return fail(400, { deleteError: 'ID обязателен' });
 		try {
-			const res = await fetchWithAuth(event, `/api/v1/ai-models/${id}`, { method: 'DELETE' });
+			const res = await fetchWithAuth(event, `/v1/ai-models/${id}`, { method: 'DELETE' });
 			if (!res.ok) {
 				const body = (await res.json().catch(() => ({}))) as { message?: string };
 				return fail(res.status, { deleteError: body.message ?? 'Ошибка удаления' });

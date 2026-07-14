@@ -7,7 +7,7 @@ import {
 	COOKIE_USER,
 	cookieOptions
 } from '$lib/auth.server';
-import { getApiBaseUrl } from '$lib/env.server';
+import { API_V1_PREFIX, getApiBaseUrl } from '$lib/env.server';
 
 interface LoginApiResponse {
 	access_token: string;
@@ -42,7 +42,7 @@ export const actions: Actions = {
 		let res: Response;
 		let data: unknown;
 		try {
-			res = await fetch(`${base}/api/v1/auth/login`, {
+			res = await fetch(`${base}${API_V1_PREFIX}/auth/login`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email, password })

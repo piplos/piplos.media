@@ -3,5 +3,5 @@ import { COMPOSITE_KEYS, makeTestAction, makeUpdateAction } from '../_ai-setting
 
 export const actions: Actions = {
 	updateTranslation: makeUpdateAction('translation', COMPOSITE_KEYS.translation),
-	testTranslation: makeTestAction('translation', '/api/v1/settings/test/translation', 100_000)
+	testTranslation: makeTestAction('translation', '/v1/settings/test/translation', 100_000)
 };

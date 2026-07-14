@@ -138,6 +138,7 @@
 			class="tag-select-menu"
 			id="{id}-listbox"
 			role="listbox"
+			tabindex="-1"
 			aria-label="Доступные значения"
 			onmousedown={onMenuPointerDown}
 		>

@@ -1,0 +1,19 @@
+# Cloudflare Workers — SvelteKit SSR admin (web/admin/.svelte-kit/cloudflare)
+# Deploy: cd web/admin && bun run build && bun run deploy
+#
+# Production: custom domain admin.piplos.media in Cloudflare dashboard.
+# ADMIN_API_URL — override in dashboard Variables or here for wrangler deploy.
+
+name = "piplos-admin"
+compatibility_date = "2026-06-19"
+compatibility_flags = ["nodejs_compat", "nodejs_als"]
+workers_dev = false
+preview_urls = false
+main = ".svelte-kit/cloudflare/_worker.js"
+
+[assets]
+binding = "ASSETS"
+directory = ".svelte-kit/cloudflare"
+
+[vars]
+ADMIN_API_URL = "https://api.piplos.media"

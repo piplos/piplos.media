@@ -15,13 +15,7 @@ export const entries: EntryGenerator = async () => {
 };
 
 export const load: PageServerLoad = async ({ params, fetch }) => {
-	// Точечный запрос: один проект и только текущий язык.
-	const fromApi = await fetchPortfolioProject(params.slug, fetch, params.lang);
-	if (fromApi) return { project: fromApi };
-
-	// API недоступен или проект не найден — проверяем список (со статическим fallback).
-	const projects = await loadPortfolioProjects(fetch, { lang: params.lang });
-	const project = projects.find((p) => p.id === params.slug);
+	const project = await fetchPortfolioProject(params.slug, fetch, params.lang);
 	if (!project) throw error(404, 'Project not found');
 	return { project };
 };

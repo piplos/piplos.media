@@ -3,7 +3,7 @@
 	import { l } from '$lib/i18n/link';
 	import { langStore } from '$lib/stores/lang.svelte';
 	import { SITE } from '$lib/site';
-	import { API_URL } from '$lib/api';
+	import { API_V1 } from '$lib/api';
 	import FieldSelect from '$lib/components/FieldSelect.svelte';
 	import { getOrderPrefillFromProject, type OrderPrefill } from '$lib/order-prefill';
 	import type { PageData } from './$types';
@@ -105,7 +105,7 @@
 		sending = true;
 		submitError = '';
 		try {
-			const res = await fetch(`${API_URL}/api/v1/leads`, {
+			const res = await fetch(`${API_V1}/leads`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -163,6 +163,12 @@
 		form.stack = prefill.stack;
 		form.references = prefill.references;
 		appliedPrefill = prefill;
+	});
+
+	$effect(() => {
+		const type = page.url.searchParams.get('type');
+		if (!type || page.url.searchParams.get('from')) return;
+		if (form.types.length === 0) form.types = [type];
 	});
 </script>
 

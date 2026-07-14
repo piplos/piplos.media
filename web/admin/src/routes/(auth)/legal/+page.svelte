@@ -14,17 +14,17 @@
 </script>
 
 <svelte:head>
-	<title>Права — Piplos Admin</title>
+	<title>Правовое — Piplos Admin</title>
 </svelte:head>
 
-<AdminPage title="Права">
+<AdminPage title="Правовое" breadcrumbs={[{ label: 'Правовое' }]}>
 	{#if data.error}
 		<div class="admin-table-wrap admin-table-wrap--empty">
 			<p class="text-muted">{data.error}</p>
 		</div>
 	{:else if !data.pages.length}
 		<div class="admin-table-wrap admin-table-wrap--empty">
-			<p class="text-muted">Документы не найдены. Примените миграции БД.</p>
+			<p class="text-muted">Правовые документы не найдены. Примените миграции БД.</p>
 		</div>
 	{:else}
 		<div class="admin-table-wrap">

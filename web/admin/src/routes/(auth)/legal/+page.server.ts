@@ -7,7 +7,7 @@ import type { LegalPage } from '$lib/types';
 
 export const load: PageServerLoad = async (event) => {
 	try {
-		const res = await fetchWithAuth(event, '/api/v1/legal');
+		const res = await fetchWithAuth(event, '/v1/legal');
 		if (!res.ok) {
 			return {
 				pages: [] as LegalPage[],

@@ -1,5 +1,5 @@
 # Cloudflare Workers — static SvelteKit build (web/site/build)
-# Deploy: cd web/site && bun run build && bun run deploy
+# Deploy: cd web/site && PUBLIC_API_URL=https://api.piplos.media bun run build && bun run deploy
 #
 # 404: not_found_handling serves the nearest 404.html in the asset tree:
 #   /foo/bar          → build/404.html

@@ -66,7 +66,8 @@ func (h *PublicHandler) Projects(c fiber.Ctx) error {
 	published := publishedProjects(items, c.Query("featured") == "true")
 	lang := c.Query("lang")
 	for i := range published {
-		published[i].Translations = filteredTranslations(published[i].Translations, lang)
+		published[i].Translations = renderMarkdownFields(
+			filteredTranslations(published[i].Translations, lang), "solution")
 	}
 	return c.JSON(fiber.Map{"projects": published})
 }
@@ -81,7 +82,8 @@ func (h *PublicHandler) Project(c fiber.Ctx) error {
 	if p == nil || !p.Published {
 		return apperrors.ErrNotFound("project not found")
 	}
-	p.Translations = filteredTranslations(p.Translations, c.Query("lang"))
+	p.Translations = renderMarkdownFields(
+		filteredTranslations(p.Translations, c.Query("lang")), "solution")
 	return c.JSON(fiber.Map{"project": p})
 }
 
@@ -98,10 +100,25 @@ func (h *PublicHandler) Services(c fiber.Ctx) error {
 		if !s.Published {
 			continue
 		}
-		s.Translations = filteredTranslations(s.Translations, lang)
+		s.Translations = renderMarkdownFields(filteredTranslations(s.Translations, lang), "body")
 		published = append(published, s)
 	}
 	return c.JSON(fiber.Map{"services": published})
+}
+
+// Service returns a single published service by slug.
+// Query: lang — return only this translation.
+func (h *PublicHandler) Service(c fiber.Ctx) error {
+	s, err := h.repo.GetService(c.Context(), c.Params("slug"))
+	if err != nil {
+		return apperrors.ErrInternal("failed to load service")
+	}
+	if s == nil || !s.Published {
+		return apperrors.ErrNotFound("service not found")
+	}
+	s.Translations = renderMarkdownFields(
+		filteredTranslations(s.Translations, c.Query("lang")), "body")
+	return c.JSON(fiber.Map{"service": s})
 }
 
 // Stack returns published stack items.
@@ -137,7 +154,7 @@ func (h *PublicHandler) Legal(c fiber.Ctx) error {
 	}
 	lang := c.Query("lang")
 	for i := range items {
-		items[i].Translations = filteredLegalTranslations(items[i].Translations, lang)
+		items[i].Translations = renderLegalMarkdown(filteredLegalTranslations(items[i].Translations, lang))
 	}
 	return c.JSON(fiber.Map{"pages": items})
 }
@@ -152,7 +169,7 @@ func (h *PublicHandler) LegalPage(c fiber.Ctx) error {
 	if p == nil {
 		return apperrors.ErrNotFound("legal page not found")
 	}
-	p.Translations = filteredLegalTranslations(p.Translations, c.Query("lang"))
+	p.Translations = renderLegalMarkdown(filteredLegalTranslations(p.Translations, c.Query("lang")))
 	return c.JSON(fiber.Map{"page": p})
 }
 

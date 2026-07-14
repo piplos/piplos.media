@@ -52,7 +52,7 @@ const defaults: AiSettingsData = {
 
 export async function loadAIModels(event: RequestEvent): Promise<AIProviderModel[]> {
 	try {
-		const res = await fetchWithAuth(event, '/api/v1/ai-models');
+		const res = await fetchWithAuth(event, '/v1/ai-models');
 		if (!res.ok) return [];
 		const data = (await res.json()) as { models: AIProviderModel[] };
 		return data.models ?? [];
@@ -64,7 +64,7 @@ export async function loadAIModels(event: RequestEvent): Promise<AIProviderModel
 export async function loadAiSettings(event: RequestEvent): Promise<AiSettingsData> {
 	try {
 		const [settingsRes, aiModels] = await Promise.all([
-			fetchWithAuth(event, '/api/v1/settings'),
+			fetchWithAuth(event, '/v1/settings'),
 			loadAIModels(event)
 		]);
 		if (!settingsRes.ok) {

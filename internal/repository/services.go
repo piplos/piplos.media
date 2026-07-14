@@ -45,9 +45,10 @@ func (r *Repository) ListServices(ctx context.Context) ([]models.Service, error)
 	return items, rows.Err()
 }
 
-// GetService returns a service by id or nil.
-func (r *Repository) GetService(ctx context.Context, id string) (*models.Service, error) {
-	row := r.pool.QueryRow(ctx, "SELECT "+serviceColumns+" FROM services WHERE id = $1", id)
+// GetService returns a service by UUID or slug, or nil.
+func (r *Repository) GetService(ctx context.Context, ref string) (*models.Service, error) {
+	row := r.pool.QueryRow(ctx,
+		"SELECT "+serviceColumns+" FROM services WHERE id::text = $1 OR slug = $1", ref)
 	return scanService(row)
 }
 

@@ -9,7 +9,7 @@ import {
 	COOKIE_USER,
 	cookieOptions
 } from '$lib/auth.server';
-import { getApiBaseUrl } from '$lib/env.server';
+import { API_V1_PREFIX, getApiBaseUrl } from '$lib/env.server';
 
 interface RefreshResponse {
 	access_token: string;
@@ -22,8 +22,8 @@ export async function refreshTokens(
 	const refreshToken = event.locals.refreshToken;
 	if (refreshToken === null || refreshToken === '') return null;
 
-	const base = getApiBaseUrl();
-	const res = await event.fetch(`${base}/api/v1/auth/refresh`, {
+	const base = getApiBaseUrl(event);
+	const res = await event.fetch(`${base}${API_V1_PREFIX}/auth/refresh`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ refresh_token: refreshToken })
@@ -72,7 +72,7 @@ export async function fetchWithAuth(
 	path: string,
 	init?: RequestInit
 ): Promise<Response> {
-	const base = getApiBaseUrl();
+	const base = getApiBaseUrl(event);
 	const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? '' : '/'}${path}`;
 
 	let token = event.locals.accessToken;

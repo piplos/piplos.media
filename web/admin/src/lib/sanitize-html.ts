@@ -7,14 +7,25 @@ const ALLOWED_TAGS = [
 	'em',
 	'b',
 	'i',
+	'del',
 	'ul',
 	'ol',
 	'li',
 	'a',
 	'h2',
 	'h3',
+	'h4',
 	'img',
-	'blockquote'
+	'blockquote',
+	'code',
+	'pre',
+	'hr',
+	'table',
+	'thead',
+	'tbody',
+	'tr',
+	'th',
+	'td'
 ];
 
 const ALLOWED_ATTR = ['href', 'src', 'alt', 'title', 'target', 'rel'];

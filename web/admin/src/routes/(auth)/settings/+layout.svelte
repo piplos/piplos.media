@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import type { Snippet } from 'svelte';
+	import AdminBreadcrumbs from '$lib/components/AdminBreadcrumbs.svelte';
 	import { setTabLayoutContext } from '$lib/tab-layout.svelte';
+	import { settingsBreadcrumbs } from './_settings';
 
 	let { children } = $props();
 
@@ -40,10 +42,12 @@
 		if (href === '/settings/ai') return pathname === '/settings/ai';
 		return pathname === href || pathname.startsWith(href + '/');
 	}
+
+	const breadcrumbs = $derived(settingsBreadcrumbs(pathname));
 </script>
 
 <div class="admin-page settings-page">
-	<h1 class="admin-page-title">Настройки проекта</h1>
+	<AdminBreadcrumbs items={breadcrumbs} />
 
 	<nav class="settings-tabs-horizontal" aria-label="Разделы настроек">
 		<div class="settings-tabs-list">
@@ -111,12 +115,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
-	}
-	.admin-page.settings-page .admin-page-title {
-		margin: 0;
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: #1a1a1a;
 	}
 	.settings-tabs-horizontal {
 		display: flex;

@@ -402,7 +402,8 @@ ul, ol { list-style: none; }
 /* ─── SECTION COMMON ────────────────────────────── */
 .section { padding: 100px 0; }
 .section-header { margin-bottom: 64px; display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; }
-.section-label { font-family: var(--f-mono); font-size: 11px; color: var(--c-accent); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px; }
+.section-header > div:first-child { display: flex; flex-direction: column; gap: 12px; }
+.section-label { font-family: var(--f-mono); font-size: 11px; color: var(--c-accent); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 0; }
 .section-title {
   font-family: var(--f-display);
   font-size: clamp(32px, 4vw, 52px);
@@ -414,6 +415,12 @@ ul, ol { list-style: none; }
 .section-link { font-family: var(--f-mono); font-size: 12px; color: var(--c-muted); letter-spacing: 0.1em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; transition: color 0.2s; white-space: nowrap; }
 .section-link:hover { color: var(--c-accent); }
 
+/* ─── PAGE HERO (list pages) ──────────────────── */
+.page-hero { padding: 72px 0 64px; border-bottom: 1px solid var(--c-border); }
+.page-eyebrow { font-family: var(--f-mono); font-size: 11px; color: var(--c-accent); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 20px; }
+.page-h1 { font-family: var(--f-display); font-size: clamp(40px, 6vw, 80px); font-weight: 700; color: var(--c-white); letter-spacing: -0.02em; line-height: 1.05; margin-bottom: 20px; }
+.page-desc { font-size: 16px; color: var(--c-muted); line-height: 1.7; max-width: 560px; }
+
 /* ─── SERVICES ──────────────────────────────────── */
 .services-grid {
   display: grid;
@@ -424,12 +431,22 @@ ul, ol { list-style: none; }
   border-radius: var(--radius);
   overflow: hidden;
 }
+.services-grid > [role='listitem'] {
+  display: flex;
+  min-height: 0;
+}
 .service-card {
   background: var(--c-surface);
   padding: 40px 40px 36px;
   display: flex; flex-direction: column; gap: 16px;
   transition: background 0.2s;
   position: relative;
+}
+.service-card--link {
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+  width: 100%;
 }
 .service-card:hover { background: var(--c-surface2); }
 .service-num { font-family: var(--f-mono); font-size: 11px; color: var(--c-dim); letter-spacing: 0.1em; }
@@ -468,6 +485,21 @@ ul, ol { list-style: none; }
 .grid-placeholder--work {
   padding: 36px 32px;
 }
+.grid-placeholder--stack {
+  padding: 20px 16px;
+  background: var(--c-stack-item-bg);
+  gap: 8px;
+}
+.grid-placeholder--stack .grid-placeholder-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+.grid-placeholder--stack .grid-placeholder-text {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
 .grid-placeholder-icon {
   width: 44px;
   height: 44px;
@@ -499,12 +531,20 @@ ul, ol { list-style: none; }
   overflow: hidden;
 }
 .work-card {
+  position: relative;
+  overflow: hidden;
   background: var(--c-surface);
   padding: 36px 32px;
   display: flex; flex-direction: column; gap: 12px;
   transition: background 0.2s;
 }
 .work-card:hover { background: var(--c-surface2); }
+.work-card > :not(.pc-bg) { position: relative; z-index: 1; }
+.work-card:hover .pc-bg img {
+  opacity: 0.28;
+  filter: grayscale(0);
+  transform: scale(1.05);
+}
 .work-type {
   font-family: var(--f-mono); font-size: 11px; color: var(--c-muted);
   letter-spacing: 0.12em; text-transform: uppercase;
@@ -652,6 +692,8 @@ ul, ol { list-style: none; }
   overflow: hidden;
 }
 .portfolio-card {
+  position: relative;
+  overflow: hidden;
   background: var(--c-surface);
   padding: 36px 32px;
   display: flex; flex-direction: column; gap: 14px;
@@ -659,6 +701,23 @@ ul, ol { list-style: none; }
 }
 .portfolio-card.featured { grid-column: span 2; }
 .portfolio-card:hover { background: var(--c-surface2); }
+.portfolio-card > :not(.pc-bg) { position: relative; z-index: 1; }
+.pc-bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.pc-bg img {
+  position: absolute;
+  right: -4%;
+  bottom: -8%;
+  height: 82%;
+  width: auto;
+  opacity: 0.09;
+  filter: grayscale(60%);
+  transition: opacity 0.35s ease, transform 0.35s ease, filter 0.35s ease;
+}
+.portfolio-card:hover .pc-bg img {
+  opacity: 0.28;
+  filter: grayscale(0);
+  transform: scale(1.05);
+}
 .pc-year { font-family: var(--f-mono); font-size: 11px; color: var(--c-dim); letter-spacing: 0.1em; }
 .pc-type { font-family: var(--f-mono); font-size: 11px; color: var(--c-muted); letter-spacing: 0.12em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
 .pc-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }

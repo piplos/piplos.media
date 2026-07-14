@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+@font-face {
+	font-family: 'TermitoHeavyCaps';
+	src: url('/fonts/TermitoHeavyCaps/termito_heavy-webfont.woff2') format('woff2');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+:root {
+	--c-brand: #fd533f;
+	--c-logo: var(--c-brand);
+	--c-logo-text: #2a2b2f;
+	--f-brand: 'TermitoHeavyCaps', 'Space Grotesk', system-ui, sans-serif;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -282,4 +297,153 @@ body {
 .text-muted {
   color: #71717a;
   font-size: 0.875rem;
+}
+
+/* Переключатель вместо стандартного чекбокса */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 1.375rem;
+  margin: 0;
+  border: none;
+  border-radius: 9999px;
+  background: #d1d5db;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background-color 0.2s ease;
+}
+input[type="checkbox"]::before {
+  content: "";
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s ease;
+}
+input[type="checkbox"]:checked {
+  background: #16a34a;
+}
+input[type="checkbox"]:checked::before {
+  transform: translateX(1.125rem);
+}
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}
+input[type="checkbox"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Классический квадратный чекбокс (выбор элементов в списках) */
+input[type="checkbox"].admin-checkbox {
+  appearance: auto;
+  -webkit-appearance: checkbox;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 4px;
+  background: none;
+  accent-color: #2563eb;
+}
+input[type="checkbox"].admin-checkbox::before {
+  content: none;
+}
+
+/* Чекбоксы в формах */
+label.check,
+label.select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+}
+label.select-all {
+  font-size: 0.8125rem;
+  color: #52525b;
+  white-space: nowrap;
+}
+.checks-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+/* Заголовки в карточках и формах админки */
+.admin-section-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #18181b;
+}
+.admin-section-title--spaced {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f4f4f5;
+}
+.admin-block-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #52525b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.admin-block-label--spaced {
+  margin-top: 1rem;
+}
+.admin-field-label {
+  font-size: 0.875rem;
+  color: #71717a;
+}
+
+/* Хлебные крошки (AdminPage, настройки) */
+.admin-breadcrumbs-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.admin-breadcrumbs a {
+  color: #71717a;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.admin-breadcrumbs a:hover {
+  color: #2563eb;
+}
+.admin-breadcrumb-sep {
+  color: #d1d5db;
+  font-weight: 400;
+}
+.admin-breadcrumb-current {
+  margin: 0;
+  font: inherit;
+}
+.admin-page-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
 }

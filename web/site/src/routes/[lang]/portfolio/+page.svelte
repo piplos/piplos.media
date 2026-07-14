@@ -92,6 +92,11 @@
 						itemscope
 						itemtype="https://schema.org/CreativeWork"
 					>
+						{#if project.image}
+							<div class="pc-bg" aria-hidden="true">
+								<img src={project.image} alt="" loading="lazy" />
+							</div>
+						{/if}
 						<div class="pc-top">
 							<span class="pc-type">
 								<span class="pc-dot" style="background:{getCategoryColor(project.category)}" aria-hidden="true"></span>
@@ -161,12 +166,6 @@
 </main>
 
 <style>
-	/* Page Hero */
-	.page-hero { padding: 72px 0 64px; border-bottom: 1px solid var(--c-border); }
-	.page-eyebrow { font-family: var(--f-mono); font-size: 11px; color: var(--c-accent); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 20px; }
-	.page-h1 { font-family: var(--f-display); font-size: clamp(40px, 6vw, 80px); font-weight: 700; color: var(--c-white); letter-spacing: -0.02em; line-height: 1.05; margin-bottom: 20px; }
-	.page-desc { font-size: 16px; color: var(--c-muted); line-height: 1.7; max-width: 560px; }
-
 	/* Filter Inner */
 	.filter-inner { display: flex; align-items: center; overflow-x: auto; scrollbar-width: none; }
 	.filter-inner::-webkit-scrollbar { display: none; }

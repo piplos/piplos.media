@@ -67,7 +67,7 @@ function smtpPayloadFromForm(fd: FormData): Record<string, unknown> {
 
 export const load: PageServerLoad = async (event) => {
 	try {
-		const res = await fetchWithAuth(event, '/api/v1/settings');
+		const res = await fetchWithAuth(event, '/v1/settings');
 		if (!res.ok) {
 			return { smtp: { ...defaults }, error: apiLoadErrorMessage(res, 'Ошибка загрузки настроек') };
 		}
@@ -98,7 +98,7 @@ export const actions: Actions = {
 	testSmtp: async (event) => {
 		try {
 			const fd = await event.request.formData();
-			const res = await fetchWithAuth(event, '/api/v1/settings/test', {
+			const res = await fetchWithAuth(event, '/v1/settings/test', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ key: 'SMTP', value: JSON.stringify(smtpPayloadFromForm(fd)) })

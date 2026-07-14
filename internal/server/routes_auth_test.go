@@ -24,49 +24,55 @@ type routeCase struct {
 
 var (
 	publicRoutes = []routeCase{
-		{http.MethodGet, "/api/v1/public/projects"},
-		{http.MethodGet, "/api/v1/public/services"},
-		{http.MethodGet, "/api/v1/public/stack"},
-		{http.MethodGet, "/api/v1/public/seo"},
-		{http.MethodGet, "/api/v1/public/legal"},
-		{http.MethodGet, "/api/v1/public/languages"},
-		{http.MethodPost, "/api/v1/leads"},
-		{http.MethodPost, "/api/v1/auth/login"},
-		{http.MethodPost, "/api/v1/auth/refresh"},
+		{http.MethodGet, "/v1/public/projects"},
+		{http.MethodGet, "/v1/public/services"},
+		{http.MethodGet, "/v1/public/services/web"},
+		{http.MethodGet, "/v1/public/stack"},
+		{http.MethodGet, "/v1/public/seo"},
+		{http.MethodGet, "/v1/public/legal"},
+		{http.MethodGet, "/v1/public/languages"},
+		{http.MethodPost, "/v1/leads"},
+		{http.MethodPost, "/v1/auth/login"},
+		{http.MethodPost, "/v1/auth/refresh"},
 	}
 
 	staffRoutes = []routeCase{
-		{http.MethodGet, "/api/v1/projects"},
-		{http.MethodPost, "/api/v1/projects"},
-		{http.MethodPost, "/api/v1/projects/reorder"},
-		{http.MethodGet, "/api/v1/services"},
-		{http.MethodPost, "/api/v1/services"},
-		{http.MethodGet, "/api/v1/stack"},
-		{http.MethodPost, "/api/v1/stack"},
-		{http.MethodGet, "/api/v1/seo"},
-		{http.MethodPost, "/api/v1/seo"},
-		{http.MethodGet, "/api/v1/legal"},
-		{http.MethodGet, "/api/v1/leads"},
-		{http.MethodPost, "/api/v1/uploads"},
-		{http.MethodPost, "/api/v1/translate"},
-		{http.MethodGet, "/api/v1/languages"},
-		{http.MethodGet, "/api/v1/auth/me"},
+		{http.MethodGet, "/v1/projects"},
+		{http.MethodPost, "/v1/projects"},
+		{http.MethodPost, "/v1/projects/reorder"},
+		{http.MethodGet, "/v1/services"},
+		{http.MethodPost, "/v1/services"},
+		{http.MethodGet, "/v1/stack"},
+		{http.MethodPost, "/v1/stack"},
+		{http.MethodGet, "/v1/seo"},
+		{http.MethodPost, "/v1/seo"},
+		{http.MethodGet, "/v1/legal"},
+		{http.MethodGet, "/v1/leads"},
+		{http.MethodPost, "/v1/uploads"},
+		{http.MethodGet, "/v1/files"},
+		{http.MethodPost, "/v1/files/folders"},
+		{http.MethodPost, "/v1/files/rename"},
+		{http.MethodPost, "/v1/files/move"},
+		{http.MethodPost, "/v1/files/delete"},
+		{http.MethodPost, "/v1/translate"},
+		{http.MethodGet, "/v1/languages"},
+		{http.MethodGet, "/v1/auth/me"},
 	}
 
 	adminRoutes = []routeCase{
-		{http.MethodGet, "/api/v1/users"},
-		{http.MethodPost, "/api/v1/users"},
-		{http.MethodGet, "/api/v1/settings"},
-		{http.MethodPut, "/api/v1/settings/SMTP"},
-		{http.MethodPost, "/api/v1/settings/test"},
-		{http.MethodPost, "/api/v1/languages"},
-		{http.MethodGet, "/api/v1/ai-models"},
-		{http.MethodPost, "/api/v1/ai-models"},
+		{http.MethodGet, "/v1/users"},
+		{http.MethodPost, "/v1/users"},
+		{http.MethodGet, "/v1/settings"},
+		{http.MethodPut, "/v1/settings/SMTP"},
+		{http.MethodPost, "/v1/settings/test"},
+		{http.MethodPost, "/v1/languages"},
+		{http.MethodGet, "/v1/ai-models"},
+		{http.MethodPost, "/v1/ai-models"},
 	}
 )
 
 func routeSuffix(path string) string {
-	return strings.TrimPrefix(path, "/api/v1")
+	return strings.TrimPrefix(path, "/v1")
 }
 
 type fakeUserLookup struct {
@@ -100,14 +106,17 @@ func newAuthTestApp(t *testing.T) (*fiber.App, *authsvc.Service, *fakeUserLookup
 	app.Use(middleware.ErrorHandler(zerolog.Nop()))
 	ok := func(c fiber.Ctx) error { return c.SendStatus(http.StatusNoContent) }
 
-	api := app.Group("/api/v1")
+	api := app.Group("/v1")
 	api.Post("/leads", ok)
 	pub := api.Group("/public")
 	pub.Get("/projects", ok)
+	pub.Get("/projects/:slug", ok)
 	pub.Get("/services", ok)
+	pub.Get("/services/:slug", ok)
 	pub.Get("/stack", ok)
 	pub.Get("/seo", ok)
 	pub.Get("/legal", ok)
+	pub.Get("/legal/:slug", ok)
 	pub.Get("/languages", ok)
 
 	api.Post("/auth/login", ok)
@@ -228,7 +237,7 @@ func TestPublicRoutesDoNotRequireAuth(t *testing.T) {
 
 	for _, r := range publicRoutes {
 		body := ""
-		if r.path == "/api/v1/leads" {
+		if r.path == "/v1/leads" {
 			body = `{"types":["web"],"first_name":"T","email":"t@test.com","lang":"en"}`
 		}
 		resp := doRequest(t, app, r.method, r.path, "", body)
@@ -246,12 +255,12 @@ func TestInvalidTokenRejected(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resp := doRequest(t, app, http.MethodGet, "/api/v1/users", "not-a-jwt", "")
+	resp := doRequest(t, app, http.MethodGet, "/v1/users", "not-a-jwt", "")
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("invalid token: got %d, want 401", resp.StatusCode)
 	}
 
-	resp = doRequest(t, app, http.MethodGet, "/api/v1/users", refreshToken, "")
+	resp = doRequest(t, app, http.MethodGet, "/v1/users", refreshToken, "")
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("refresh token as access: got %d, want 401", resp.StatusCode)
 	}

@@ -85,18 +85,6 @@
 		flex-direction: column;
 		gap: 1rem;
 	}
-	.checks-row {
-		display: flex;
-		gap: 1.25rem;
-	}
-	.check {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.875rem;
-		color: #374151;
-		cursor: pointer;
-	}
 	.form-actions {
 		padding-top: 0.25rem;
 	}

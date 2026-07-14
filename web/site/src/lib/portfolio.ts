@@ -17,6 +17,7 @@ export type PortfolioProject = {
 	tags: string[];
 	year: number;
 	featured: boolean;
+	image: string;
 	en: ProjectLocale;
 	ru: ProjectLocale;
 };

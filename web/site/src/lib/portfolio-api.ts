@@ -1,6 +1,5 @@
-import { API_URL } from '$lib/api';
+import { API_V1 } from '$lib/api';
 import { DEFAULT_LANG } from '$lib/i18n/routing';
-import staticPortfolio from '$lib/data/portfolio.json';
 import type { PortfolioProject, ProjectLocale } from '$lib/portfolio';
 
 export interface ApiProject {
@@ -13,6 +12,7 @@ export interface ApiProject {
 	featured: boolean;
 	published: boolean;
 	sort_order: number;
+	image: string;
 	translations: Record<string, Record<string, string>>;
 }
 
@@ -42,6 +42,7 @@ export function toPortfolioProject(project: ApiProject): PortfolioProject {
 		tags: project.tags ?? [],
 		year: project.year,
 		featured: project.featured,
+		image: project.image ?? '',
 		en: toProjectLocale(project.translations.en ?? fallback),
 		ru: toProjectLocale(project.translations.ru ?? fallback)
 	};
@@ -70,7 +71,7 @@ export async function fetchPortfolioProjects(
 	query: ProjectsQuery = {}
 ): Promise<ApiProject[]> {
 	try {
-		const res = await fetchFn(`${API_URL}/api/v1/public/projects${projectsQueryString(query)}`);
+		const res = await fetchFn(`${API_V1}/public/projects${projectsQueryString(query)}`);
 		if (!res.ok) return [];
 		const data = (await res.json()) as { projects: ApiProject[] };
 		return (data.projects ?? []).filter((item) => item.published);
@@ -87,7 +88,7 @@ export async function fetchPortfolioProject(
 ): Promise<PortfolioProject | null> {
 	try {
 		const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
-		const res = await fetchFn(`${API_URL}/api/v1/public/projects/${encodeURIComponent(slug)}${qs}`);
+		const res = await fetchFn(`${API_V1}/public/projects/${encodeURIComponent(slug)}${qs}`);
 		if (!res.ok) return null;
 		const data = (await res.json()) as { project: ApiProject };
 		return data.project ? toPortfolioProject(data.project) : null;
@@ -96,20 +97,15 @@ export async function fetchPortfolioProject(
 	}
 }
 
-/** Загружает портфолио из API или статический fallback.
- *  Сортировка повторяет API: sort_order, затем год по убыванию. */
+/** Загружает портфолио из API. Сортировка: sort_order, затем год по убыванию. */
 export async function loadPortfolioProjects(
 	fetchFn: FetchFn = fetch,
 	query: ProjectsQuery = {}
 ): Promise<PortfolioProject[]> {
 	const fromApi = await fetchPortfolioProjects(fetchFn, query);
-	if (fromApi.length > 0) {
-		return [...fromApi]
-			.sort((a, b) => a.sort_order - b.sort_order || b.year - a.year)
-			.map(toPortfolioProject);
-	}
-	const fallback = staticPortfolio as PortfolioProject[];
-	return query.featured ? fallback.filter((p) => p.featured) : fallback;
+	return [...fromApi]
+		.sort((a, b) => a.sort_order - b.sort_order || b.year - a.year)
+		.map(toPortfolioProject);
 }
 
 /** Slug-и для prerender entries(). */

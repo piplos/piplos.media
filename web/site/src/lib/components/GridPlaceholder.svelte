@@ -1,7 +1,7 @@
 <script lang="ts">
 	interface Props {
 		label: string;
-		variant?: 'service' | 'work';
+		variant?: 'service' | 'work' | 'stack';
 	}
 	let { label, variant = 'service' }: Props = $props();
 </script>

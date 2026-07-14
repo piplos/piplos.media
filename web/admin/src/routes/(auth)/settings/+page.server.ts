@@ -5,7 +5,7 @@ import type { Language } from '$lib/types';
 
 export const load: PageServerLoad = async (event) => {
 	try {
-		const res = await fetchWithAuth(event, '/api/v1/languages');
+		const res = await fetchWithAuth(event, '/v1/languages');
 		if (!res.ok) {
 			return { languages: [], error: apiLoadErrorMessage(res, 'Ошибка загрузки языков') };
 		}
@@ -30,7 +30,7 @@ export const actions: Actions = {
 		if (payload.code.length < 2 || !payload.name) {
 			return fail(400, { error: 'Код (2-5 символов) и название обязательны' });
 		}
-		const res = await fetchWithAuth(event, '/api/v1/languages', {
+		const res = await fetchWithAuth(event, '/v1/languages', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload)
@@ -45,7 +45,7 @@ export const actions: Actions = {
 		const code = (await event.request.formData()).get('code')?.toString();
 		if (!code) return fail(400, { error: 'Некорректный запрос' });
 
-		const res = await fetchWithAuth(event, `/api/v1/languages/${code}`, {
+		const res = await fetchWithAuth(event, `/v1/languages/${code}`, {
 			method: 'DELETE'
 		});
 		if (!res.ok) {

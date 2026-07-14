@@ -5,7 +5,7 @@ import type { Service, StackItem } from '$lib/types';
 
 export async function loadServices(event: RequestEvent): Promise<Service[]> {
 	try {
-		const res = await fetchWithAuth(event, '/api/v1/services');
+		const res = await fetchWithAuth(event, '/v1/services');
 		if (!res.ok) return [];
 		const data = (await res.json()) as { services: Service[] };
 		return data.services ?? [];
@@ -17,7 +17,7 @@ export async function loadServices(event: RequestEvent): Promise<Service[]> {
 
 export async function loadStack(event: RequestEvent): Promise<StackItem[]> {
 	try {
-		const res = await fetchWithAuth(event, '/api/v1/stack');
+		const res = await fetchWithAuth(event, '/v1/stack');
 		if (!res.ok) return [];
 		const data = (await res.json()) as { stack: StackItem[] };
 		return data.stack ?? [];

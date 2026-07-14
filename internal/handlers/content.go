@@ -31,6 +31,7 @@ type projectRequest struct {
 	Featured     bool                `json:"featured"`
 	Published    bool                `json:"published"`
 	SortOrder    int                 `json:"sort_order"`
+	Image        string              `json:"image"`
 	Translations models.Translations `json:"translations"`
 }
 
@@ -51,7 +52,7 @@ func (req *projectRequest) toModel(id string) (*models.Project, error) {
 	return &models.Project{
 		ID: id, Slug: req.Slug, Category: req.Category, Categories: req.Categories,
 		Tags: req.Tags, Year: req.Year, Featured: req.Featured, Published: req.Published,
-		SortOrder: req.SortOrder, Translations: req.Translations,
+		SortOrder: req.SortOrder, Image: strings.TrimSpace(req.Image), Translations: req.Translations,
 	}, nil
 }
 

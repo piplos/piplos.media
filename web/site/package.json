@@ -4,7 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "vite dev",
+		"dev": "PUBLIC_API_URL=http://localhost:3001 vite dev",
 		"build": "vite build",
 		"deploy": "wrangler deploy",
 		"preview": "vite preview",

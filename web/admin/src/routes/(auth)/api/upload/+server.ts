@@ -12,8 +12,12 @@ export const POST: RequestHandler = async (event) => {
 
 	const body = new FormData();
 	body.append('file', file, file.name);
+	const path = form.get('path');
+	if (typeof path === 'string' && path) body.append('path', path);
+	const name = form.get('name');
+	if (typeof name === 'string' && name) body.append('name', name);
 
-	const res = await fetchWithAuth(event, '/api/v1/uploads', {
+	const res = await fetchWithAuth(event, '/v1/uploads', {
 		method: 'POST',
 		body
 	});

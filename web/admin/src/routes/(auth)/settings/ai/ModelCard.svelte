@@ -364,12 +364,6 @@
 		opacity: 0.8;
 		cursor: default;
 	}
-	.model-switch {
-		width: 1.125rem;
-		height: 1.125rem;
-		accent-color: #18181b;
-		cursor: pointer;
-	}
 	.model-switch:disabled {
 		cursor: not-allowed;
 	}

@@ -7,11 +7,11 @@ import type { Project, Service, StackItem } from '$lib/types';
 type ToggleResult = ActionFailure<{ error: string }> | { ok: true };
 
 export async function toggleProjectPublished(event: RequestEvent, slug: string): Promise<ToggleResult> {
-	const getRes = await fetchWithAuth(event, `/api/v1/projects/${slug}`);
+	const getRes = await fetchWithAuth(event, `/v1/projects/${slug}`);
 	if (!getRes.ok) return fail(getRes.status, { error: 'Проект не найден' });
 
 	const { project } = (await getRes.json()) as { project: Project };
-	const res = await fetchWithAuth(event, `/api/v1/projects/${slug}`, {
+	const res = await fetchWithAuth(event, `/v1/projects/${slug}`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({
@@ -34,14 +34,14 @@ export async function toggleProjectPublished(event: RequestEvent, slug: string):
 }
 
 export async function toggleServicePublished(event: RequestEvent, id: string): Promise<ToggleResult> {
-	const listRes = await fetchWithAuth(event, '/api/v1/services');
+	const listRes = await fetchWithAuth(event, '/v1/services');
 	if (!listRes.ok) return fail(listRes.status, { error: 'Не удалось загрузить услуги' });
 
 	const { services } = (await listRes.json()) as { services: Service[] };
 	const service = services.find((item) => item.id === id);
 	if (!service) return fail(404, { error: 'Услуга не найдена' });
 
-	const res = await fetchWithAuth(event, `/api/v1/services/${id}`, {
+	const res = await fetchWithAuth(event, `/v1/services/${id}`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({
@@ -61,14 +61,14 @@ export async function toggleServicePublished(event: RequestEvent, id: string): P
 }
 
 export async function toggleStackPublished(event: RequestEvent, id: string): Promise<ToggleResult> {
-	const listRes = await fetchWithAuth(event, '/api/v1/stack');
+	const listRes = await fetchWithAuth(event, '/v1/stack');
 	if (!listRes.ok) return fail(listRes.status, { error: 'Не удалось загрузить стек' });
 
 	const { stack } = (await listRes.json()) as { stack: StackItem[] };
 	const item = stack.find((entry) => entry.id === id);
 	if (!item) return fail(404, { error: 'Технология не найдена' });
 
-	const res = await fetchWithAuth(event, `/api/v1/stack/${id}`, {
+	const res = await fetchWithAuth(event, `/v1/stack/${id}`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({

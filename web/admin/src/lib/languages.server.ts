@@ -9,7 +9,7 @@ export async function loadLanguages(event: RequestEvent): Promise<Language[]> {
 		{ code: 'ru', name: 'Русский', is_default: false, enabled: true, sort_order: 1 }
 	];
 	try {
-		const res = await fetchWithAuth(event, '/api/v1/languages');
+		const res = await fetchWithAuth(event, '/v1/languages');
 		if (!res.ok) return fallback;
 		const data = (await res.json()) as { languages: Language[] };
 		return data.languages?.length ? data.languages : fallback;

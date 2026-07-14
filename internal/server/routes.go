@@ -18,15 +18,19 @@ type Handlers struct {
 	Settings *handlers.SettingsHandler
 	Public   *handlers.PublicHandler
 	Uploads  *handlers.UploadsHandler
+	Files    *handlers.FilesHandler
 	AIModels *handlers.AIModelsHandler
 }
 
-// Register mounts all API routes under /api/v1.
+// APIPrefix is the versioned path on the API host (api.piplos.media/v1/...).
+const APIPrefix = "/v1"
+
+// Register mounts all API routes under /v1.
 //
 // Роли: admin — полный доступ; manager — контент и заявки,
 // но не пользователи и не настройки (включая языки).
 func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
-	api := app.Group("/api/v1")
+	api := app.Group(APIPrefix)
 
 	// Public (site) endpoints.
 	api.Post("/leads", h.Leads.Create)
@@ -34,6 +38,7 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	pub.Get("/projects", h.Public.Projects)
 	pub.Get("/projects/:slug", h.Public.Project)
 	pub.Get("/services", h.Public.Services)
+	pub.Get("/services/:slug", h.Public.Service)
 	pub.Get("/stack", h.Public.Stack)
 	pub.Get("/seo", h.Public.SEO)
 	pub.Get("/legal", h.Public.Legal)
@@ -80,6 +85,12 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	staff.Put("/legal/:id", h.Content.UpdateLegal)
 
 	staff.Post("/uploads", h.Uploads.Upload)
+
+	staff.Get("/files", h.Files.List)
+	staff.Post("/files/folders", h.Files.CreateFolder)
+	staff.Post("/files/rename", h.Files.Rename)
+	staff.Post("/files/move", h.Files.Move)
+	staff.Post("/files/delete", h.Files.Delete)
 
 	staff.Get("/leads", h.Leads.List)
 	staff.Get("/leads/:id", h.Leads.Get)

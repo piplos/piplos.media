@@ -28,6 +28,7 @@ export interface Project {
 	featured: boolean;
 	published: boolean;
 	sort_order: number;
+	image: string;
 	translations: Translations;
 	created_at: string;
 	updated_at: string;
@@ -134,6 +135,13 @@ export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
 };
 
 export const LEAD_STATUS_ORDER: LeadStatus[] = ['new', 'in_progress', 'done', 'spam'];
+
+export const LEAD_STATUS_VARIANTS: Record<LeadStatus, 'info' | 'warning' | 'success' | 'danger'> = {
+	new: 'info',
+	in_progress: 'warning',
+	done: 'success',
+	spam: 'danger'
+};
 
 export function nextLeadStatus(current: LeadStatus): LeadStatus {
 	const index = LEAD_STATUS_ORDER.indexOf(current);

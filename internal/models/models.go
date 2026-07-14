@@ -59,6 +59,7 @@ type Project struct {
 	Featured     bool         `json:"featured"`
 	Published    bool         `json:"published"`
 	SortOrder    int          `json:"sort_order"`
+	Image        string       `json:"image"`
 	Translations Translations `json:"translations"`
 	CreatedAt    time.Time    `json:"created_at"`
 	UpdatedAt    time.Time    `json:"updated_at"`

@@ -5,7 +5,7 @@ import type { AdminUser } from '$lib/types';
 
 export const load: PageServerLoad = async (event) => {
 	try {
-		const res = await fetchWithAuth(event, '/api/v1/users');
+		const res = await fetchWithAuth(event, '/v1/users');
 		if (!res.ok) {
 			return { users: [], error: apiLoadErrorMessage(res, 'Ошибка загрузки пользователей') };
 		}
@@ -33,7 +33,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Пароль — минимум 8 символов' });
 		}
 
-		const res = await fetchWithAuth(event, id ? `/api/v1/users/${id}` : '/api/v1/users', {
+		const res = await fetchWithAuth(event, id ? `/v1/users/${id}` : '/v1/users', {
 			method: id ? 'PUT' : 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload)
@@ -48,7 +48,7 @@ export const actions: Actions = {
 		const id = (await event.request.formData()).get('id')?.toString();
 		if (!id) return fail(400, { error: 'Некорректный запрос' });
 
-		const res = await fetchWithAuth(event, `/api/v1/users/${id}`, { method: 'DELETE' });
+		const res = await fetchWithAuth(event, `/v1/users/${id}`, { method: 'DELETE' });
 		if (!res.ok) {
 			const data = (await res.json().catch(() => ({}))) as { message?: string };
 			return fail(res.status, { error: data.message ?? 'Не удалось удалить пользователя' });

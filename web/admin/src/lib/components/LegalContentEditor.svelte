@@ -3,8 +3,9 @@
 	import FormField from '$lib/components/FormField.svelte';
 	import LangTabs from '$lib/components/LangTabs.svelte';
 	import Input from '$lib/components/Input.svelte';
-	import Textarea from '$lib/components/Textarea.svelte';
-	import type { LegalSection, LegalTranslations } from '$lib/types';
+	import LegalPlaceholdersHint from '$lib/components/LegalPlaceholdersHint.svelte';
+	import MarkdownEditor from '$lib/components/MarkdownEditor.svelte';
+	import type { LegalTranslations } from '$lib/types';
 
 	interface Props {
 		languages: { code: string; name: string; is_default: boolean }[];
@@ -52,6 +53,8 @@
 </script>
 
 <div class="legal-editor">
+	<LegalPlaceholdersHint />
+
 	<LangTabs
 		{languages}
 		{activeLang}
@@ -106,11 +109,11 @@
 							<FormField label="Заголовок раздела" id="{idPrefix}-{activeLang}-sec-{index}-title">
 								<Input id="{idPrefix}-{activeLang}-sec-{index}-title" bind:value={section.title} />
 							</FormField>
-							<FormField label="Текст" id="{idPrefix}-{activeLang}-sec-{index}-body">
-								<Textarea
+							<FormField label="Текст (Markdown)" id="{idPrefix}-{activeLang}-sec-{index}-body">
+								<MarkdownEditor
 									id="{idPrefix}-{activeLang}-sec-{index}-body"
 									bind:value={section.body}
-									rows={8}
+									rows={10}
 								/>
 							</FormField>
 						</div>

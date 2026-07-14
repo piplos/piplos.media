@@ -97,6 +97,7 @@ func main() {
 		Settings: handlers.NewSettingsHandler(repo, translate.New(repo)),
 		Public:   handlers.NewPublicHandler(repo),
 		Uploads:  handlers.NewUploadsHandler(uploadDir, publicAPIURL),
+		Files:    handlers.NewFilesHandler(uploadDir, publicAPIURL),
 		AIModels: handlers.NewAIModelsHandler(repo),
 	}
 	server.Register(app, h, authMw)

@@ -5,7 +5,7 @@ import type { Lead } from '$lib/types';
 
 export const load: PageServerLoad = async (event) => {
 	try {
-		const res = await fetchWithAuth(event, `/api/v1/leads/${event.params.id}`);
+		const res = await fetchWithAuth(event, `/v1/leads/${event.params.id}`);
 		if (res.status === 404) throw error(404, 'Заявка не найдена');
 		if (!res.ok) throw error(res.status, 'Ошибка загрузки заявки');
 		const data = (await res.json()) as { lead: Lead };
@@ -21,7 +21,7 @@ export const actions: Actions = {
 		const status = (await event.request.formData()).get('status')?.toString();
 		if (!status) return fail(400, { error: 'Некорректный запрос' });
 
-		const res = await fetchWithAuth(event, `/api/v1/leads/${event.params.id}/status`, {
+		const res = await fetchWithAuth(event, `/v1/leads/${event.params.id}/status`, {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ status })

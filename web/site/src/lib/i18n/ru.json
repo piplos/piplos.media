@@ -25,6 +25,8 @@
     "title": "Услуги",
     "cta": "Начать проект",
     "coming_soon": "Скоро здесь будет что-то новое",
+    "page_eyebrow": "Что мы делаем",
+    "page_description": "Веб, мобильные приложения, бэкенд, данные и облако — полный цикл разработки продуктов, которые выходят в продакшн.",
     "ticker": [
       "Веб-приложения",
       "Мобильные приложения",
@@ -32,38 +34,6 @@
       "Данные и аналитика",
       "DevOps и облако",
       "UI/UX дизайн"
-    ],
-    "items": [
-      {
-        "id": "web",
-        "title": "Веб-приложения",
-        "description": "SPA, дашборды, админ-панели и корпоративные платформы. React, Svelte, Vue и Next.js на TypeScript — от прототипа в Figma до продакшн-интерфейса.",
-        "tags": ["React", "Svelte", "Vue", "Next.js"]
-      },
-      {
-        "id": "mobile",
-        "title": "Мобильные приложения",
-        "description": "Кроссплатформенные приложения на Flutter и нативный iOS на Swift. Производительный UX, офлайн-сценарии и полный деплой в App Store.",
-        "tags": ["Flutter", "Swift", "iOS", "Android"]
-      },
-      {
-        "id": "backend",
-        "title": "Бэкенд и API",
-        "description": "Микросервисы, REST и GraphQL API, real-time и интеграции. Node.js, Go, Python, Java и Rust — архитектура, готовая к росту с первого дня.",
-        "tags": ["Node.js", "Go", "Python", "GraphQL"]
-      },
-      {
-        "id": "data",
-        "title": "Данные и аналитика",
-        "description": "Проектирование БД, оптимизация запросов, кэширование и аналитические пайплайны. OLTP и OLAP на PostgreSQL, ClickHouse и Redis.",
-        "tags": ["PostgreSQL", "ClickHouse", "Redis", "MySQL"]
-      },
-      {
-        "id": "devops",
-        "title": "DevOps и облако",
-        "description": "CI/CD, оркестрация контейнеров, облачная инфраструктура и мониторинг. Docker, Kubernetes, AWS и Terraform с GitHub Actions.",
-        "tags": ["Docker", "Kubernetes", "AWS", "GitHub Actions"]
-      }
     ]
   },
   "work": {
@@ -122,6 +92,12 @@
     "result": "Результат",
     "stack": "Технологический стек",
     "start_project": "Начать похожий проект"
+  },
+  "service_page": {
+    "back": "К услугам",
+    "stack": "Технологии",
+    "projects": "Связанные проекты",
+    "start_project": "Начать проект"
   },
   "order": {
     "eyebrow": "Ответ в течение 24 часов",

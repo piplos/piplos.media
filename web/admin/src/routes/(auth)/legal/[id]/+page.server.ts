@@ -7,7 +7,7 @@ import type { LegalPage } from '$lib/types';
 
 export const load: PageServerLoad = async (event) => {
 	try {
-		const res = await fetchWithAuth(event, `/api/v1/legal/${event.params.id}`);
+		const res = await fetchWithAuth(event, `/v1/legal/${event.params.id}`);
 		if (res.status === 404) throw error(404, 'Документ не найден');
 		if (!res.ok) throw error(res.status, 'Ошибка загрузки документа');
 		const data = (await res.json()) as { page: LegalPage };
@@ -21,7 +21,7 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
 	save: async (event) => {
 		const payload = legalPayload(await event.request.formData());
-		const res = await fetchWithAuth(event, `/api/v1/legal/${event.params.id}`, {
+		const res = await fetchWithAuth(event, `/v1/legal/${event.params.id}`, {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload)

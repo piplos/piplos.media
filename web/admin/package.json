@@ -6,7 +6,8 @@
 	"scripts": {
 		"dev": "ADMIN_API_URL=http://localhost:3001 vite dev",
 		"build": "vite build",
-		"preview": "vite preview",
+		"deploy": "wrangler deploy",
+		"preview": "wrangler dev .svelte-kit/cloudflare/_worker.js",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"prepare": "svelte-kit sync || true"
 	},
@@ -16,20 +17,17 @@
 		"@tailwindcss/vite": "^4.3.0",
 		"@types/node": "^25.8.0",
 		"svelte": "^5.55.7",
-		"svelte-adapter-bun": "^1.0.1",
+		"@sveltejs/adapter-cloudflare": "^7.2.4",
+		"wrangler": "^4",
 		"svelte-check": "^4.4.8",
 		"tailwindcss": "^4.3.0",
 		"typescript": "^6.0.3",
 		"vite": "^8.0.13"
 	},
 	"dependencies": {
-		"@tiptap/core": "^3.27.3",
-		"@tiptap/extension-image": "^3.27.3",
-		"@tiptap/extension-link": "^3.27.3",
-		"@tiptap/pm": "^3.27.3",
-		"@tiptap/starter-kit": "^3.27.3",
 		"bits-ui": "^2.18.1",
 		"isomorphic-dompurify": "^3.18.0",
+		"marked": "^18.0.6",
 		"svelte-french-toast": "^1.2.0"
 	}
 }

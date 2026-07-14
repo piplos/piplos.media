@@ -42,9 +42,6 @@
 {:else}
 	<Card padding="sm">
 		<h2 class="section-title">SMTP</h2>
-		<p class="section-hint">
-			Почтовый сервер для исходящих писем. Логин и пароль хранятся в БД в зашифрованном виде.
-		</p>
 
 		<div class="smtp-form">
 			<div class="smtp-fields-row">
@@ -159,11 +156,6 @@
 		font-size: 1rem;
 		font-weight: 600;
 		color: #18181b;
-	}
-	.section-hint {
-		margin: 0 0 1rem;
-		font-size: 0.8125rem;
-		color: #71717a;
 	}
 	.smtp-form {
 		display: flex;

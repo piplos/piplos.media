@@ -4,7 +4,7 @@ import type { SEOPage } from '$lib/types';
 
 export async function loadSeoByPath(event: RequestEvent, path: string): Promise<SEOPage | null> {
 	try {
-		const res = await fetchWithAuth(event, '/api/v1/seo');
+		const res = await fetchWithAuth(event, '/v1/seo');
 		if (!res.ok) return null;
 		const data = (await res.json()) as { pages: SEOPage[] };
 		return (data.pages ?? []).find((page) => page.path === path) ?? null;

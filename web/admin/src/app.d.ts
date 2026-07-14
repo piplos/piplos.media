@@ -6,6 +6,12 @@ declare global {
 			refreshToken: string | null;
 			user: { id: string; email: string; full_name: string; role: string } | null;
 		}
+
+		interface Platform {
+			env?: {
+				ADMIN_API_URL?: string;
+			};
+		}
 	}
 }
 

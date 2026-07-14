@@ -1,5 +1,5 @@
 /**
- * Утилиты для API настроек (/api/v1/settings). Значения — композитный JSON
+ * Утилиты для API настроек (/v1/settings). Значения — композитный JSON
  * (ключи AI, SMTP); чувствительные поля приходят маскированными ("****").
  */
 import type { RequestEvent } from '@sveltejs/kit';
@@ -22,7 +22,7 @@ export async function updateSetting(
 	key: string,
 	value: string
 ): Promise<Response> {
-	return fetchWithAuth(event, `/api/v1/settings/${encodeURIComponent(key)}`, {
+	return fetchWithAuth(event, `/v1/settings/${encodeURIComponent(key)}`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ value })

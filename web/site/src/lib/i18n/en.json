@@ -25,6 +25,8 @@
     "title": "Services",
     "cta": "Start a project",
     "coming_soon": "Something new is coming soon",
+    "page_eyebrow": "What we do",
+    "page_description": "Web, mobile, backend, data and cloud — full-cycle engineering for products that ship.",
     "ticker": [
       "Web Applications",
       "Mobile Apps",
@@ -32,38 +34,6 @@
       "Data & Analytics",
       "DevOps & Cloud",
       "UI/UX Design"
-    ],
-    "items": [
-      {
-        "id": "web",
-        "title": "Web Applications",
-        "description": "SPAs, dashboards, admin panels and enterprise platforms. React, Svelte, Vue and Next.js with TypeScript — from Figma prototypes to production UI.",
-        "tags": ["React", "Svelte", "Vue", "Next.js"]
-      },
-      {
-        "id": "mobile",
-        "title": "Mobile Apps",
-        "description": "Cross-platform apps with Flutter and native iOS with Swift. Performance-first UX, offline-ready flows and full App Store deployment.",
-        "tags": ["Flutter", "Swift", "iOS", "Android"]
-      },
-      {
-        "id": "backend",
-        "title": "Backend & APIs",
-        "description": "Microservices, REST and GraphQL APIs, real-time systems and integrations. Node.js, Go, Python, Java and Rust — built to scale from day one.",
-        "tags": ["Node.js", "Go", "Python", "GraphQL"]
-      },
-      {
-        "id": "data",
-        "title": "Data & Analytics",
-        "description": "Database design, query optimization, caching layers and analytics pipelines. OLTP and OLAP workloads with PostgreSQL, ClickHouse and Redis.",
-        "tags": ["PostgreSQL", "ClickHouse", "Redis", "MySQL"]
-      },
-      {
-        "id": "devops",
-        "title": "DevOps & Cloud",
-        "description": "CI/CD pipelines, container orchestration, cloud infrastructure and monitoring. Docker, Kubernetes, AWS and Terraform with GitHub Actions.",
-        "tags": ["Docker", "Kubernetes", "AWS", "GitHub Actions"]
-      }
     ]
   },
   "work": {
@@ -122,6 +92,12 @@
     "result": "The Result",
     "stack": "Tech Stack",
     "start_project": "Start a Similar Project"
+  },
+  "service_page": {
+    "back": "Back to Services",
+    "stack": "Technologies",
+    "projects": "Related Projects",
+    "start_project": "Start a Project"
   },
   "order": {
     "eyebrow": "Response within 24 hours",

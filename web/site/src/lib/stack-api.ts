@@ -1,4 +1,4 @@
-import { API_URL } from '$lib/api';
+import { API_V1 } from '$lib/api';
 
 export interface StackItem {
 	id: string;
@@ -15,7 +15,7 @@ type FetchFn = typeof fetch;
  *  Сортировка повторяет API: group_id, sort_order, label. */
 export async function fetchStackItems(fetchFn: FetchFn = fetch): Promise<StackItem[]> {
 	try {
-		const res = await fetchFn(`${API_URL}/api/v1/public/stack`);
+		const res = await fetchFn(`${API_V1}/public/stack`);
 		if (!res.ok) return [];
 		const data = (await res.json()) as { stack: StackItem[] };
 		return (data.stack ?? [])

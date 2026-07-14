@@ -3,7 +3,7 @@
 	import { langStore } from '$lib/stores/lang.svelte';
 	import { SITE, getCompanyYears } from '$lib/site';
 	import { SERVICE_ICONS } from '$lib/constants/sections';
-	import { toServiceDisplayItems, type ServiceDisplayItem } from '$lib/services-api';
+	import { toServiceDisplayItems } from '$lib/services-api';
 	import StackIcon from '$lib/components/StackIcon.svelte';
 	import GridPlaceholder from '$lib/components/GridPlaceholder.svelte';
 	import { getCategoryColor, getProjectLocale } from '$lib/portfolio';
@@ -22,10 +22,7 @@
 	});
 
 	let services = $derived.by(() => {
-		const items: (Omit<ServiceDisplayItem, 'icon'> & { icon?: string })[] =
-			data.services.length > 0
-				? toServiceDisplayItems(data.services, langStore.value)
-				: (langStore.get<Omit<ServiceDisplayItem, 'icon'>[]>('services.items') ?? []);
+		const items = toServiceDisplayItems(data.services, langStore.value);
 		return items.map((item, i) => ({
 			...item,
 			num: String(i + 1).padStart(2, '0'),
@@ -34,8 +31,35 @@
 	});
 
 	const SERVICES_COLUMNS = 2;
+	const STACK_MIN_COL_WIDTH = 120;
+
 	const servicesPlaceholderCount = $derived(
 		(SERVICES_COLUMNS - (services.length % SERVICES_COLUMNS)) % SERVICES_COLUMNS
+	);
+
+	let stackGrid = $state<HTMLDivElement | null>(null);
+	let stackColumns = $state(1);
+
+	$effect(() => {
+		const el = stackGrid;
+		if (!el) return;
+
+		const update = () => {
+			const width = el.clientWidth;
+			const gap = 1;
+			stackColumns = Math.max(1, Math.floor((width + gap) / (STACK_MIN_COL_WIDTH + gap)));
+		};
+
+		update();
+		const observer = new ResizeObserver(update);
+		observer.observe(el);
+		return () => observer.disconnect();
+	});
+
+	const stackPlaceholderCount = $derived(
+		stackItems.length === 0
+			? 0
+			: (stackColumns - (stackItems.length % stackColumns)) % stackColumns
 	);
 
 	let process = $derived(
@@ -141,17 +165,19 @@
 			</div>
 			<div class="services-grid" role="list">
 				{#each services as svc (svc.id)}
-					<article class="service-card" role="listitem" itemscope itemtype="https://schema.org/Service">
-						<div class="service-num">{svc.num}</div>
-						<div class="service-icon" aria-hidden="true">{svc.icon}</div>
-						<h3 class="service-title" itemprop="name">{svc.title}</h3>
-						<p class="service-desc" itemprop="description">{svc.description}</p>
-						<div class="service-tags" aria-label="Technologies">
-							{#each svc.tags as tag (tag)}
-								<span class="tag">{tag}</span>
-							{/each}
-						</div>
-					</article>
+					<div role="listitem">
+						<a href={l(`/services/${svc.id}`)} class="service-card service-card--link" itemscope itemtype="https://schema.org/Service">
+							<div class="service-num">{svc.num}</div>
+							<div class="service-icon" aria-hidden="true">{svc.icon}</div>
+							<h3 class="service-title" itemprop="name">{svc.title}</h3>
+							<p class="service-desc" itemprop="description">{svc.description}</p>
+							<div class="service-tags" aria-label="Technologies">
+								{#each svc.tags as tag (tag)}
+									<span class="tag">{tag}</span>
+								{/each}
+							</div>
+						</a>
+					</div>
 				{/each}
 				{#each Array(servicesPlaceholderCount) as _, i (`placeholder-${i}`)}
 					<GridPlaceholder label={langStore.t('services.coming_soon')} variant="service" />
@@ -177,6 +203,11 @@
 				{#each featuredProjects as project (project.id)}
 					{@const loc = getProjectLocale(project, langStore.value)}
 					<article class="work-card" role="listitem" itemscope itemtype="https://schema.org/CreativeWork">
+						{#if project.image}
+							<div class="pc-bg" aria-hidden="true">
+								<img src={project.image} alt="" loading="lazy" />
+							</div>
+						{/if}
 						<div class="work-type">
 							<span class="work-type-dot" style="background:{getCategoryColor(project.category)}" aria-hidden="true"></span>
 							{loc.subtitle}
@@ -204,12 +235,20 @@
 					<h2 class="section-title" id="stack-heading">{langStore.t('stack.title')}</h2>
 				</div>
 			</div>
-			<div class="stack-grid" role="list" aria-label="Technologies we work with">
+			<div
+				class="stack-grid"
+				bind:this={stackGrid}
+				role="list"
+				aria-label="Technologies we work with"
+			>
 				{#each stackItems as item (item.slug)}
 					<div class="stack-item" role="listitem">
 						<StackIcon slug={item.slug} />
 						<span class="stack-name">{item.label}</span>
 					</div>
+				{/each}
+				{#each Array(stackPlaceholderCount) as _, i (`stack-placeholder-${i}`)}
+					<GridPlaceholder label={langStore.t('services.coming_soon')} variant="stack" />
 				{/each}
 			</div>
 		</div>

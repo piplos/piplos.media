@@ -1,4 +1,4 @@
-import { API_URL } from '$lib/api';
+import { API_V1 } from '$lib/api';
 
 export interface LegalSection {
 	title: string;
@@ -33,7 +33,7 @@ type FetchFn = typeof fetch;
 export async function fetchLegalPages(fetchFn: FetchFn = fetch, lang?: string): Promise<LegalPage[]> {
 	try {
 		const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
-		const res = await fetchFn(`${API_URL}/api/v1/public/legal${qs}`);
+		const res = await fetchFn(`${API_V1}/public/legal${qs}`);
 		if (!res.ok) return [];
 		const data = (await res.json()) as { pages: LegalPage[] };
 		return (data.pages ?? []).sort((a, b) => a.sort_order - b.sort_order);
@@ -50,7 +50,7 @@ export async function fetchLegalPage(
 ): Promise<LegalPage | null> {
 	try {
 		const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
-		const res = await fetchFn(`${API_URL}/api/v1/public/legal/${slug}${qs}`);
+		const res = await fetchFn(`${API_V1}/public/legal/${slug}${qs}`);
 		if (!res.ok) return null;
 		const data = (await res.json()) as { page: LegalPage };
 		return data.page ?? null;

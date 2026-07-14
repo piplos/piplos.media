@@ -4,7 +4,7 @@ name: Release containers
 # (e.g. `git tag v1.2.3 && git push origin v1.2.3`):
 #   - ghcr.io/piplos/piplos-api     — Go API (docker/Dockerfile.api)
 #   - ghcr.io/piplos/piplos-migrate — one-shot goose migrations (docker/Dockerfile.migrate)
-#   - ghcr.io/piplos/piplos-admin   — admin panel behind nginx (docker/Dockerfile.admin)
+# Admin panel deploys to Cloudflare Workers (web/admin).
 on:
   push:
     tags:
@@ -31,8 +31,6 @@ jobs:
             dockerfile: docker/Dockerfile.api
           - image: piplos-migrate
             dockerfile: docker/Dockerfile.migrate
-          - image: piplos-admin
-            dockerfile: docker/Dockerfile.admin
     steps:
       - name: Checkout
         uses: actions/checkout@v4

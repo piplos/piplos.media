@@ -5,16 +5,15 @@
 	import Button from '$lib/components/Button.svelte';
 	import LangTabs from '$lib/components/LangTabs.svelte';
 	import Input from '$lib/components/Input.svelte';
+	import MarkdownEditor from '$lib/components/MarkdownEditor.svelte';
 	import Textarea from '$lib/components/Textarea.svelte';
-	import RichHtmlEditor from '$lib/components/RichHtmlEditor.svelte';
 
 	interface FieldDef {
 		key: string;
 		label: string;
-		type?: 'input' | 'textarea' | 'richtext';
+		/** markdown — моноширинный textarea; HTML генерируется на стороне API. */
+		type?: 'input' | 'textarea' | 'markdown';
 		rows?: number;
-		/** Редактор / HTML-код (для solution и др.). */
-		preview?: boolean;
 	}
 	interface Props {
 		languages: Language[];
@@ -43,14 +42,8 @@
 		if (!translations[code]) translations[code] = {};
 	}
 
-	function stripHtml(html: string): string {
-		return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-	}
-
 	function fieldText(code: string, key: string): string {
-		const raw = translations[code]?.[key] ?? '';
-		const field = fields.find((f) => f.key === key);
-		return field?.type === 'richtext' ? stripHtml(raw) : raw.trim();
+		return (translations[code]?.[key] ?? '').trim();
 	}
 
 	function langFilled(code: string): boolean {
@@ -64,7 +57,6 @@
 		const source = translations[sourceLang] ?? {};
 		const payload: Record<string, string> = {};
 		for (const f of fields) {
-			if (f.type === 'richtext') continue;
 			const v = (source[f.key] ?? '').trim();
 			if (v) payload[f.key] = v;
 		}
@@ -102,10 +94,7 @@
 	function canTranslateActive(): boolean {
 		if (!activeLang || activeLang === sourceLang) return false;
 		const source = translations[sourceLang] ?? {};
-		return fields.some((f) => {
-			if (f.type === 'richtext') return false;
-			return (source[f.key] ?? '').trim() !== '';
-		});
+		return fields.some((f) => (source[f.key] ?? '').trim() !== '');
 	}
 </script>
 
@@ -186,10 +175,10 @@
 			{@const fieldId = `${idPrefix}-${activeLang}-${field.key}`}
 			<div class="tr-field">
 				<label class="tr-label" for={fieldId}>{field.label}</label>
-				{#if field.type === 'richtext'}
-					<RichHtmlEditor
+				{#if field.type === 'markdown'}
+					<MarkdownEditor
 						id={fieldId}
-						previewable={field.preview ?? false}
+						rows={field.rows ?? 12}
 						bind:value={
 							() => translations[activeLang]?.[field.key] ?? '',
 							(v) => {
@@ -198,6 +187,9 @@
 							}
 						}
 					/>
+					<p class="tr-hint">
+						Поддерживается Markdown. HTML для сайта генерируется автоматически при выводе через API.
+					</p>
 				{:else if field.type === 'textarea'}
 					<Textarea
 						id={fieldId}
@@ -242,5 +234,10 @@
 		font-size: 0.8125rem;
 		font-weight: 500;
 		color: #52525b;
+	}
+	.tr-hint {
+		margin: 0;
+		font-size: 0.75rem;
+		color: #a1a1aa;
 	}
 </style>

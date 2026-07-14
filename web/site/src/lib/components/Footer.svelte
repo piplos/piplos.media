@@ -21,11 +21,11 @@
 			<nav class="footer-nav" aria-label="Services">
 				<h3>{langStore.t('footer.services')}</h3>
 				<ul>
-					<li><a href={l('/#services')}>{langStore.t('footer.links.web')}</a></li>
-					<li><a href={l('/#services')}>{langStore.t('footer.links.mobile')}</a></li>
-					<li><a href={l('/#services')}>{langStore.t('footer.links.backend')}</a></li>
-					<li><a href={l('/#services')}>{langStore.t('footer.links.data')}</a></li>
-					<li><a href={l('/#services')}>{langStore.t('footer.links.devops')}</a></li>
+					<li><a href={l('/services/web')}>{langStore.t('footer.links.web')}</a></li>
+					<li><a href={l('/services/mobile')}>{langStore.t('footer.links.mobile')}</a></li>
+					<li><a href={l('/services/backend')}>{langStore.t('footer.links.backend')}</a></li>
+					<li><a href={l('/services/data')}>{langStore.t('footer.links.data')}</a></li>
+					<li><a href={l('/services/devops')}>{langStore.t('footer.links.devops')}</a></li>
 				</ul>
 			</nav>
 

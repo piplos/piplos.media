@@ -31,6 +31,7 @@ export function projectPayload(fd: FormData) {
 		year: parseIntField(fd, 'year', new Date().getFullYear()),
 		featured: fd.get('featured') === 'on',
 		published: fd.get('published') === 'on',
+		image: fd.get('image')?.toString().trim() ?? '',
 		translations: parseTranslations(fd)
 	};
 }

@@ -7,6 +7,7 @@
 	import Input from '$lib/components/Input.svelte';
 	import Select from '$lib/components/Select.svelte';
 	import TagSelect from '$lib/components/TagSelect.svelte';
+	import FilePickerDrawer from '$lib/components/FilePickerDrawer.svelte';
 	import TranslationsEditor from '$lib/components/TranslationsEditor.svelte';
 	import type { Language, Project, SEOPage, Service, StackItem, Translations } from '$lib/types';
 
@@ -39,6 +40,33 @@
 	let year = $state(String(initial.year ?? new Date().getFullYear()));
 	let featured = $state(initial.featured ?? false);
 	let published = $state(initial.published ?? true);
+	let image = $state(initial.image ?? '');
+	let imageInput = $state<HTMLInputElement | null>(null);
+	let uploadingImage = $state(false);
+	let imagePickerOpen = $state(false);
+
+	async function onImageFileChange(e: Event) {
+		const input = e.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		input.value = '';
+		if (!file) return;
+		uploadingImage = true;
+		try {
+			const fd = new FormData();
+			fd.append('file', file);
+			const res = await fetch('/api/upload', { method: 'POST', body: fd });
+			const data = (await res.json().catch(() => ({}))) as { url?: string; message?: string };
+			if (!res.ok || !data.url) {
+				toast.error(data.message ?? 'Не удалось загрузить изображение');
+				return;
+			}
+			image = data.url;
+		} catch {
+			toast.error('Сервис загрузки недоступен');
+		} finally {
+			uploadingImage = false;
+		}
+	}
 	let translations = $state<Translations>((initial.translations ?? {}) as Translations);
 	let seoTranslations = $state<Translations>((initialSeo?.translations ?? {}) as Translations);
 
@@ -69,7 +97,7 @@
 		{ key: 'subtitle', label: 'Подзаголовок' },
 		{ key: 'description', label: 'Описание', type: 'textarea' as const },
 		{ key: 'challenge', label: 'Задача (challenge)', type: 'textarea' as const },
-		{ key: 'solution', label: 'Решение (solution)', type: 'richtext' as const, preview: true },
+		{ key: 'solution', label: 'Решение (solution, Markdown)', type: 'markdown' as const },
 		{ key: 'result', label: 'Результат (result)', type: 'textarea' as const }
 	];
 
@@ -110,21 +138,51 @@
 
 	<Card padding="sm">
 		<div class="fields">
-			<div class="grid-2">
+			<div class="grid-3">
 				<FormField label="Slug" id="project-slug">
 					<Input id="project-slug" name="slug" bind:value={slug} placeholder="analytics-dashboard" required />
 				</FormField>
 				<FormField label="Год" id="project-year">
 					<Input id="project-year" name="year" type="number" bind:value={year} />
 				</FormField>
+				<FormField label="Группа (услуга)" id="project-category">
+					<Select
+						id="project-category"
+						name="category"
+						options={serviceOptions}
+						bind:value={category}
+						disabled={!serviceOptions.length}
+					/>
+				</FormField>
 			</div>
-			<FormField label="Группа (услуга)" id="project-category">
-				<Select
-					id="project-category"
-					name="category"
-					options={serviceOptions}
-					bind:value={category}
-					disabled={!serviceOptions.length}
+			<FormField label="Превью (картинка)" id="project-image">
+				<div class="image-field">
+					<div class="image-controls">
+						<Input id="project-image" name="image" bind:value={image} placeholder="/uploads/… или https://…" />
+						<div class="image-buttons">
+							<Button variant="secondary" loading={uploadingImage} onclick={() => imageInput?.click()}>
+								Загрузить
+							</Button>
+							<Button variant="secondary" onclick={() => (imagePickerOpen = true)}>
+								Из архива
+							</Button>
+							{#if image}
+								<Button variant="ghost" onclick={() => (image = '')}>Убрать</Button>
+							{/if}
+						</div>
+					</div>
+					{#if image}
+						<a class="image-thumb" href={image} target="_blank" rel="noreferrer" title="Открыть в новой вкладке">
+							<img src={image} alt="Превью проекта" />
+						</a>
+					{/if}
+				</div>
+				<input
+					type="file"
+					accept="image/*"
+					bind:this={imageInput}
+					onchange={onImageFileChange}
+					hidden
 				/>
 			</FormField>
 			<FormField label="Стек" id="project-stack">
@@ -181,7 +239,7 @@
 			{#if !seoPath || activeTab === 'content'}
 				<TranslationsEditor {languages} fields={translationFields} bind:translations idPrefix="project" />
 			{:else}
-				<FormField label="Путь страницы" id="seo-path" hint="Соответствует URL кейса на сайте">
+				<FormField label="Путь страницы" id="seo-path">
 					<p class="seo-path">{seoPath}</p>
 				</FormField>
 				<div class="seo-editor">
@@ -202,6 +260,12 @@
 	</div>
 </form>
 
+<FilePickerDrawer
+	bind:open={imagePickerOpen}
+	title="Выбор картинки из архива"
+	onselect={(file) => (image = file.url)}
+/>
+
 <style>
 	.content-form {
 		display: flex;
@@ -213,13 +277,14 @@
 		flex-direction: column;
 		gap: 1rem;
 	}
-	.grid-2 {
+	.grid-3 {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: minmax(0, 2fr) minmax(5.5rem, 0.75fr) minmax(0, 1.5fr);
 		gap: 1rem;
+		align-items: start;
 	}
 	@media (max-width: 640px) {
-		.grid-2 {
+		.grid-3 {
 			grid-template-columns: 1fr;
 		}
 	}
@@ -228,15 +293,44 @@
 		flex-wrap: wrap;
 		gap: 1.5rem;
 	}
-	.check {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.875rem;
-		color: #374151;
-		cursor: pointer;
+	.image-field {
+		display: flex;
+		gap: 1rem;
+		align-items: flex-start;
 	}
-	.section-title {
+	.image-controls {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	.image-buttons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.image-thumb {
+		flex-shrink: 0;
+		display: block;
+		width: 10rem;
+		height: 6.25rem;
+		border: 1px solid #e5e7eb;
+		border-radius: 8px;
+		overflow: hidden;
+		background: #f4f4f5;
+	}
+	.image-thumb img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+	@media (max-width: 640px) {
+		.image-field {
+			flex-direction: column;
+		}
+	}
+	.image-field {
 		margin: 0;
 		font-size: 1rem;
 		font-weight: 600;

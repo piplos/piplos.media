@@ -3,6 +3,8 @@
 	import { DropdownMenu } from 'bits-ui';
 	import { fly } from 'svelte/transition';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+	import Logo from '$lib/components/Logo.svelte';
+	import NameDialog from '$lib/components/NameDialog.svelte';
 	import type { LayoutData } from './$types';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
@@ -15,8 +17,10 @@
 	const navLinks = [
 		{ href: '/leads', label: 'Заявки' },
 		{ href: '/projects', label: 'Проекты' },
-		{ href: '/lists', label: 'Списки' },
-		{ href: '/legal', label: 'Права' }
+		{ href: '/services', label: 'Услуги' },
+		{ href: '/stack', label: 'Стек' },
+		{ href: '/files', label: 'Файлы' },
+		{ href: '/legal', label: 'Правовое' }
 	];
 
 	const pathname = $derived($page.url.pathname);
@@ -49,7 +53,7 @@
 	<header class="admin-header">
 		<div class="admin-header-inner">
 			<div class="admin-header-left">
-				<a href="/" class="logo">piplos.media</a>
+				<Logo href="/" label="Piplos Media — главная" />
 				<nav class="admin-nav" aria-label="Основная навигация">
 					{#each navLinks as link (link.href)}
 						<a
@@ -128,6 +132,7 @@
 </div>
 
 <ConfirmDialog />
+<NameDialog />
 
 <style>
 	.hidden {
@@ -213,12 +218,6 @@
 	.admin-settings-icon--active {
 		background: #e5e7eb;
 		color: #111;
-	}
-	.logo {
-		font-weight: 700;
-		font-size: 1.125rem;
-		color: #1a1a1a;
-		text-decoration: none;
 	}
 	:global(.user-trigger) {
 		display: inline-flex;
