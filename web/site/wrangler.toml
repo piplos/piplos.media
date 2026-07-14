@@ -12,13 +12,14 @@
 
 name = "piplos-media"
 compatibility_date = "2026-06-19"
+compatibility_flags = ["nodejs_compat", "nodejs_als"]
 workers_dev = false
 preview_urls = false
+main = ".svelte-kit/cloudflare/_worker.js"
 
 [assets]
-directory = "./build"
-not_found_handling = "404-page"
-html_handling = "auto-trailing-slash"
+binding = "ASSETS"
+directory = ".svelte-kit/cloudflare"
 
 [vars]
-PUBLIC_API_URL = "https://api.piplos.media"
+ADMIN_API_URL = "https://api.piplos.media"
