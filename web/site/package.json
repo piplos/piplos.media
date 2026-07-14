@@ -7,14 +7,14 @@
 		"dev": "PUBLIC_API_URL=http://localhost:3001 vite dev",
 		"build": "vite build",
 		"deploy": "wrangler deploy",
-		"preview": "vite preview",
+		"preview": "wrangler dev .svelte-kit/cloudflare/_worker.js",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"update": "bun update --latest"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-static": "^3.0.10",
+		"@sveltejs/adapter-cloudflare": "^7.2.4",
 		"@sveltejs/kit": "^2.69.2",
 		"@sveltejs/vite-plugin-svelte": "^7.2.0",
 		"@tailwindcss/vite": "^4.3.2",

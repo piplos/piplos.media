@@ -1,4 +1,4 @@
-import { API_V1 } from '$lib/api';
+import { getApiV1, type ApiRequestContext } from '$lib/api';
 
 export interface StackItem {
 	id: string;
@@ -13,9 +13,12 @@ type FetchFn = typeof fetch;
 
 /** Опубликованные технологии для секции «Стек» на сайте.
  *  Сортировка повторяет API: group_id, sort_order, label. */
-export async function fetchStackItems(fetchFn: FetchFn = fetch): Promise<StackItem[]> {
+export async function fetchStackItems(
+	fetchFn: FetchFn = fetch,
+	ctx?: ApiRequestContext
+): Promise<StackItem[]> {
 	try {
-		const res = await fetchFn(`${API_V1}/public/stack`);
+		const res = await fetchFn(`${getApiV1(ctx)}/public/stack`);
 		if (!res.ok) return [];
 		const data = (await res.json()) as { stack: StackItem[] };
 		return (data.stack ?? [])

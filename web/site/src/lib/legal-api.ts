@@ -1,4 +1,4 @@
-import { API_V1 } from '$lib/api';
+import { getApiV1, type ApiRequestContext } from '$lib/api';
 
 export interface LegalSection {
 	title: string;
@@ -30,10 +30,14 @@ export function isLegalSlug(value: string): value is LegalSlug {
 
 type FetchFn = typeof fetch;
 
-export async function fetchLegalPages(fetchFn: FetchFn = fetch, lang?: string): Promise<LegalPage[]> {
+export async function fetchLegalPages(
+	fetchFn: FetchFn = fetch,
+	lang?: string,
+	ctx?: ApiRequestContext
+): Promise<LegalPage[]> {
 	try {
 		const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
-		const res = await fetchFn(`${API_V1}/public/legal${qs}`);
+		const res = await fetchFn(`${getApiV1(ctx)}/public/legal${qs}`);
 		if (!res.ok) return [];
 		const data = (await res.json()) as { pages: LegalPage[] };
 		return (data.pages ?? []).sort((a, b) => a.sort_order - b.sort_order);
@@ -46,11 +50,12 @@ export async function fetchLegalPages(fetchFn: FetchFn = fetch, lang?: string): 
 export async function fetchLegalPage(
 	slug: LegalSlug,
 	fetchFn: FetchFn = fetch,
-	lang?: string
+	lang?: string,
+	ctx?: ApiRequestContext
 ): Promise<LegalPage | null> {
 	try {
 		const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
-		const res = await fetchFn(`${API_V1}/public/legal/${slug}${qs}`);
+		const res = await fetchFn(`${getApiV1(ctx)}/public/legal/${slug}${qs}`);
 		if (!res.ok) return null;
 		const data = (await res.json()) as { page: LegalPage };
 		return data.page ?? null;

@@ -1,4 +1,4 @@
-import { API_V1 } from '$lib/api';
+import { getApiV1, type ApiRequestContext } from '$lib/api';
 import { SERVICE_ICONS } from '$lib/constants/sections';
 import { DEFAULT_LANG } from '$lib/i18n/routing';
 
@@ -63,10 +63,14 @@ export function toServicePageItem(item: ServiceItem, lang: string): ServicePageI
 
 /** Опубликованные услуги для секции на главной.
  *  lang — вернуть только этот перевод (фильтрация на сервере). */
-export async function fetchServices(fetchFn: FetchFn = fetch, lang?: string): Promise<ServiceItem[]> {
+export async function fetchServices(
+	fetchFn: FetchFn = fetch,
+	lang?: string,
+	ctx?: ApiRequestContext
+): Promise<ServiceItem[]> {
 	try {
 		const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
-		const res = await fetchFn(`${API_V1}/public/services${qs}`);
+		const res = await fetchFn(`${getApiV1(ctx)}/public/services${qs}`);
 		if (!res.ok) return [];
 		const data = (await res.json()) as { services: ServiceItem[] };
 		return (data.services ?? []).filter((item) => item.published);
@@ -79,12 +83,13 @@ export async function fetchServices(fetchFn: FetchFn = fetch, lang?: string): Pr
 export async function fetchService(
 	slug: string,
 	fetchFn: FetchFn = fetch,
-	lang?: string
+	lang?: string,
+	ctx?: ApiRequestContext
 ): Promise<ServiceItem | null> {
 	try {
 		const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
 		const res = await fetchFn(
-			`${API_V1}/public/services/${encodeURIComponent(slug)}${qs}`
+			`${getApiV1(ctx)}/public/services/${encodeURIComponent(slug)}${qs}`
 		);
 		if (!res.ok) return null;
 		const data = (await res.json()) as { service: ServiceItem };
@@ -117,9 +122,10 @@ export function toServiceDisplayItems(
 /** Список услуг для страниц сайта (только API). */
 export async function loadServicePageItems(
 	fetchFn: FetchFn = fetch,
-	lang: string
+	lang: string,
+	ctx?: ApiRequestContext
 ): Promise<ServicePageItem[]> {
-	const fromApi = await fetchServices(fetchFn, lang);
+	const fromApi = await fetchServices(fetchFn, lang, ctx);
 	return [...fromApi]
 		.sort((a, b) => a.sort_order - b.sort_order)
 		.map((item) => toServicePageItem(item, lang));
@@ -129,9 +135,10 @@ export async function loadServicePageItems(
 export async function loadServicePageItem(
 	slug: string,
 	fetchFn: FetchFn = fetch,
-	lang: string
+	lang: string,
+	ctx?: ApiRequestContext
 ): Promise<ServicePageItem | null> {
-	const fromApi = await fetchService(slug, fetchFn, lang);
+	const fromApi = await fetchService(slug, fetchFn, lang, ctx);
 	if (!fromApi) return null;
 	return toServicePageItem(fromApi, lang);
 }

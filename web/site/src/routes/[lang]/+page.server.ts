@@ -1,16 +1,14 @@
-import { SUPPORTED_LANGS } from '$lib/i18n/routing';
 import { loadPortfolioProjects } from '$lib/portfolio-api';
 import { fetchServices } from '$lib/services-api';
 import { fetchStackItems, toStackDisplayItems } from '$lib/stack-api';
-import type { EntryGenerator, PageServerLoad } from './$types';
+import type { PageServerLoad } from './$types';
 
-export const entries: EntryGenerator = () => SUPPORTED_LANGS.map((lang) => ({ lang }));
-
-export const load: PageServerLoad = async ({ params, fetch }) => {
+export const load: PageServerLoad = async ({ params, fetch, platform }) => {
+	const ctx = { platform };
 	const [stackFromApi, servicesFromApi, projects] = await Promise.all([
-		fetchStackItems(fetch),
-		fetchServices(fetch, params.lang),
-		loadPortfolioProjects(fetch, { lang: params.lang, featured: true })
+		fetchStackItems(fetch, ctx),
+		fetchServices(fetch, params.lang, ctx),
+		loadPortfolioProjects(fetch, { lang: params.lang, featured: true }, ctx)
 	]);
 
 	return {

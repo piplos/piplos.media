@@ -1,4 +1,9 @@
-import { API_V1 } from '$lib/api';
+import {
+	getApiV1,
+	resolveUploadUrl,
+	resolveUploadUrlsInHtml,
+	type ApiRequestContext
+} from '$lib/api';
 import { DEFAULT_LANG } from '$lib/i18n/routing';
 import type { PortfolioProject, ProjectLocale } from '$lib/portfolio';
 
@@ -26,14 +31,22 @@ const LOCALE_FIELDS = [
 	'stack_detail'
 ] as const;
 
-function toProjectLocale(data: Record<string, string> | undefined): ProjectLocale {
+function toProjectLocale(
+	data: Record<string, string> | undefined,
+	ctx?: ApiRequestContext
+): ProjectLocale {
 	const src = data ?? {};
-	return Object.fromEntries(LOCALE_FIELDS.map((key) => [key, src[key] ?? ''])) as ProjectLocale;
+	const locale = Object.fromEntries(
+		LOCALE_FIELDS.map((key) => [key, src[key] ?? ''])
+	) as ProjectLocale;
+	// solution приходит из API готовым HTML с относительными /uploads/ ссылками
+	locale.solution = resolveUploadUrlsInHtml(locale.solution, ctx);
+	return locale;
 }
 
 /** Преобразует запись API в формат сайта (id = slug для URL /portfolio/{slug}).
  *  Отсутствующий перевод заменяется языком по умолчанию, чтобы не отдавать пустые страницы. */
-export function toPortfolioProject(project: ApiProject): PortfolioProject {
+export function toPortfolioProject(project: ApiProject, ctx?: ApiRequestContext): PortfolioProject {
 	const fallback = project.translations[DEFAULT_LANG];
 	return {
 		id: project.slug,
@@ -42,9 +55,9 @@ export function toPortfolioProject(project: ApiProject): PortfolioProject {
 		tags: project.tags ?? [],
 		year: project.year,
 		featured: project.featured,
-		image: project.image ?? '',
-		en: toProjectLocale(project.translations.en ?? fallback),
-		ru: toProjectLocale(project.translations.ru ?? fallback)
+		image: resolveUploadUrl(project.image ?? '', ctx),
+		en: toProjectLocale(project.translations.en ?? fallback, ctx),
+		ru: toProjectLocale(project.translations.ru ?? fallback, ctx)
 	};
 }
 
@@ -68,10 +81,11 @@ function projectsQueryString(query: ProjectsQuery = {}): string {
 /** Опубликованные проекты портфолио (фильтрация по языку/featured — на сервере). */
 export async function fetchPortfolioProjects(
 	fetchFn: FetchFn = fetch,
-	query: ProjectsQuery = {}
+	query: ProjectsQuery = {},
+	ctx?: ApiRequestContext
 ): Promise<ApiProject[]> {
 	try {
-		const res = await fetchFn(`${API_V1}/public/projects${projectsQueryString(query)}`);
+		const res = await fetchFn(`${getApiV1(ctx)}/public/projects${projectsQueryString(query)}`);
 		if (!res.ok) return [];
 		const data = (await res.json()) as { projects: ApiProject[] };
 		return (data.projects ?? []).filter((item) => item.published);
@@ -84,14 +98,15 @@ export async function fetchPortfolioProjects(
 export async function fetchPortfolioProject(
 	slug: string,
 	fetchFn: FetchFn = fetch,
-	lang?: string
+	lang?: string,
+	ctx?: ApiRequestContext
 ): Promise<PortfolioProject | null> {
 	try {
 		const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
-		const res = await fetchFn(`${API_V1}/public/projects/${encodeURIComponent(slug)}${qs}`);
+		const res = await fetchFn(`${getApiV1(ctx)}/public/projects/${encodeURIComponent(slug)}${qs}`);
 		if (!res.ok) return null;
 		const data = (await res.json()) as { project: ApiProject };
-		return data.project ? toPortfolioProject(data.project) : null;
+		return data.project ? toPortfolioProject(data.project, ctx) : null;
 	} catch {
 		return null;
 	}
@@ -100,12 +115,13 @@ export async function fetchPortfolioProject(
 /** Загружает портфолио из API. Сортировка: sort_order, затем год по убыванию. */
 export async function loadPortfolioProjects(
 	fetchFn: FetchFn = fetch,
-	query: ProjectsQuery = {}
+	query: ProjectsQuery = {},
+	ctx?: ApiRequestContext
 ): Promise<PortfolioProject[]> {
-	const fromApi = await fetchPortfolioProjects(fetchFn, query);
+	const fromApi = await fetchPortfolioProjects(fetchFn, query, ctx);
 	return [...fromApi]
 		.sort((a, b) => a.sort_order - b.sort_order || b.year - a.year)
-		.map(toPortfolioProject);
+		.map((project) => toPortfolioProject(project, ctx));
 }
 
 /** Slug-и для prerender entries(). */

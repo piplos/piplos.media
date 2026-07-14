@@ -1,14 +1,8 @@
-# Cloudflare Workers — static SvelteKit build (web/site/build)
-# Deploy: cd web/site && PUBLIC_API_URL=https://api.piplos.media bun run build && bun run deploy
+# Cloudflare Workers — SvelteKit (web/site/.svelte-kit/cloudflare)
+# Deploy: cd web/site && bun run build && bun run deploy
 #
-# 404: not_found_handling serves the nearest 404.html in the asset tree:
-#   /foo/bar          → build/404.html
-#   /en/missing       → build/en/404.html
-#   /ru/missing       → build/ru/404.html
-#
-# 500: Workers static assets have no 500-page option. After deploy, add a zone
-# Custom Error Rule (Rules → Custom Errors) for origin 5xx responses pointing to:
-#   https://piplos.media/500
+# PUBLIC_API_URL — override in dashboard Variables or here for wrangler deploy.
+# Prerender at build time still reads process env; runtime SSR/client loads use [vars].
 
 name = "piplos-media"
 compatibility_date = "2026-06-19"
@@ -22,4 +16,4 @@ binding = "ASSETS"
 directory = ".svelte-kit/cloudflare"
 
 [vars]
-ADMIN_API_URL = "https://api.piplos.media"
+PUBLIC_API_URL = "https://api.piplos.media"

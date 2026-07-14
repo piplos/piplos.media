@@ -1,25 +1,14 @@
 import { error } from '@sveltejs/kit';
-import { DEFAULT_LANG, SUPPORTED_LANGS } from '$lib/i18n/routing';
 import { loadPortfolioProjects } from '$lib/portfolio-api';
-import {
-	loadServicePageItem,
-	loadServicePageItems,
-	servicePageEntries
-} from '$lib/services-api';
-import type { EntryGenerator, PageServerLoad } from './$types';
+import { loadServicePageItem } from '$lib/services-api';
+import type { PageServerLoad } from './$types';
 
-export const entries: EntryGenerator = async () => {
-	const services = await loadServicePageItems(fetch, DEFAULT_LANG);
-	return SUPPORTED_LANGS.flatMap((lang) =>
-		servicePageEntries(services).map((entry) => ({ lang, slug: entry.slug }))
-	);
-};
-
-export const load: PageServerLoad = async ({ params, fetch }) => {
-	const service = await loadServicePageItem(params.slug, fetch, params.lang);
+export const load: PageServerLoad = async ({ params, fetch, platform }) => {
+	const ctx = { platform };
+	const service = await loadServicePageItem(params.slug, fetch, params.lang, ctx);
 	if (!service) throw error(404, 'Service not found');
 
-	const projects = await loadPortfolioProjects(fetch, { lang: params.lang });
+	const projects = await loadPortfolioProjects(fetch, { lang: params.lang }, ctx);
 	const related = projects
 		.filter(
 			(project) =>
