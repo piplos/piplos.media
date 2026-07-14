@@ -4,6 +4,10 @@
 	import Logo from '$lib/components/Logo.svelte';
 	import { SITE } from '$lib/site';
 
+	type FooterService = { slug: string; title: string };
+
+	let { services = [] }: { services?: FooterService[] } = $props();
+
 	const year = new Date().getFullYear();
 </script>
 
@@ -18,16 +22,16 @@
 				</p>
 			</div>
 
-			<nav class="footer-nav" aria-label="Services">
-				<h3>{langStore.t('footer.services')}</h3>
-				<ul>
-					<li><a href={l('/services/web')}>{langStore.t('footer.links.web')}</a></li>
-					<li><a href={l('/services/mobile')}>{langStore.t('footer.links.mobile')}</a></li>
-					<li><a href={l('/services/backend')}>{langStore.t('footer.links.backend')}</a></li>
-					<li><a href={l('/services/data')}>{langStore.t('footer.links.data')}</a></li>
-					<li><a href={l('/services/devops')}>{langStore.t('footer.links.devops')}</a></li>
-				</ul>
-			</nav>
+			{#if services.length > 0}
+				<nav class="footer-nav" aria-label="Services">
+					<h3>{langStore.t('footer.services')}</h3>
+					<ul>
+						{#each services as service (service.slug)}
+							<li><a href={l(`/services/${service.slug}`)}>{service.title}</a></li>
+						{/each}
+					</ul>
+				</nav>
+			{/if}
 
 			<nav class="footer-nav" aria-label="Company">
 				<h3>{langStore.t('footer.company')}</h3>

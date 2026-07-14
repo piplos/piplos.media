@@ -29,4 +29,4 @@
 <div id="page-wrap">
 	{@render children()}
 </div>
-<Footer />
+<Footer services={data.footerServices} />
