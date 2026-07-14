@@ -20,8 +20,8 @@ export const PORTFOLIO_FILTER_KEYS = [
 	'all',
 	'web',
 	'mobile',
+	'backend',
 	'saas',
 	'fintech',
-	'ecommerce',
-	'devops'
+	'ecommerce'
 ] as const;

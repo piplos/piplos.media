@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { l } from '$lib/i18n/link';
 	import { langStore } from '$lib/stores/lang.svelte';
 	import { SITE, getCompanyYears } from '$lib/site';
@@ -10,7 +11,13 @@
 
 	const projects = $derived(data.projects);
 
-	let activeFilter = $state('all');
+	// ?filter=web — входной фильтр (редиректы старых разделов /portfolio/{type}).
+	const requestedFilter = page.url.searchParams.get('filter');
+	let activeFilter = $state(
+		requestedFilter && (PORTFOLIO_FILTER_KEYS as readonly string[]).includes(requestedFilter)
+			? requestedFilter
+			: 'all'
+	);
 
 	let categories = $derived(
 		PORTFOLIO_FILTER_KEYS.map((key) => ({

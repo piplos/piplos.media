@@ -72,10 +72,10 @@
       "all": "Все",
       "web": "Веб",
       "mobile": "Мобайл",
+      "backend": "Бэкенд",
       "saas": "SaaS",
       "fintech": "Финтех",
-      "ecommerce": "E-commerce",
-      "devops": "DevOps"
+      "ecommerce": "E-commerce"
     },
     "case_study": "Смотреть кейс",
     "stats": {

@@ -72,10 +72,10 @@
       "all": "All",
       "web": "Web Apps",
       "mobile": "Mobile",
+      "backend": "Backend",
       "saas": "SaaS",
       "fintech": "Fintech",
-      "ecommerce": "E-commerce",
-      "devops": "DevOps"
+      "ecommerce": "E-commerce"
     },
     "case_study": "View Case Study",
     "stats": {

@@ -60,8 +60,10 @@
 	}
 
 	function onIconPicked(file: { path: string; url: string }) {
-		if (iconPickerTarget === 'icon') icon = file.path || file.url;
-		else iconAlt = file.path || file.url;
+		// Файловый API отдаёт path относительно архива (stack/x.svg) — храним как /uploads/stack/x.svg.
+		const value = file.path ? `/uploads/${file.path}` : file.url;
+		if (iconPickerTarget === 'icon') icon = value;
+		else iconAlt = value;
 	}
 </script>
 
