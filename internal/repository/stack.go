@@ -10,11 +10,14 @@ import (
 	"github.com/piplos/piplos.media/internal/models"
 )
 
-const stackColumns = "id, slug, label, group_id, published, sort_order, created_at, updated_at"
+const stackColumns = "id, slug, label, icon, icon_alt, group_id, published, sort_order, created_at, updated_at"
 
 func scanStackItem(row pgx.Row) (*models.StackItem, error) {
 	var s models.StackItem
-	err := row.Scan(&s.ID, &s.Slug, &s.Label, &s.GroupID, &s.Published, &s.SortOrder, &s.CreatedAt, &s.UpdatedAt)
+	err := row.Scan(
+		&s.ID, &s.Slug, &s.Label, &s.Icon, &s.IconAlt,
+		&s.GroupID, &s.Published, &s.SortOrder, &s.CreatedAt, &s.UpdatedAt,
+	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -46,19 +49,19 @@ func (r *Repository) ListStackItems(ctx context.Context) ([]models.StackItem, er
 // CreateStackItem inserts a stack item.
 func (r *Repository) CreateStackItem(ctx context.Context, s *models.StackItem) (*models.StackItem, error) {
 	row := r.pool.QueryRow(ctx,
-		`INSERT INTO stack_items (slug, label, group_id, published, sort_order)
-		 VALUES ($1, $2, $3, $4, $5) RETURNING `+stackColumns,
-		s.Slug, s.Label, s.GroupID, s.Published, s.SortOrder)
+		`INSERT INTO stack_items (slug, label, icon, icon_alt, group_id, published, sort_order)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING `+stackColumns,
+		s.Slug, s.Label, s.Icon, s.IconAlt, s.GroupID, s.Published, s.SortOrder)
 	return scanStackItem(row)
 }
 
 // UpdateStackItem updates a stack item.
 func (r *Repository) UpdateStackItem(ctx context.Context, s *models.StackItem) (*models.StackItem, error) {
 	row := r.pool.QueryRow(ctx,
-		`UPDATE stack_items SET slug = $2, label = $3, group_id = $4, published = $5,
-			sort_order = $6, updated_at = now()
+		`UPDATE stack_items SET slug = $2, label = $3, icon = $4, icon_alt = $5, group_id = $6,
+			published = $7, sort_order = $8, updated_at = now()
 		 WHERE id = $1 RETURNING `+stackColumns,
-		s.ID, s.Slug, s.Label, s.GroupID, s.Published, s.SortOrder)
+		s.ID, s.Slug, s.Label, s.Icon, s.IconAlt, s.GroupID, s.Published, s.SortOrder)
 	return scanStackItem(row)
 }
 

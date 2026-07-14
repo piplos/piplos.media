@@ -120,6 +120,8 @@ export function stackPayload(fd: FormData) {
 	return {
 		slug: fd.get('slug')?.toString().trim() ?? '',
 		label: fd.get('label')?.toString().trim() ?? '',
+		icon: fd.get('icon')?.toString().trim() ?? '',
+		icon_alt: fd.get('icon_alt')?.toString().trim() ?? '',
 		published: fd.get('published') === 'on'
 	};
 }

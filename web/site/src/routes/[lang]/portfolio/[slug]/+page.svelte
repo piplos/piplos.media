@@ -2,10 +2,11 @@
 	import { l } from '$lib/i18n/link';
 	import { langStore } from '$lib/stores/lang.svelte';
 	import { SITE } from '$lib/site';
+	import { resolveUploadUrl } from '$lib/api';
 	import { getProjectLocale, getProjectStackItems, type PortfolioProject } from '$lib/portfolio';
 	import { extractAndStripProjectLinks } from '$lib/project-links';
 	import ProjectLinkIcon from '$lib/components/ProjectLinkIcon.svelte';
-	import { sanitizeCaseHtml } from '$lib/sanitize-html';
+	import SafeHtml from '$lib/components/SafeHtml.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -14,13 +15,38 @@
 	let stackItems = $derived(getProjectStackItems(project, langStore.value));
 	let solutionParts = $derived(extractAndStripProjectLinks(loc.solution));
 	let projectLinks = $derived(solutionParts.links);
-	let solutionHtml = $derived(sanitizeCaseHtml(solutionParts.html));
+
+	let seoLoc = $derived(data.seo?.[langStore.value]);
+	let seoTitle = $derived(seoLoc?.title || `${loc.title} — Case Study | ${SITE.name}`);
+	let seoDescription = $derived(seoLoc?.description || loc.description);
+	let ogTitle = $derived(seoLoc?.og_title || seoTitle);
+	let ogDescription = $derived(seoLoc?.og_description || seoDescription);
+	let ogImage = $derived(resolveUploadUrl(seoLoc?.og_image || project.image || ''));
+	let canonicalUrl = $derived(`${SITE.url}${l(`/portfolio/${project.id}`)}`);
 </script>
 
 <svelte:head>
-	<title>{loc.title} — Case Study | {SITE.name}</title>
-	<meta name="description" content={loc.description} />
-	<link rel="canonical" href="{SITE.url}{l(`/portfolio/${project.id}`)}" />
+	<title>{seoTitle}</title>
+	<meta name="description" content={seoDescription} />
+	<link rel="canonical" href={canonicalUrl} />
+	<link rel="alternate" hreflang="en" href="{SITE.url}/en/portfolio/{project.id}" />
+	<link rel="alternate" hreflang="ru" href="{SITE.url}/ru/portfolio/{project.id}" />
+	<link rel="alternate" hreflang="x-default" href="{SITE.url}/en/portfolio/{project.id}" />
+	<meta property="og:type" content="article" />
+	<meta property="og:site_name" content={SITE.displayName} />
+	<meta property="og:locale" content={langStore.value === 'ru' ? 'ru_RU' : 'en_US'} />
+	<meta property="og:title" content={ogTitle} />
+	<meta property="og:description" content={ogDescription} />
+	<meta property="og:url" content={canonicalUrl} />
+	{#if ogImage}
+		<meta property="og:image" content={ogImage} />
+	{/if}
+	<meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+	<meta name="twitter:title" content={ogTitle} />
+	<meta name="twitter:description" content={ogDescription} />
+	{#if ogImage}
+		<meta name="twitter:image" content={ogImage} />
+	{/if}
 </svelte:head>
 
 <nav class="breadcrumb-bar" aria-label="Breadcrumb">
@@ -62,8 +88,8 @@
 
 					<article class="cs-block">
 						<h2 class="cs-heading">{langStore.t('case_study.solution')}</h2>
-						{#if solutionHtml}
-							<div class="cs-text cs-rich">{@html solutionHtml}</div>
+						{#if solutionParts.html.trim()}
+							<SafeHtml html={solutionParts.html} class="cs-text cs-rich" />
 						{:else}
 							<p class="cs-text"></p>
 						{/if}
@@ -232,6 +258,13 @@
 	.cs-rich :global(ol) {
 		margin: 0 0 1rem 1.25rem;
 		padding: 0;
+	}
+
+	.cs-rich :global(ul) { list-style: disc; }
+	.cs-rich :global(ol) { list-style: decimal; }
+
+	.cs-rich :global(li::marker) {
+		color: var(--c-accent);
 	}
 
 	.cs-rich :global(a) {

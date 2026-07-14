@@ -51,6 +51,12 @@ func (r *Repository) GetSEOPage(ctx context.Context, id string) (*models.SEOPage
 	return scanSEOPage(row)
 }
 
+// GetSEOPageByPath returns a SEO entry by page path or nil.
+func (r *Repository) GetSEOPageByPath(ctx context.Context, path string) (*models.SEOPage, error) {
+	row := r.pool.QueryRow(ctx, "SELECT "+seoColumns+" FROM seo_pages WHERE path = $1", path)
+	return scanSEOPage(row)
+}
+
 // CreateSEOPage inserts a SEO entry.
 func (r *Repository) CreateSEOPage(ctx context.Context, p *models.SEOPage) (*models.SEOPage, error) {
 	tr, err := p.Translations.JSON()

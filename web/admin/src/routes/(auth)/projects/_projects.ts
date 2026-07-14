@@ -6,8 +6,9 @@ export const ORPHAN_URL_SLUG = 'unassigned';
 export type ProjectFilter = { value: string; label: string; href: string };
 
 export function serviceTitle(service: Service): string {
-	const langs = Object.keys(service.translations);
-	return service.translations['en']?.title ?? (langs.length ? service.translations[langs[0]]?.title : '') ?? service.slug;
+	const translations = service.translations ?? {};
+	const langs = Object.keys(translations);
+	return translations['en']?.title ?? (langs.length ? translations[langs[0]]?.title : '') ?? service.slug;
 }
 
 export function computeProjectCounts(projects: Project[], services: Service[]): Record<string, number> {

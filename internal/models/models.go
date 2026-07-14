@@ -83,6 +83,8 @@ type StackItem struct {
 	ID        string    `json:"id"`
 	Slug      string    `json:"slug"`
 	Label     string    `json:"label"`
+	Icon      string    `json:"icon"`
+	IconAlt   string    `json:"icon_alt"`
 	GroupID   string    `json:"group_id"`
 	Published bool      `json:"published"`
 	SortOrder int       `json:"sort_order"`

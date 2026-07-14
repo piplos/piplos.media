@@ -55,13 +55,13 @@ export function deleteEntries(paths: string[]): Promise<{ deleted: number }> {
 	return filesAction('delete', { paths });
 }
 
-export async function uploadFile(file: File, path: string): Promise<{ url: string }> {
+export async function uploadFile(file: File, path: string): Promise<{ url: string; path: string }> {
 	const fd = new FormData();
 	fd.append('file', file);
 	if (path) fd.append('path', path);
 	fd.append('name', file.name);
 	const res = await fetch('/api/upload', { method: 'POST', body: fd });
-	return parseOrThrow<{ url: string }>(res);
+	return parseOrThrow<{ url: string; path: string }>(res);
 }
 
 const IMAGE_EXT = /\.(png|jpe?g|webp|gif|svg|avif)$/i;

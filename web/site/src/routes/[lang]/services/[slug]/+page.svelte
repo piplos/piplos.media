@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { l } from '$lib/i18n/link';
 	import { langStore } from '$lib/stores/lang.svelte';
+	import { resolveUploadUrl } from '$lib/api';
 	import { getCategoryColor, getProjectLocale } from '$lib/portfolio';
-	import { sanitizeCaseHtml } from '$lib/sanitize-html';
+	import SafeHtml from '$lib/components/SafeHtml.svelte';
 	import { SITE } from '$lib/site';
 	import type { PageData } from './$types';
 
@@ -10,13 +11,40 @@
 
 	const service = $derived(data.service);
 	const related = $derived(data.related);
-	const bodyHtml = $derived(sanitizeCaseHtml(service.body));
+
+	const seoLoc = $derived(data.seo?.[langStore.value]);
+	const seoTitle = $derived(
+		seoLoc?.title || `${service.title} — ${langStore.t('services.title')} | ${SITE.name}`
+	);
+	const seoDescription = $derived(seoLoc?.description || service.description);
+	const ogTitle = $derived(seoLoc?.og_title || seoTitle);
+	const ogDescription = $derived(seoLoc?.og_description || seoDescription);
+	const ogImage = $derived(resolveUploadUrl(seoLoc?.og_image || ''));
+	const canonicalUrl = $derived(`${SITE.url}${l(`/services/${service.slug}`)}`);
 </script>
 
 <svelte:head>
-	<title>{service.title} — {langStore.t('services.title')} | {SITE.name}</title>
-	<meta name="description" content={service.description} />
-	<link rel="canonical" href="{SITE.url}{l(`/services/${service.slug}`)}" />
+	<title>{seoTitle}</title>
+	<meta name="description" content={seoDescription} />
+	<link rel="canonical" href={canonicalUrl} />
+	<link rel="alternate" hreflang="en" href="{SITE.url}/en/services/{service.slug}" />
+	<link rel="alternate" hreflang="ru" href="{SITE.url}/ru/services/{service.slug}" />
+	<link rel="alternate" hreflang="x-default" href="{SITE.url}/en/services/{service.slug}" />
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content={SITE.displayName} />
+	<meta property="og:locale" content={langStore.value === 'ru' ? 'ru_RU' : 'en_US'} />
+	<meta property="og:title" content={ogTitle} />
+	<meta property="og:description" content={ogDescription} />
+	<meta property="og:url" content={canonicalUrl} />
+	{#if ogImage}
+		<meta property="og:image" content={ogImage} />
+	{/if}
+	<meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+	<meta name="twitter:title" content={ogTitle} />
+	<meta name="twitter:description" content={ogDescription} />
+	{#if ogImage}
+		<meta name="twitter:image" content={ogImage} />
+	{/if}
 </svelte:head>
 
 <nav class="breadcrumb-bar" aria-label="Breadcrumb">
@@ -53,9 +81,9 @@
 		<div class="container">
 			<div class="svc-layout">
 				<div class="svc-main">
-					{#if bodyHtml}
+					{#if service.body?.trim()}
 						<div class="svc-block">
-							<div class="svc-rich">{@html bodyHtml}</div>
+							<SafeHtml html={service.body} class="svc-rich" />
 						</div>
 					{/if}
 				</div>
@@ -223,9 +251,9 @@
 
 	.svc-rich :global(img) {
 		display: block;
-		max-width: 100%;
+		max-width: min(360px, 100%);
 		height: auto;
-		margin: 1.25rem 0;
+		margin: 2rem auto;
 		border-radius: var(--radius);
 	}
 
@@ -233,6 +261,21 @@
 	.svc-rich :global(ol) {
 		margin: 0 0 1rem 1.25rem;
 		padding: 0;
+	}
+
+	.svc-rich :global(ul) { list-style: disc; }
+	.svc-rich :global(ol) { list-style: decimal; }
+
+	.svc-rich :global(li) {
+		margin-bottom: 0.5rem;
+	}
+
+	.svc-rich :global(li::marker) {
+		color: var(--c-accent);
+	}
+
+	.svc-rich :global(h3) {
+		font-size: 17px;
 	}
 
 	.svc-rich :global(a) {

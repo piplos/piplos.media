@@ -243,7 +243,7 @@
 			>
 				{#each stackItems as item (item.slug)}
 					<div class="stack-item" role="listitem">
-						<StackIcon slug={item.slug} />
+						<StackIcon icon={item.icon} iconAlt={item.icon_alt} />
 						<span class="stack-name">{item.label}</span>
 					</div>
 				{/each}

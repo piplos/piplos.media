@@ -38,11 +38,10 @@ export const actions: Actions = {
 			return fail(400, { email, error: 'Введите email и пароль' });
 		}
 
-		const base = getApiBaseUrl({ platform });
 		let res: Response;
 		let data: unknown;
 		try {
-			res = await fetch(`${base}${API_V1_PREFIX}/auth/login`, {
+			res = await fetch(`${getApiBaseUrl({ platform })}${API_V1_PREFIX}/auth/login`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email, password })

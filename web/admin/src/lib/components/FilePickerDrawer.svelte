@@ -24,6 +24,8 @@
 		imagesOnly?: boolean;
 		/** Пути, которые нельзя выбрать/открыть (например, перемещаемые папки). */
 		disabledPaths?: string[];
+		/** Начальная папка при открытии (например, stack). */
+		initialPath?: string;
 		onselect: (value: { path: string; url: string }) => void;
 	}
 	let {
@@ -32,6 +34,7 @@
 		mode = 'file',
 		imagesOnly = true,
 		disabledPaths = [],
+		initialPath = '',
 		onselect
 	}: Props = $props();
 
@@ -56,7 +59,7 @@
 	}
 
 	$effect(() => {
-		if (open) void load(untrack(() => path));
+		if (open) void load(initialPath || untrack(() => path));
 	});
 
 	const crumbs = $derived(pathCrumbs(path));

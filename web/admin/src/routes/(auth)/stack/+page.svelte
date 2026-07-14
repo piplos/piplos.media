@@ -206,6 +206,7 @@
 				<thead>
 					<tr>
 						<th class="admin-table-cell-drag" aria-label="Порядок"></th>
+						<th class="admin-table-cell-icon" aria-label="Иконка"></th>
 						<th>Технология</th>
 						<th>Slug</th>
 						<th>Статус</th>
@@ -225,7 +226,7 @@
 								}}
 								ondrop={(e) => void onGroupDrop(e, group.id)}
 							>
-								<td colspan="5">{group.label}</td>
+								<td colspan="6">{group.label}</td>
 							</tr>
 						{/if}
 						{#each group.items as item (item.id)}
@@ -265,6 +266,11 @@
 											<circle cx="15" cy="18" r="1.5" />
 										</svg>
 									</button>
+								</td>
+								<td class="admin-table-cell-icon">
+									{#if item.icon}
+										<img class="stack-list-icon" src={item.icon} alt="" width="24" height="24" />
+									{/if}
 								</td>
 								<td class="chart-cell-main">
 									<button type="button" class="admin-text-link row-link" onclick={() => openEdit(item)}>
@@ -357,5 +363,15 @@
 	}
 	:global(.stack-group-header--over td) {
 		background: #eff6ff;
+	}
+	.stack-list-icon {
+		display: block;
+		width: 24px;
+		height: 24px;
+		object-fit: contain;
+	}
+	:global(.admin-table-cell-icon) {
+		width: 40px;
+		padding-right: 0;
 	}
 </style>

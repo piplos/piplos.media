@@ -82,8 +82,9 @@
 	});
 
 	function serviceTitle(service: Service): string {
-		const langs = Object.keys(service.translations);
-		return service.translations['en']?.title ?? (langs.length ? service.translations[langs[0]]?.title : '') ?? service.slug;
+		const translations = service.translations ?? {};
+		const langs = Object.keys(translations);
+		return translations['en']?.title ?? (langs.length ? translations[langs[0]]?.title : '') ?? service.slug;
 	}
 
 	const serviceOptions = $derived(

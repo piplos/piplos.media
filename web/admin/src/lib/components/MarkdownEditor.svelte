@@ -4,7 +4,6 @@
 	import { marked } from 'marked';
 	import toast from 'svelte-french-toast';
 	import FilePickerDrawer from './FilePickerDrawer.svelte';
-	import { sanitizeCaseHtml } from '$lib/sanitize-html';
 
 	interface Props {
 		id: string;
@@ -25,11 +24,24 @@
 	let pickerOpen = $state(false);
 	let uploading = $state(false);
 	let mode = $state<'edit' | 'preview'>('edit');
+	let previewHtml = $state('');
 
-	const previewHtml = $derived.by(() => {
-		if (!browser || mode !== 'preview' || !source.trim()) return '';
+	$effect(() => {
+		if (!browser || mode !== 'preview' || !source.trim()) {
+			previewHtml = '';
+			return;
+		}
+
 		const html = marked.parse(source, { async: false, gfm: true }) as string;
-		return sanitizeCaseHtml(html);
+		let cancelled = false;
+
+		import('$lib/sanitize-html').then(async ({ sanitizeCaseHtmlAsync }) => {
+			if (!cancelled) previewHtml = await sanitizeCaseHtmlAsync(html);
+		});
+
+		return () => {
+			cancelled = true;
+		};
 	});
 
 	async function replaceRange(

@@ -2,9 +2,9 @@ import { env } from '$env/dynamic/public';
 import { building, dev } from '$app/environment';
 import type { RequestEvent } from '@sveltejs/kit';
 
-/** Origin only — e.g. https://api.piplos.media (no /api suffix). */
+/** Origin only — e.g. https://api.piplos.media (no trailing slash). */
 export function normalizeApiOrigin(raw: string): string {
-	return raw.trim().replace(/\/+$/, '').replace(/\/api$/, '');
+	return raw.trim().replace(/\/+$/, '');
 }
 
 const DEV_ORIGIN = 'http://localhost:3001';
@@ -12,15 +12,16 @@ const PROD_ORIGIN = 'https://api.piplos.media';
 
 export type ApiRequestContext = Pick<RequestEvent, 'platform'>;
 
-/** Базовый URL API: build env → Worker runtime → fallback. */
+/** Базовый URL API: Worker runtime → build env → fallback.
+ *  В dev эмуляция platform.env берёт прод-URL из wrangler.toml [vars] — пропускаем её. */
 export function getApiBaseUrl(ctx?: ApiRequestContext): string {
-	const configured = env.PUBLIC_API_URL?.trim();
-	if (configured) return normalizeApiOrigin(configured);
-
-	if (!building && ctx?.platform) {
+	if (!building && !dev && ctx?.platform) {
 		const runtime = ctx.platform.env?.PUBLIC_API_URL?.trim();
 		if (runtime) return normalizeApiOrigin(runtime);
 	}
+
+	const configured = env.PUBLIC_API_URL?.trim();
+	if (configured) return normalizeApiOrigin(configured);
 
 	return dev ? DEV_ORIGIN : PROD_ORIGIN;
 }

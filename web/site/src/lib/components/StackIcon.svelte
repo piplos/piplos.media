@@ -1,23 +1,23 @@
 <script lang="ts">
+	import { resolveUploadUrl } from '$lib/api';
 	import { themeStore } from '$lib/stores/theme.svelte';
 
 	type Props = {
-		slug: string;
+		icon: string;
+		iconAlt?: string;
 	};
 
-	let { slug }: Props = $props();
+	let { icon, iconAlt = '' }: Props = $props();
 
-	const themeAware = new Set(['nextjs']);
-
-	let src = $derived.by(() => {
-		if (themeAware.has(slug) && themeStore.value === 'dark') {
-			return `/stack/${slug}-light.svg`;
-		}
-		return `/stack/${slug}.svg`;
+	const src = $derived.by(() => {
+		const path = themeStore.value === 'dark' && iconAlt ? iconAlt : icon;
+		return path ? resolveUploadUrl(path) : '';
 	});
 </script>
 
-<img class="stack-logo" {src} alt="" width="32" height="32" loading="lazy" decoding="async" />
+{#if src}
+	<img class="stack-logo" {src} alt="" width="32" height="32" loading="lazy" decoding="async" />
+{/if}
 
 <style>
 	.stack-logo {

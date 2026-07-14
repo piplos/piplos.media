@@ -50,6 +50,8 @@ export interface StackItem {
 	id: string;
 	slug: string;
 	label: string;
+	icon: string;
+	icon_alt: string;
 	group_id: string;
 	published: boolean;
 	sort_order: number;

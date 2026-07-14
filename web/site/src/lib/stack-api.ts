@@ -4,6 +4,8 @@ export interface StackItem {
 	id: string;
 	slug: string;
 	label: string;
+	icon: string;
+	icon_alt: string;
 	group_id: string;
 	published: boolean;
 	sort_order: number;
@@ -37,9 +39,16 @@ export async function fetchStackItems(
 export interface StackDisplayItem {
 	slug: string;
 	label: string;
+	icon: string;
+	icon_alt: string;
 }
 
-/** Преобразует API-записи в формат для UI (slug + label). */
+/** Преобразует API-записи в формат для UI (slug + label + icon). */
 export function toStackDisplayItems(items: StackItem[]): StackDisplayItem[] {
-	return items.map((item) => ({ slug: item.slug, label: item.label }));
+	return items.map((item) => ({
+		slug: item.slug,
+		label: item.label,
+		icon: item.icon ?? '',
+		icon_alt: item.icon_alt ?? ''
+	}));
 }

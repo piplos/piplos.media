@@ -1,20 +1,22 @@
 import { env } from '$env/dynamic/private';
 import type { RequestEvent } from '@sveltejs/kit';
 
-/** Origin only — e.g. https://api.piplos.media (no /api suffix). */
+type ApiEnvContext = Pick<RequestEvent, 'platform'>;
+
+/** Origin only — e.g. https://api.piplos.media (no trailing slash). */
 export function normalizeApiOrigin(raw: string): string {
-	return raw.trim().replace(/\/+$/, '').replace(/\/api$/, '');
+	return raw.trim().replace(/\/+$/, '');
 }
 
 const DEV_ORIGIN = 'http://localhost:3001';
 
 /** Базовый URL API backend'а (Go, Fiber). */
-export function getApiBaseUrl(event?: Pick<RequestEvent, 'platform'>): string {
+export function getApiBaseUrl(ctx?: ApiEnvContext): string {
+	const platformUrl = ctx?.platform?.env?.ADMIN_API_URL?.trim();
+	if (platformUrl) return normalizeApiOrigin(platformUrl);
+
 	const configured = env.ADMIN_API_URL?.trim();
 	if (configured) return normalizeApiOrigin(configured);
-
-	const platformUrl = event?.platform?.env?.ADMIN_API_URL?.trim();
-	if (platformUrl) return normalizeApiOrigin(platformUrl);
 
 	return DEV_ORIGIN;
 }

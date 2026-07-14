@@ -2,7 +2,7 @@
 # Deploy: cd web/admin && bun run build && bun run deploy
 #
 # Production: custom domain admin.piplos.media in Cloudflare dashboard.
-# ADMIN_API_URL — override in dashboard Variables or here for wrangler deploy.
+# ADMIN_API_URL — API origin (e.g. https://api.dev.piplos.media). Override in dashboard or here.
 
 name = 'piplos-media-admin'
 compatibility_date = "2026-06-19"

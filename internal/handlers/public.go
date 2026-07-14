@@ -136,8 +136,16 @@ func (h *PublicHandler) Stack(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"stack": published})
 }
 
-// SEO returns all SEO page entries.
+// SEO returns SEO page entries.
+// Query: path — return only the entry for this page path.
 func (h *PublicHandler) SEO(c fiber.Ctx) error {
+	if path := c.Query("path"); path != "" {
+		p, err := h.repo.GetSEOPageByPath(c.Context(), path)
+		if err != nil {
+			return apperrors.ErrInternal("failed to load seo")
+		}
+		return c.JSON(fiber.Map{"page": p})
+	}
 	items, err := h.repo.ListSEOPages(c.Context())
 	if err != nil {
 		return apperrors.ErrInternal("failed to load seo")

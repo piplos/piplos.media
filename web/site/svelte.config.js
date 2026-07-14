@@ -8,8 +8,8 @@ const config = {
 		prerender: {
 			handleUnseenRoutes: 'ignore',
 			handleHttpError: ({ path }) => {
-				// Uploads и stack-иконки отдаёт Go API, при build-time crawl их может не быть.
-				if (path.startsWith('/uploads/') || path.startsWith('/stack/')) return;
+				// Uploads отдаёт Go API, при build-time crawl их может не быть.
+				if (path.startsWith('/uploads/')) return;
 			}
 		},
 		adapter: adapter()

@@ -24,10 +24,11 @@ def chroma_key(input_path: str, output_path: str) -> None:
     # <60 fully transparent, >180 fully opaque, linear ramp in between.
     alpha = np.clip((dist - 60) / 120, 0, 1)
 
-    # Defringe: remove magenta cast on semi-transparent edge pixels.
+    # Defringe: remove magenta cast everywhere (also opaque shadow pixels).
+    # The brand palette contains no magenta, so min(r,b) > g is always chroma bleed.
     mag_cast = np.clip(np.minimum(r, b) - g, 0, 255)
-    r2 = np.clip(r - mag_cast * (1 - alpha), 0, 255)
-    b2 = np.clip(b - mag_cast * (1 - alpha), 0, 255)
+    r2 = np.clip(r - mag_cast, 0, 255)
+    b2 = np.clip(b - mag_cast, 0, 255)
 
     out = np.stack([r2, g, b2, alpha * 255], axis=-1).astype(np.uint8)
     res = Image.fromarray(out, 'RGBA')

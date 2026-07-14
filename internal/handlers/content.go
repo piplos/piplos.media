@@ -276,6 +276,8 @@ func (h *ContentHandler) ReorderServices(c fiber.Ctx) error {
 type stackRequest struct {
 	Slug      string `json:"slug"`
 	Label     string `json:"label"`
+	Icon      string `json:"icon"`
+	IconAlt   string `json:"icon_alt"`
 	GroupID   string `json:"group_id"`
 	Published bool   `json:"published"`
 	SortOrder int    `json:"sort_order"`
@@ -284,12 +286,14 @@ type stackRequest struct {
 func (req *stackRequest) toModel(id string) (*models.StackItem, error) {
 	req.Slug = strings.TrimSpace(req.Slug)
 	req.Label = strings.TrimSpace(req.Label)
+	req.Icon = strings.TrimSpace(req.Icon)
+	req.IconAlt = strings.TrimSpace(req.IconAlt)
 	if req.Slug == "" || req.Label == "" {
 		return nil, apperrors.ErrInvalidRequest("slug and label are required")
 	}
 	return &models.StackItem{
-		ID: id, Slug: req.Slug, Label: req.Label, GroupID: req.GroupID,
-		Published: req.Published, SortOrder: req.SortOrder,
+		ID: id, Slug: req.Slug, Label: req.Label, Icon: req.Icon, IconAlt: req.IconAlt,
+		GroupID: req.GroupID, Published: req.Published, SortOrder: req.SortOrder,
 	}, nil
 }
 

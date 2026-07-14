@@ -3,7 +3,7 @@
 	import { langStore } from '$lib/stores/lang.svelte';
 	import type { LegalPage, LegalSlug } from '$lib/legal-api';
 	import { resolveLegalDocument } from '$lib/legal';
-	import { sanitizeCaseHtml } from '$lib/sanitize-html';
+	import SafeHtml from '$lib/components/SafeHtml.svelte';
 
 	interface Props {
 		slug: LegalSlug;
@@ -13,10 +13,6 @@
 	let { slug, legalPages }: Props = $props();
 
 	const document = $derived(resolveLegalDocument(slug, legalPages));
-
-	function sectionBodyHtml(body: string): string {
-		return sanitizeCaseHtml(body);
-	}
 </script>
 
 <svelte:head>
@@ -42,7 +38,7 @@
 			{#each document.sections as section (section.title)}
 				<article class="legal-section">
 					<h2>{section.title}</h2>
-					<div class="legal-body">{@html sectionBodyHtml(section.body)}</div>
+					<SafeHtml html={section.body} class="legal-body" />
 				</article>
 			{/each}
 		</div>

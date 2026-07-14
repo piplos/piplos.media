@@ -1,9 +1,6 @@
 /_app/immutable/*
   Cache-Control: public, max-age=31536000, immutable
 
-/stack/*
-  Cache-Control: public, max-age=2592000
-
 /fonts/*
   Cache-Control: public, max-age=2592000
 

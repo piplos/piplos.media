@@ -1,4 +1,8 @@
 -- +goose Up
+-- Consolidated schema: all tables in their final shape plus deterministic
+-- system configuration (languages, settings, AI provider models).
+-- Content seeds live in 002_seed_catalog.sql and 003_seed_content.sql.
+
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE users (
@@ -37,12 +41,13 @@ CREATE TABLE projects (
     featured BOOLEAN NOT NULL DEFAULT FALSE,
     published BOOLEAN NOT NULL DEFAULT TRUE,
     sort_order INT NOT NULL DEFAULT 0,
+    image TEXT NOT NULL DEFAULT '',
     translations JSONB NOT NULL DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Услуги. translations: {"en": {"title": ..., "description": ...}, ...}
+-- Услуги. translations: {"en": {"title": ..., "description": ..., "body": ...}, ...}
 CREATE TABLE services (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     slug TEXT NOT NULL UNIQUE,
@@ -56,6 +61,7 @@ CREATE TABLE services (
 );
 
 -- Технологический стек (названия технологий не переводятся).
+-- group_id = slug услуги (services.slug). icon/icon_alt — пути в /uploads/stack/…
 CREATE TABLE stack_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     slug TEXT NOT NULL UNIQUE,
@@ -63,6 +69,8 @@ CREATE TABLE stack_items (
     group_id TEXT NOT NULL DEFAULT 'backend',
     published BOOLEAN NOT NULL DEFAULT TRUE,
     sort_order INT NOT NULL DEFAULT 0,
+    icon TEXT NOT NULL DEFAULT '',
+    icon_alt TEXT NOT NULL DEFAULT '',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -72,6 +80,17 @@ CREATE TABLE stack_items (
 CREATE TABLE seo_pages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     path TEXT NOT NULL UNIQUE,
+    translations JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Правовые документы (privacy, terms, cookies). Страницы noindex.
+CREATE TABLE legal_pages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug TEXT NOT NULL UNIQUE,
+    path TEXT NOT NULL UNIQUE,
+    sort_order INT NOT NULL DEFAULT 0,
     translations JSONB NOT NULL DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -104,7 +123,8 @@ CREATE TABLE leads (
 
 CREATE INDEX idx_leads_status_created ON leads (status, created_at DESC);
 
--- Настройки (в т.ч. AI-переводчик).
+-- Композитные настройки (luna-style): один ключ = JSON-объект.
+-- Чувствительные поля (apiKey, SMTP.password) шифруются приложением (AES-256-GCM, enc:v1:).
 CREATE TABLE settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL DEFAULT '',
@@ -112,14 +132,39 @@ CREATE TABLE settings (
 );
 
 INSERT INTO settings (key, value) VALUES
-    ('ai.base_url', 'https://api.openai.com/v1/chat/completions'),
-    ('ai.api_key', ''),
-    ('ai.model', 'gpt-4o-mini'),
-    ('ai.translate_prompt', 'You are a professional translator for a software development agency website. Translate the values of the given JSON object into {target_language}. Keep the JSON keys unchanged, preserve technology names, brand names, numbers and formatting. Return only a valid JSON object.');
+    ('SMTP', '{"host":"","port":587,"username":"","password":"","from":"","timeout_seconds":30}'),
+    ('OPENAI', '{"enable":true,"apiKey":"","rateLimit":10,"timeoutSeconds":120}'),
+    ('GEMINI', '{"enable":false,"apiKey":"","rateLimit":10,"timeoutSeconds":60}'),
+    ('GROK', '{"enable":false,"apiKey":"","rateLimit":10,"timeoutSeconds":30}'),
+    ('OPENROUTER', '{"enable":false,"apiKey":"","rateLimit":10,"timeoutSeconds":30}'),
+    ('AI_TRANSLATION', '{"provider":"openai","model":"gpt-4o-mini","prompt":"You are a professional translator for a software development agency website. Translate the values of the given JSON object into {target_language}. Keep the JSON keys unchanged, preserve technology names, brand names, numbers and formatting. Return only a valid JSON object."}');
+
+-- Каталог AI-моделей провайдеров.
+CREATE TABLE ai_provider_models (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    provider     TEXT NOT NULL,
+    model_id     TEXT NOT NULL,
+    display_name TEXT NOT NULL,
+    enabled      BOOLEAN NOT NULL DEFAULT true,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (provider, model_id)
+);
+
+INSERT INTO ai_provider_models (provider, model_id, display_name) VALUES
+    ('gemini', 'gemini-2.5-flash', 'Gemini 2.5 Flash'),
+    ('gemini', 'gemini-2.5-flash-lite', 'Gemini 2.5 Flash Lite'),
+    ('grok', 'grok-4-fast-non-reasoning', 'Grok 4 Fast'),
+    ('openai', 'gpt-4o-mini', 'GPT-4o Mini'),
+    ('openrouter', 'deepseek/deepseek-v3.2', 'DeepSeek V3.2'),
+    ('openrouter', 'minimax/minimax-m2.5', 'MiniMax M2.5')
+ON CONFLICT (provider, model_id) DO NOTHING;
 
 -- +goose Down
+DROP TABLE IF EXISTS ai_provider_models;
 DROP TABLE IF EXISTS settings;
 DROP TABLE IF EXISTS leads;
+DROP TABLE IF EXISTS legal_pages;
 DROP TABLE IF EXISTS seo_pages;
 DROP TABLE IF EXISTS stack_items;
 DROP TABLE IF EXISTS services;
