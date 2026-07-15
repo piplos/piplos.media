@@ -6,6 +6,7 @@
 	import FormField from '$lib/components/FormField.svelte';
 	import Input from '$lib/components/Input.svelte';
 	import Select from '$lib/components/Select.svelte';
+	import SlugInput from '$lib/components/SlugInput.svelte';
 	import TagSelect from '$lib/components/TagSelect.svelte';
 	import FilePickerDrawer from '$lib/components/FilePickerDrawer.svelte';
 	import TranslationsEditor from '$lib/components/TranslationsEditor.svelte';
@@ -70,7 +71,20 @@
 	let translations = $state<Translations>((initial.translations ?? {}) as Translations);
 	let seoTranslations = $state<Translations>((initialSeo?.translations ?? {}) as Translations);
 
-	const seoPath = $derived(isEdit && slug ? `/portfolio/${slug}` : '');
+	// При очистке поля slug используем исходный slug, чтобы табы «Контент/SEO» не пропадали.
+	const seoSlug = $derived(slug.trim() || initial.slug || '');
+	const seoPath = $derived(isEdit && seoSlug ? `/portfolio/${seoSlug}` : '');
+
+	const defaultLang = $derived(languages.find((l) => l.is_default)?.code ?? languages[0]?.code ?? 'en');
+	const slugSource = $derived.by(() => {
+		const fromDefault = translations[defaultLang]?.title?.trim();
+		if (fromDefault) return fromDefault;
+		for (const lang of Object.keys(translations)) {
+			const title = translations[lang]?.title?.trim();
+			if (title) return title;
+		}
+		return '';
+	});
 
 	const stackOptions = $derived.by(() => {
 		const fromStack = stack.map((item) => ({ value: item.label, label: item.label }));
@@ -141,7 +155,14 @@
 		<div class="fields">
 			<div class="grid-3">
 				<FormField label="Slug" id="project-slug">
-					<Input id="project-slug" name="slug" bind:value={slug} placeholder="analytics-dashboard" required />
+					<SlugInput
+						id="project-slug"
+						name="slug"
+						bind:value={slug}
+						placeholder="analytics-dashboard"
+						required
+						source={slugSource}
+					/>
 				</FormField>
 				<FormField label="Год" id="project-year">
 					<Input id="project-year" name="year" type="number" bind:value={year} />

@@ -6,6 +6,7 @@
 	import FilePickerDrawer from '$lib/components/FilePickerDrawer.svelte';
 	import FormField from '$lib/components/FormField.svelte';
 	import Input from '$lib/components/Input.svelte';
+	import SlugInput from '$lib/components/SlugInput.svelte';
 	import { uploadFile } from '$lib/files';
 	import type { StackItem } from '$lib/types';
 
@@ -90,7 +91,7 @@
 		<Input id="stack-label" name="label" bind:value={label} placeholder="PostgreSQL" required />
 	</FormField>
 	<FormField label="Slug" id="stack-slug">
-		<Input id="stack-slug" name="slug" bind:value={slug} placeholder="postgresql" required />
+		<SlugInput id="stack-slug" name="slug" bind:value={slug} placeholder="postgresql" required source={label} />
 	</FormField>
 
 	<FormField label="Иконка" id="stack-icon">

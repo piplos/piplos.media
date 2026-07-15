@@ -7,6 +7,7 @@
 	import FormField from '$lib/components/FormField.svelte';
 	import Input from '$lib/components/Input.svelte';
 	import Select from '$lib/components/Select.svelte';
+	import SlugInput from '$lib/components/SlugInput.svelte';
 	import TagSelect from '$lib/components/TagSelect.svelte';
 	import TranslationsEditor from '$lib/components/TranslationsEditor.svelte';
 	import { DEFAULT_SERVICE_ICON, SERVICE_ICON_OPTIONS } from '$lib/service-icons';
@@ -35,7 +36,20 @@
 	let translations = $state<Translations>((initial.translations ?? {}) as Translations);
 	let seoTranslations = $state<Translations>((initialSeo?.translations ?? {}) as Translations);
 
-	const seoPath = $derived(isEdit && slug ? `/services/${slug}` : '');
+	// При очистке поля slug используем исходный slug, чтобы табы «Контент/SEO» не пропадали.
+	const seoSlug = $derived(slug.trim() || initial.slug || '');
+	const seoPath = $derived(isEdit && seoSlug ? `/services/${seoSlug}` : '');
+
+	const defaultLang = $derived(languages.find((l) => l.is_default)?.code ?? languages[0]?.code ?? 'en');
+	const slugSource = $derived.by(() => {
+		const fromDefault = translations[defaultLang]?.title?.trim();
+		if (fromDefault) return fromDefault;
+		for (const lang of Object.keys(translations)) {
+			const title = translations[lang]?.title?.trim();
+			if (title) return title;
+		}
+		return '';
+	});
 
 	const translationFields = [
 		{ key: 'title', label: 'Название' },
@@ -93,7 +107,7 @@
 		<div class="fields">
 			<div class="grid-2">
 				<FormField label="Slug" id="svc-slug">
-					<Input id="svc-slug" name="slug" bind:value={slug} placeholder="web" required />
+					<SlugInput id="svc-slug" name="slug" bind:value={slug} placeholder="web" required source={slugSource} />
 				</FormField>
 				<FormField label="Иконка (символ)" id="svc-icon">
 					<div class="icon-field">
