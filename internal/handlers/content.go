@@ -420,18 +420,26 @@ type seoRequest struct {
 	Translations models.Translations `json:"translations"`
 }
 
-func (req *seoRequest) toModel(id string) (*models.SEOPage, error) {
+func (req *seoRequest) toModel(id string, langCodes []string) (*models.SEOPage, error) {
 	req.Path = strings.TrimSpace(req.Path)
 	if req.Path == "" || !strings.HasPrefix(req.Path, "/") {
 		return nil, apperrors.ErrInvalidRequest("path must start with /")
 	}
-	if models.IsLegalPath(req.Path) {
+	if models.IsLegalPath(req.Path, langCodes) {
 		return nil, apperrors.ErrInvalidRequest("legal pages are managed in the Legal section")
 	}
 	if req.Translations == nil {
 		req.Translations = models.Translations{}
 	}
 	return &models.SEOPage{ID: id, Path: req.Path, Translations: req.Translations}, nil
+}
+
+func (h *ContentHandler) seoLangCodes(c fiber.Ctx) ([]string, error) {
+	langs, err := h.repo.ListLanguages(c.Context())
+	if err != nil {
+		return nil, apperrors.ErrInternal("failed to load languages")
+	}
+	return models.EnabledLanguageCodes(langs), nil
 }
 
 // ListSEO returns all SEO entries.
@@ -449,7 +457,11 @@ func (h *ContentHandler) CreateSEO(c fiber.Ctx) error {
 	if err := c.Bind().Body(&req); err != nil {
 		return apperrors.ErrInvalidRequest("invalid request body")
 	}
-	p, err := req.toModel("")
+	langCodes, err := h.seoLangCodes(c)
+	if err != nil {
+		return err
+	}
+	p, err := req.toModel("", langCodes)
 	if err != nil {
 		return err
 	}
@@ -466,7 +478,11 @@ func (h *ContentHandler) UpdateSEO(c fiber.Ctx) error {
 	if err := c.Bind().Body(&req); err != nil {
 		return apperrors.ErrInvalidRequest("invalid request body")
 	}
-	p, err := req.toModel(c.Params("id"))
+	langCodes, err := h.seoLangCodes(c)
+	if err != nil {
+		return err
+	}
+	p, err := req.toModel(c.Params("id"), langCodes)
 	if err != nil {
 		return err
 	}

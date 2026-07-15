@@ -53,7 +53,7 @@
 	<header class="admin-header">
 		<div class="admin-header-inner">
 			<div class="admin-header-left">
-				<Logo href="/" label="Piplos Media — главная" />
+				<Logo href="/" label="Piplos Media — главная" iconOnly />
 				<nav class="admin-nav" aria-label="Основная навигация">
 					{#each navLinks as link (link.href)}
 						<a

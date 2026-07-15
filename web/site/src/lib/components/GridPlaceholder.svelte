@@ -2,11 +2,18 @@
 	interface Props {
 		label: string;
 		variant?: 'service' | 'work' | 'stack';
+		/** Сколько колонок сетки занимает блок (объединяет пустые ячейки в один блок). */
+		span?: number;
 	}
-	let { label, variant = 'service' }: Props = $props();
+	let { label, variant = 'service', span = 1 }: Props = $props();
 </script>
 
-<article class="grid-placeholder grid-placeholder--{variant}" role="listitem" aria-label={label}>
+<article
+	class="grid-placeholder grid-placeholder--{variant}"
+	style:grid-column={span > 1 ? `span ${span}` : undefined}
+	role="listitem"
+	aria-label={label}
+>
 	<div class="grid-placeholder-icon" aria-hidden="true">
 		<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
 			<rect x="3" y="3" width="18" height="18" rx="4" stroke-dasharray="3 3" />

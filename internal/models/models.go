@@ -137,11 +137,28 @@ type LegalPage struct {
 // LegalSlugs are fixed document identifiers.
 var LegalSlugs = []string{"privacy", "terms", "cookies"}
 
+// EnabledLanguageCodes returns codes of enabled content languages.
+func EnabledLanguageCodes(langs []Language) []string {
+	codes := make([]string, 0, len(langs))
+	for _, l := range langs {
+		if l.Enabled {
+			codes = append(codes, l.Code)
+		}
+	}
+	return codes
+}
+
 // IsLegalPath reports whether path is reserved for legal documents (no standalone SEO).
-func IsLegalPath(path string) bool {
+// langCodes — enabled language codes from the languages table.
+func IsLegalPath(path string, langCodes []string) bool {
 	for _, slug := range LegalSlugs {
 		if path == "/legal/"+slug {
 			return true
+		}
+		for _, lang := range langCodes {
+			if path == "/"+lang+"/legal/"+slug {
+				return true
+			}
 		}
 	}
 	return false

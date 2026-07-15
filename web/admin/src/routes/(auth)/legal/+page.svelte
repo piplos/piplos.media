@@ -46,7 +46,7 @@
 									{LEGAL_SLUG_LABELS[page.slug] ?? page.slug}
 								</a>
 							</td>
-							<td class="chart-cell-muted">{page.path}</td>
+							<td class="chart-cell-muted">/{'{lang}'}/legal/{page.slug}</td>
 							<td class="chart-cell-muted">{title(page)}</td>
 							<td>
 								{#each Object.keys(page.translations) as lang (lang)}

@@ -247,9 +247,13 @@
 						<span class="stack-name">{item.label}</span>
 					</div>
 				{/each}
-				{#each Array(stackPlaceholderCount) as _, i (`stack-placeholder-${i}`)}
-					<GridPlaceholder label={langStore.t('services.coming_soon')} variant="stack" />
-				{/each}
+				{#if stackPlaceholderCount > 0}
+					<GridPlaceholder
+						label={langStore.t('services.coming_soon')}
+						variant="stack"
+						span={stackPlaceholderCount}
+					/>
+				{/if}
 			</div>
 		</div>
 	</section>

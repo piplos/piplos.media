@@ -41,7 +41,7 @@
 
 	<Card padding="sm">
 		<FormField label="Путь на сайте" id="legal-path">
-			<p class="legal-path">{page.path}</p>
+			<p class="legal-path">/{'{lang}'}/legal/{page.slug}</p>
 		</FormField>
 		<p class="legal-hint">
 			SEO для legal-страниц заблокировано. На сайте для этих страниц установлен <code>noindex, nofollow</code>

@@ -61,6 +61,8 @@
 | `/privacy`     | `/{lang}/legal/privacy`     |
 | `/terms`       | `/{lang}/legal/terms`       |
 | `/cookies`     | `/{lang}/legal/cookies`     |
+| `/legal`       | `/{lang}/legal/privacy`     |
+| `/legal/{slug}`| `/{lang}/legal/{slug}`      |
 
 ## Без изменений
 
