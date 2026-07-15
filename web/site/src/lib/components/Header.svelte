@@ -136,12 +136,10 @@
 	});
 
 	$effect(() => {
-		document.body.classList.toggle('menu-open', menuOpen);
-		document.body.style.overflow = menuOpen ? 'hidden' : '';
+		document.documentElement.classList.toggle('menu-open', menuOpen);
 
 		return () => {
-			document.body.classList.remove('menu-open');
-			document.body.style.overflow = '';
+			document.documentElement.classList.remove('menu-open');
 		};
 	});
 

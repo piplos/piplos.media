@@ -84,7 +84,15 @@
 
 /* ─── RESET ─────────────────────────────────────── */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  /* overflow-y: scroll + stable — gutter всегда зарезервирован:
+     переход длинная↔короткая страница и блокировка скролла (меню) без сдвига */
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+html.menu-open { overflow: hidden; }
 body { background: var(--c-bg); color: var(--c-text); font-family: var(--f-body); font-size: 16px; line-height: 1.6; overflow-x: hidden; }
 img, svg { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
