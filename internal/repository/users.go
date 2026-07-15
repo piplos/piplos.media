@@ -10,11 +10,11 @@ import (
 	"github.com/piplos/piplos.media/internal/models"
 )
 
-const userColumns = "id, email, password_hash, full_name, role, is_active, created_at, updated_at"
+const userColumns = "id, email, password_hash, full_name, role, is_active, notify_leads, created_at, updated_at"
 
 func scanUser(row pgx.Row) (*models.User, error) {
 	var u models.User
-	err := row.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.FullName, &u.Role, &u.IsActive, &u.CreatedAt, &u.UpdatedAt)
+	err := row.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.FullName, &u.Role, &u.IsActive, &u.NotifyLeads, &u.CreatedAt, &u.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -47,7 +47,7 @@ func (r *Repository) ListUsers(ctx context.Context) ([]models.User, error) {
 	users := []models.User{}
 	for rows.Next() {
 		var u models.User
-		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.FullName, &u.Role, &u.IsActive, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.FullName, &u.Role, &u.IsActive, &u.NotifyLeads, &u.CreatedAt, &u.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("scan user: %w", err)
 		}
 		users = append(users, u)
@@ -65,25 +65,26 @@ func (r *Repository) CountUsers(ctx context.Context) (int, error) {
 }
 
 // CreateUser inserts a user and returns it.
-func (r *Repository) CreateUser(ctx context.Context, email, passwordHash, fullName string, role models.UserRole) (*models.User, error) {
+func (r *Repository) CreateUser(ctx context.Context, email, passwordHash, fullName string, role models.UserRole, notifyLeads bool) (*models.User, error) {
 	row := r.pool.QueryRow(ctx,
-		`INSERT INTO users (email, password_hash, full_name, role)
-		 VALUES ($1, $2, $3, $4) RETURNING `+userColumns,
-		email, passwordHash, fullName, role)
+		`INSERT INTO users (email, password_hash, full_name, role, notify_leads)
+		 VALUES ($1, $2, $3, $4, $5) RETURNING `+userColumns,
+		email, passwordHash, fullName, role, notifyLeads)
 	return scanUser(row)
 }
 
 // UpdateUser updates mutable user fields. Empty passwordHash keeps the old password.
-func (r *Repository) UpdateUser(ctx context.Context, id, fullName string, role models.UserRole, isActive bool, passwordHash string) (*models.User, error) {
+func (r *Repository) UpdateUser(ctx context.Context, id, fullName string, role models.UserRole, isActive bool, notifyLeads bool, passwordHash string) (*models.User, error) {
 	row := r.pool.QueryRow(ctx,
 		`UPDATE users SET
 			full_name = $2,
 			role = $3,
 			is_active = $4,
-			password_hash = CASE WHEN $5 = '' THEN password_hash ELSE $5 END,
+			notify_leads = $5,
+			password_hash = CASE WHEN $6 = '' THEN password_hash ELSE $6 END,
 			updated_at = now()
 		 WHERE id = $1 RETURNING `+userColumns,
-		id, fullName, role, isActive, passwordHash)
+		id, fullName, role, isActive, notifyLeads, passwordHash)
 	return scanUser(row)
 }
 

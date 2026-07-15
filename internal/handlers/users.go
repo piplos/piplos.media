@@ -24,11 +24,12 @@ func NewUsersHandler(auth *authsvc.Service, repo *repository.Repository) *UsersH
 }
 
 type userRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	FullName string `json:"full_name"`
-	Role     string `json:"role"`
-	IsActive *bool  `json:"is_active"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	FullName    string `json:"full_name"`
+	Role        string `json:"role"`
+	IsActive    *bool  `json:"is_active"`
+	NotifyLeads *bool  `json:"notify_leads"`
 }
 
 func parseRole(role string) (models.UserRole, error) {
@@ -76,7 +77,11 @@ func (h *UsersHandler) Create(c fiber.Ctx) error {
 	if err != nil {
 		return apperrors.ErrInternal("failed to hash password")
 	}
-	user, err := h.repo.CreateUser(c.Context(), req.Email, hash, req.FullName, role)
+	notifyLeads := true
+	if req.NotifyLeads != nil {
+		notifyLeads = *req.NotifyLeads
+	}
+	user, err := h.repo.CreateUser(c.Context(), req.Email, hash, req.FullName, role, notifyLeads)
 	if err != nil {
 		return apperrors.ErrInternal("failed to create user")
 	}
@@ -98,6 +103,10 @@ func (h *UsersHandler) Update(c fiber.Ctx) error {
 	if req.IsActive != nil {
 		isActive = *req.IsActive
 	}
+	notifyLeads := true
+	if req.NotifyLeads != nil {
+		notifyLeads = *req.NotifyLeads
+	}
 
 	// Защита от самоблокировки/самопонижения последнего админа.
 	current := middleware.CurrentUser(c)
@@ -115,7 +124,7 @@ func (h *UsersHandler) Update(c fiber.Ctx) error {
 		}
 	}
 
-	user, err := h.repo.UpdateUser(c.Context(), id, req.FullName, role, isActive, hash)
+	user, err := h.repo.UpdateUser(c.Context(), id, req.FullName, role, isActive, notifyLeads, hash)
 	if err != nil {
 		return apperrors.ErrInternal("failed to update user")
 	}

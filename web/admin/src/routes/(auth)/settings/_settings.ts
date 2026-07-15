@@ -17,6 +17,13 @@ export function settingsBreadcrumbs(pathname: string): SettingsBreadcrumb[] {
 	}
 
 	if (pathname === '/settings/smtp' || pathname.startsWith('/settings/smtp/')) {
+		if (pathname === '/settings/smtp/template') {
+			return [
+				{ label: 'Настройки', href: '/settings' },
+				{ label: 'SMTP', href: '/settings/smtp' },
+				{ label: 'Шаблон письма' }
+			];
+		}
 		return [{ label: 'Настройки', href: '/settings' }, { label: 'SMTP' }];
 	}
 

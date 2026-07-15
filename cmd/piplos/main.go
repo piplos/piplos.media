@@ -145,7 +145,7 @@ func seedAdmin(ctx context.Context, cfg *config.Config, repo *repository.Reposit
 	if err != nil {
 		return err
 	}
-	if _, err := repo.CreateUser(ctx, email, hash, "Administrator", models.RoleAdmin); err != nil {
+	if _, err := repo.CreateUser(ctx, email, hash, "Administrator", models.RoleAdmin, true); err != nil {
 		return err
 	}
 	log.Info().Str("email", email).Msg("initial admin user created")

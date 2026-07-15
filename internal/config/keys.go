@@ -8,13 +8,14 @@ const (
 	KeyOpenRouter = "OPENROUTER"
 	KeySMTP       = "SMTP"
 
-	KeyAITranslation = "AI_TRANSLATION"
+	KeyAITranslation     = "AI_TRANSLATION"
+	KeyLeadEmailTemplate = "LEAD_EMAIL_TEMPLATE"
 )
 
 // AllowedSettingKeys lists keys editable via admin API.
 var AllowedSettingKeys = map[string]bool{
 	KeyGemini: true, KeyGrok: true, KeyOpenAI: true, KeyOpenRouter: true,
-	KeySMTP: true, KeyAITranslation: true,
+	KeySMTP: true, KeyAITranslation: true, KeyLeadEmailTemplate: true,
 }
 
 // SensitiveFields maps composite keys to secret JSON field names.

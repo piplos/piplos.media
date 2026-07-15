@@ -24,6 +24,7 @@
 	let fullName = $state(initial.full_name ?? '');
 	let role = $state(initial.role ?? 'manager');
 	let isActive = $state(initial.is_active ?? true);
+	let notifyLeads = $state(initial.notify_leads ?? true);
 </script>
 
 <form
@@ -86,6 +87,10 @@
 	<label class="check">
 		<input type="checkbox" name="is_active" bind:checked={isActive} />
 		Активен
+	</label>
+	<label class="check">
+		<input type="checkbox" name="notify_leads" bind:checked={notifyLeads} />
+		Получать письма о новых заявках
 	</label>
 	<div class="form-actions">
 		<Button type="submit" loading={submitting} fullWidth>

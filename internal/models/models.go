@@ -18,14 +18,16 @@ const (
 
 // User is an admin panel account.
 type User struct {
-	ID           string    `json:"id"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"-"`
-	FullName     string    `json:"full_name"`
-	Role         UserRole  `json:"role"`
-	IsActive     bool      `json:"is_active"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID           string   `json:"id"`
+	Email        string   `json:"email"`
+	PasswordHash string   `json:"-"`
+	FullName     string   `json:"full_name"`
+	Role         UserRole `json:"role"`
+	IsActive     bool     `json:"is_active"`
+	// NotifyLeads включает письма о новых заявках; меняется только администратором.
+	NotifyLeads bool      `json:"notify_leads"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // Language is a system content language.

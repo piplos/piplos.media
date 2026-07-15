@@ -34,12 +34,21 @@
 		{ href: '/settings/ai/translation', label: 'Перевод' }
 	];
 
+	const smtpSubTabs = [
+		{ href: '/settings/smtp', label: 'Подключение' },
+		{ href: '/settings/smtp/template', label: 'Шаблон письма' }
+	];
+
 	const showAiSidebar = $derived(
 		pathname === '/settings/ai' || pathname.startsWith('/settings/ai/')
 	);
 
-	function isAiSubActive(href: string) {
-		if (href === '/settings/ai') return pathname === '/settings/ai';
+	const showSmtpSidebar = $derived(
+		pathname === '/settings/smtp' || pathname.startsWith('/settings/smtp/')
+	);
+
+	function isSubActive(rootHref: string, href: string) {
+		if (href === rootHref) return pathname === rootHref;
 		return pathname === href || pathname.startsWith(href + '/');
 	}
 
@@ -94,7 +103,20 @@
 		<div class="admin-sidebar-row">
 			<nav class="admin-sidebar-nav" aria-label="Подразделы AI">
 				{#each aiSubTabs as tab (tab.href)}
-					<a href={tab.href} class:active={isAiSubActive(tab.href)}>
+					<a href={tab.href} class:active={isSubActive('/settings/ai', tab.href)}>
+						{tab.label}
+					</a>
+				{/each}
+			</nav>
+			<div class="admin-sidebar-content admin-sidebar-content--no-box">
+				{@render children()}
+			</div>
+		</div>
+	{:else if showSmtpSidebar}
+		<div class="admin-sidebar-row">
+			<nav class="admin-sidebar-nav" aria-label="Подразделы SMTP">
+				{#each smtpSubTabs as tab (tab.href)}
+					<a href={tab.href} class:active={isSubActive('/settings/smtp', tab.href)}>
 						{tab.label}
 					</a>
 				{/each}

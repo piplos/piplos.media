@@ -26,7 +26,8 @@ export const actions: Actions = {
 			password: fd.get('password')?.toString() ?? '',
 			full_name: fd.get('full_name')?.toString().trim() ?? '',
 			role: fd.get('role')?.toString() ?? 'manager',
-			is_active: fd.get('is_active') === 'on'
+			is_active: fd.get('is_active') === 'on',
+			notify_leads: fd.get('notify_leads') === 'on'
 		};
 		if (!id && !payload.email) return fail(400, { error: 'Укажите email' });
 		if (!id && payload.password.length < 8) {

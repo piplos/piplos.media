@@ -102,6 +102,16 @@
 											<div class="user-info">
 												<div class="user-info-email">{email}</div>
 												<div class="user-info-role">{data.user?.role === 'admin' ? 'Администратор' : 'Менеджер'}</div>
+												{#if data.notifyLeads !== null}
+													<div class="user-info-notify">
+														<span
+															class="user-notify-dot"
+															class:user-notify-dot--on={data.notifyLeads}
+															aria-hidden="true"
+														></span>
+														Письма о заявках: {data.notifyLeads ? 'включены' : 'выключены'}
+													</div>
+												{/if}
 											</div>
 											<DropdownMenu.Separator class="user-sep" />
 											<DropdownMenu.Item
@@ -284,6 +294,24 @@
 		font-size: 0.75rem;
 		color: #71717a;
 		margin-top: 0.125rem;
+	}
+	.user-info-notify {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		font-size: 0.75rem;
+		color: #71717a;
+		margin-top: 0.375rem;
+	}
+	.user-notify-dot {
+		flex-shrink: 0;
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 50%;
+		background: #d4d4d8;
+	}
+	.user-notify-dot--on {
+		background: #16a34a;
 	}
 	:global(.user-sep) {
 		height: 1px;

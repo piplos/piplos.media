@@ -53,7 +53,12 @@ func (s *Service) NotifyNewLead(ctx context.Context, lead *models.Lead) {
 		return
 	}
 
-	email := BuildLeadEmail(lead, s.adminURL)
+	tpl := LoadLeadTemplate(ctx, s.repo)
+	if !tpl.Ready() {
+		s.log.Warn().Msg("lead notification: email template not configured")
+		return
+	}
+	email := RenderLeadEmail(tpl, lead, s.adminURL)
 	if err := Send(ctx, cfg, recipients, email.Subject, email.TextBody, email.HTMLBody); err != nil {
 		s.log.Warn().Err(err).Strs("to", recipients).Str("lead_id", lead.ID).Msg("lead notification: send failed")
 		return
@@ -69,7 +74,7 @@ func (s *Service) adminRecipients(ctx context.Context) ([]string, error) {
 	seen := make(map[string]struct{}, len(users))
 	out := make([]string, 0, len(users))
 	for _, u := range users {
-		if !u.IsActive {
+		if !u.IsActive || !u.NotifyLeads {
 			continue
 		}
 		if u.Role != models.RoleAdmin && u.Role != models.RoleManager {

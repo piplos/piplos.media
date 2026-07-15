@@ -4,6 +4,8 @@ export interface AdminUser {
 	full_name: string;
 	role: 'admin' | 'manager';
 	is_active: boolean;
+	/** Получать письма о новых заявках (меняет только админ). */
+	notify_leads: boolean;
 	created_at: string;
 	updated_at: string;
 }
