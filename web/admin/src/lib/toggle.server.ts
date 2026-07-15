@@ -23,6 +23,7 @@ export async function toggleProjectPublished(event: RequestEvent, slug: string):
 			featured: project.featured,
 			published: !project.published,
 			sort_order: project.sort_order,
+			global_sort_order: project.global_sort_order,
 			translations: project.translations ?? {}
 		})
 	});

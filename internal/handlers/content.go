@@ -23,16 +23,17 @@ func NewContentHandler(repo *repository.Repository) *ContentHandler {
 // ---------- Projects ----------
 
 type projectRequest struct {
-	Slug         string              `json:"slug"`
-	Category     string              `json:"category"`
-	Categories   []string            `json:"categories"`
-	Tags         []string            `json:"tags"`
-	Year         int                 `json:"year"`
-	Featured     bool                `json:"featured"`
-	Published    bool                `json:"published"`
-	SortOrder    int                 `json:"sort_order"`
-	Image        string              `json:"image"`
-	Translations models.Translations `json:"translations"`
+	Slug            string              `json:"slug"`
+	Category        string              `json:"category"`
+	Categories      []string            `json:"categories"`
+	Tags            []string            `json:"tags"`
+	Year            int                 `json:"year"`
+	Featured        bool                `json:"featured"`
+	Published       bool                `json:"published"`
+	SortOrder       int                 `json:"sort_order"`
+	GlobalSortOrder int                 `json:"global_sort_order"`
+	Image           string              `json:"image"`
+	Translations    models.Translations `json:"translations"`
 }
 
 func (req *projectRequest) toModel(id string) (*models.Project, error) {
@@ -52,7 +53,8 @@ func (req *projectRequest) toModel(id string) (*models.Project, error) {
 	return &models.Project{
 		ID: id, Slug: req.Slug, Category: req.Category, Categories: req.Categories,
 		Tags: req.Tags, Year: req.Year, Featured: req.Featured, Published: req.Published,
-		SortOrder: req.SortOrder, Image: strings.TrimSpace(req.Image), Translations: req.Translations,
+		SortOrder: req.SortOrder, GlobalSortOrder: req.GlobalSortOrder,
+		Image: strings.TrimSpace(req.Image), Translations: req.Translations,
 	}, nil
 }
 
@@ -165,6 +167,26 @@ func (h *ContentHandler) ReorderProjects(c fiber.Ctx) error {
 	}
 
 	if err := h.repo.ReorderProjects(c.Context(), groups); err != nil {
+		return apperrors.ErrInternal("failed to reorder projects")
+	}
+	return c.JSON(fiber.Map{"ok": true})
+}
+
+type reorderProjectsGlobalRequest struct {
+	IDs []string `json:"ids"`
+}
+
+// ReorderProjectsGlobal updates the cross-group display order (global_sort_order)
+// used by the public "all projects" listing. Group order stays untouched.
+func (h *ContentHandler) ReorderProjectsGlobal(c fiber.Ctx) error {
+	var req reorderProjectsGlobalRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return apperrors.ErrInvalidRequest("invalid request body")
+	}
+	if len(req.IDs) == 0 {
+		return apperrors.ErrInvalidRequest("ids is required")
+	}
+	if err := h.repo.ReorderProjectsGlobal(c.Context(), req.IDs); err != nil {
 		return apperrors.ErrInternal("failed to reorder projects")
 	}
 	return c.JSON(fiber.Map{"ok": true})

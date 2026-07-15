@@ -56,6 +56,8 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	staff.Get("/projects", h.Content.ListProjects)
 	staff.Post("/projects/reorder", h.Content.ReorderProjects)
 	staff.Put("/projects/reorder", h.Content.ReorderProjects)
+	staff.Post("/projects/reorder-global", h.Content.ReorderProjectsGlobal)
+	staff.Put("/projects/reorder-global", h.Content.ReorderProjectsGlobal)
 	staff.Post("/projects", h.Content.CreateProject)
 	staff.Get("/projects/:slug", h.Content.GetProject)
 	staff.Put("/projects/:slug", h.Content.UpdateProject)

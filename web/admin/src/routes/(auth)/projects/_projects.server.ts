@@ -99,5 +99,30 @@ export const projectsActions: Actions = {
 			});
 		}
 		return { ok: true };
+	},
+	reorderGlobal: async (event) => {
+		const orderRaw = (await event.request.formData()).get('order')?.toString() ?? '';
+		let ids: string[];
+		try {
+			ids = JSON.parse(orderRaw) as string[];
+			if (!Array.isArray(ids) || !ids.length || ids.some((id) => typeof id !== 'string' || !id)) {
+				throw new Error('invalid');
+			}
+		} catch {
+			return fail(400, { error: 'Некорректный порядок проектов' });
+		}
+
+		const res = await fetchWithAuth(event, '/v1/projects/reorder-global', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ ids })
+		});
+		if (!res.ok) {
+			const data = (await res.json().catch(() => ({}))) as { message?: string };
+			return fail(res.status, {
+				error: data.message ?? res.statusText ?? 'Не удалось сохранить порядок'
+			});
+		}
+		return { ok: true };
 	}
 };

@@ -40,6 +40,7 @@ var (
 		{http.MethodGet, "/v1/projects"},
 		{http.MethodPost, "/v1/projects"},
 		{http.MethodPost, "/v1/projects/reorder"},
+		{http.MethodPost, "/v1/projects/reorder-global"},
 		{http.MethodGet, "/v1/services"},
 		{http.MethodPost, "/v1/services"},
 		{http.MethodGet, "/v1/stack"},

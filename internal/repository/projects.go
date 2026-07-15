@@ -10,13 +10,13 @@ import (
 	"github.com/piplos/piplos.media/internal/models"
 )
 
-const projectColumns = "id, slug, category, categories, tags, year, featured, published, sort_order, image, translations, created_at, updated_at"
+const projectColumns = "id, slug, category, categories, tags, year, featured, published, sort_order, global_sort_order, image, translations, created_at, updated_at"
 
 func scanProject(row pgx.Row) (*models.Project, error) {
 	var p models.Project
 	var raw []byte
 	err := row.Scan(&p.ID, &p.Slug, &p.Category, &p.Categories, &p.Tags, &p.Year,
-		&p.Featured, &p.Published, &p.SortOrder, &p.Image, &raw, &p.CreatedAt, &p.UpdatedAt)
+		&p.Featured, &p.Published, &p.SortOrder, &p.GlobalSortOrder, &p.Image, &raw, &p.CreatedAt, &p.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -27,10 +27,11 @@ func scanProject(row pgx.Row) (*models.Project, error) {
 	return &p, nil
 }
 
-// ListProjects returns all projects (admin view, including unpublished).
+// ListProjects returns all projects (admin view, including unpublished)
+// in the cross-group site order.
 func (r *Repository) ListProjects(ctx context.Context) ([]models.Project, error) {
 	rows, err := r.pool.Query(ctx,
-		"SELECT "+projectColumns+" FROM projects ORDER BY sort_order, year DESC, created_at DESC")
+		"SELECT "+projectColumns+" FROM projects ORDER BY global_sort_order, year DESC, created_at DESC")
 	if err != nil {
 		return nil, fmt.Errorf("list projects: %w", err)
 	}
@@ -61,9 +62,9 @@ func (r *Repository) CreateProject(ctx context.Context, p *models.Project) (*mod
 		return nil, fmt.Errorf("marshal translations: %w", err)
 	}
 	row := r.pool.QueryRow(ctx,
-		`INSERT INTO projects (slug, category, categories, tags, year, featured, published, sort_order, image, translations)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING `+projectColumns,
-		p.Slug, p.Category, p.Categories, p.Tags, p.Year, p.Featured, p.Published, p.SortOrder, p.Image, tr)
+		`INSERT INTO projects (slug, category, categories, tags, year, featured, published, sort_order, global_sort_order, image, translations)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING `+projectColumns,
+		p.Slug, p.Category, p.Categories, p.Tags, p.Year, p.Featured, p.Published, p.SortOrder, p.GlobalSortOrder, p.Image, tr)
 	return scanProject(row)
 }
 
@@ -75,9 +76,9 @@ func (r *Repository) UpdateProject(ctx context.Context, p *models.Project) (*mod
 	}
 	row := r.pool.QueryRow(ctx,
 		`UPDATE projects SET slug = $2, category = $3, categories = $4, tags = $5, year = $6,
-			featured = $7, published = $8, sort_order = $9, image = $10, translations = $11, updated_at = now()
+			featured = $7, published = $8, sort_order = $9, global_sort_order = $10, image = $11, translations = $12, updated_at = now()
 		 WHERE id = $1 RETURNING `+projectColumns,
-		p.ID, p.Slug, p.Category, p.Categories, p.Tags, p.Year, p.Featured, p.Published, p.SortOrder, p.Image, tr)
+		p.ID, p.Slug, p.Category, p.Categories, p.Tags, p.Year, p.Featured, p.Published, p.SortOrder, p.GlobalSortOrder, p.Image, tr)
 	return scanProject(row)
 }
 
@@ -148,6 +149,26 @@ func (r *Repository) ReorderProjects(ctx context.Context, groups []ProjectGroupO
 			); err != nil {
 				return fmt.Errorf("reorder project %s: %w", id, err)
 			}
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+// ReorderProjectsGlobal sets global_sort_order from the position of each id in the slice.
+func (r *Repository) ReorderProjectsGlobal(ctx context.Context, ids []string) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin reorder projects global tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	for i, id := range ids {
+		if _, err := tx.Exec(ctx,
+			"UPDATE projects SET global_sort_order = $2, updated_at = now() WHERE id = $1",
+			id, i,
+		); err != nil {
+			return fmt.Errorf("reorder project %s globally: %w", id, err)
 		}
 	}
 

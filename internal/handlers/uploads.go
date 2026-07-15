@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 	"os"
 	"path"
@@ -19,10 +19,11 @@ import (
 const maxUploadBytes = 5 << 20 // 5 MiB
 
 var allowedImageMIMEs = map[string]string{
-	"image/jpeg": ".jpg",
-	"image/png":  ".png",
-	"image/webp": ".webp",
-	"image/gif":  ".gif",
+	"image/jpeg":    ".jpg",
+	"image/png":     ".png",
+	"image/webp":    ".webp",
+	"image/gif":     ".gif",
+	"image/svg+xml": ".svg",
 }
 
 // UploadsHandler stores and serves uploaded media files.
@@ -47,6 +48,32 @@ func uniqueName(dir, name string) string {
 		}
 		candidate = fmt.Sprintf("%s-%d%s", base, i, ext)
 	}
+}
+
+// isSVGContent reports whether body looks like an SVG image.
+// http.DetectContentType often classifies SVG as text/plain or text/xml.
+func isSVGContent(body []byte) bool {
+	trimmed := bytes.TrimSpace(body)
+	trimmed = bytes.TrimPrefix(trimmed, []byte{0xEF, 0xBB, 0xBF})
+	trimmed = bytes.TrimSpace(trimmed)
+	if len(trimmed) > 512 {
+		trimmed = trimmed[:512]
+	}
+	if bytes.HasPrefix(trimmed, []byte("<svg")) {
+		return true
+	}
+	return bytes.HasPrefix(trimmed, []byte("<?xml")) && bytes.Contains(trimmed, []byte("<svg"))
+}
+
+func detectUploadType(body []byte) (ext, mimeType string, ok bool) {
+	detected := http.DetectContentType(body)
+	if ext, ok = allowedImageMIMEs[detected]; ok {
+		return ext, detected, true
+	}
+	if isSVGContent(body) {
+		return ".svg", "image/svg+xml", true
+	}
+	return "", "", false
 }
 
 // Upload accepts a multipart image and returns its public URL.
@@ -78,10 +105,9 @@ func (h *UploadsHandler) Upload(c fiber.Ctx) error {
 		return apperrors.ErrInvalidRequest("empty file")
 	}
 
-	detected := http.DetectContentType(body)
-	ext, ok := allowedImageMIMEs[detected]
+	ext, mimeType, ok := detectUploadType(body)
 	if !ok {
-		return apperrors.ErrInvalidRequest("only JPEG, PNG, WebP and GIF images are allowed")
+		return apperrors.ErrInvalidRequest("only JPEG, PNG, WebP, GIF and SVG images are allowed")
 	}
 
 	folderRel, folderAbs, ok := resolveUploadPath(h.dir, c.FormValue("path"))
@@ -111,6 +137,6 @@ func (h *UploadsHandler) Upload(c fiber.Ctx) error {
 		"url":      uploadsFileURL(h.publicURL, fileRel),
 		"path":     "/uploads/" + fileRel,
 		"filename": name,
-		"mime":     mime.TypeByExtension(ext),
+		"mime":     mimeType,
 	})
 }

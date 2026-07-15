@@ -47,6 +47,12 @@ export function nextProjectSortOrder(projects: Project[], category: string): num
 	return Math.min(...inGroup.map((project) => project.sort_order)) - 1;
 }
 
+/** Новый проект попадает в начало сквозного списка «все проекты». */
+export function nextProjectGlobalSortOrder(projects: Project[]): number {
+	if (!projects.length) return 0;
+	return Math.min(...projects.map((project) => project.global_sort_order)) - 1;
+}
+
 export function projectSaveBody(
 	payload: ReturnType<typeof projectPayload>,
 	options: { existing?: Project; services: Service[]; projects?: Project[] }
@@ -63,7 +69,8 @@ export function projectSaveBody(
 			...payload,
 			category,
 			categories: [category],
-			sort_order: options.existing.sort_order
+			sort_order: options.existing.sort_order,
+			global_sort_order: options.existing.global_sort_order
 		};
 	}
 
@@ -71,7 +78,8 @@ export function projectSaveBody(
 		...payload,
 		category,
 		categories: [category],
-		sort_order: nextProjectSortOrder(options.projects ?? [], category)
+		sort_order: nextProjectSortOrder(options.projects ?? [], category),
+		global_sort_order: nextProjectGlobalSortOrder(options.projects ?? [])
 	};
 }
 

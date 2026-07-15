@@ -27,7 +27,10 @@ export interface Project {
 	year: number;
 	featured: boolean;
 	published: boolean;
+	/** Порядок внутри группы (услуги). */
 	sort_order: number;
+	/** Сквозной порядок в разделе «все проекты» на сайте. */
+	global_sort_order: number;
 	image: string;
 	translations: Translations;
 	created_at: string;

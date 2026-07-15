@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import { resolveUploadUrlsInHtml } from '$lib/api';
-import { loadPortfolioProjects } from '$lib/portfolio-api';
+import { loadPortfolioProjects, sortProjectsByGroupOrder } from '$lib/portfolio-api';
 import { fetchSEOPage } from '$lib/seo-api';
 import { loadServicePageItem } from '$lib/services-api';
 import type { PageServerLoad } from './$types';
@@ -29,12 +29,13 @@ export const load: PageServerLoad = async ({ params, fetch, platform }) => {
 
 	service.body = resolveUploadUrlsInHtml(service.body, ctx);
 
-	const related = projects
-		.filter(
+	// Порядок внутри группы, как в админке (sort_order).
+	const related = sortProjectsByGroupOrder(
+		projects.filter(
 			(project) =>
 				project.category === service.slug || project.categories.includes(service.slug)
 		)
-		.slice(0, 3);
+	).slice(0, 3);
 
 	return { service, related, seo };
 };

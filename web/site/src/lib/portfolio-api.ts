@@ -16,7 +16,10 @@ export interface ApiProject {
 	year: number;
 	featured: boolean;
 	published: boolean;
+	/** Порядок внутри группы (услуги). */
 	sort_order: number;
+	/** Сквозной порядок раздела «все проекты» (задаётся в админке). */
+	global_sort_order: number;
 	image: string;
 	translations: Record<string, Record<string, string>>;
 }
@@ -55,6 +58,7 @@ export function toPortfolioProject(project: ApiProject, ctx?: ApiRequestContext)
 		tags: project.tags ?? [],
 		year: project.year,
 		featured: project.featured,
+		sort_order: project.sort_order,
 		image: resolveUploadUrl(project.image ?? '', ctx),
 		en: toProjectLocale(project.translations.en ?? fallback, ctx),
 		ru: toProjectLocale(project.translations.ru ?? fallback, ctx)
@@ -112,7 +116,9 @@ export async function fetchPortfolioProject(
 	}
 }
 
-/** Загружает портфолио из API. Сортировка: sort_order, затем год по убыванию. */
+/** Загружает портфолио из API в сквозном порядке раздела «все проекты»
+ *  (global_sort_order, затем год по убыванию). Для порядка внутри группы
+ *  используйте sortProjectsByGroupOrder. */
 export async function loadPortfolioProjects(
 	fetchFn: FetchFn = fetch,
 	query: ProjectsQuery = {},
@@ -120,8 +126,13 @@ export async function loadPortfolioProjects(
 ): Promise<PortfolioProject[]> {
 	const fromApi = await fetchPortfolioProjects(fetchFn, query, ctx);
 	return [...fromApi]
-		.sort((a, b) => a.sort_order - b.sort_order || b.year - a.year)
+		.sort((a, b) => a.global_sort_order - b.global_sort_order || b.year - a.year)
 		.map((project) => toPortfolioProject(project, ctx));
+}
+
+/** Порядок внутри группы (sort_order из админки), затем год по убыванию. */
+export function sortProjectsByGroupOrder(projects: PortfolioProject[]): PortfolioProject[] {
+	return [...projects].sort((a, b) => a.sort_order - b.sort_order || b.year - a.year);
 }
 
 /** Slug-и для prerender entries(). */

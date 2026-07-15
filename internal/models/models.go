@@ -49,20 +49,23 @@ func (t Translations) JSON() ([]byte, error) {
 }
 
 // Project is a portfolio case study.
+// SortOrder is the position inside its service group; GlobalSortOrder is the
+// cross-group position used by the public "all projects" listing.
 type Project struct {
-	ID           string       `json:"id"`
-	Slug         string       `json:"slug"`
-	Category     string       `json:"category"`
-	Categories   []string     `json:"categories"`
-	Tags         []string     `json:"tags"`
-	Year         int          `json:"year"`
-	Featured     bool         `json:"featured"`
-	Published    bool         `json:"published"`
-	SortOrder    int          `json:"sort_order"`
-	Image        string       `json:"image"`
-	Translations Translations `json:"translations"`
-	CreatedAt    time.Time    `json:"created_at"`
-	UpdatedAt    time.Time    `json:"updated_at"`
+	ID              string       `json:"id"`
+	Slug            string       `json:"slug"`
+	Category        string       `json:"category"`
+	Categories      []string     `json:"categories"`
+	Tags            []string     `json:"tags"`
+	Year            int          `json:"year"`
+	Featured        bool         `json:"featured"`
+	Published       bool         `json:"published"`
+	SortOrder       int          `json:"sort_order"`
+	GlobalSortOrder int          `json:"global_sort_order"`
+	Image           string       `json:"image"`
+	Translations    Translations `json:"translations"`
+	CreatedAt       time.Time    `json:"created_at"`
+	UpdatedAt       time.Time    `json:"updated_at"`
 }
 
 // Service is an offered service (web, mobile, backend, ...).

@@ -39,8 +39,29 @@ func (r *Repository) UpsertLanguage(ctx context.Context, l models.Language) erro
 	return err
 }
 
-// DeleteLanguage removes a language (default language is protected by the handler).
+// translatedTables lists content tables with a translations JSONB column.
+var translatedTables = []string{"projects", "services", "seo_pages", "legal_pages"}
+
+// DeleteLanguage removes a language (default language is protected by the handler)
+// and strips its translations from all content tables.
 func (r *Repository) DeleteLanguage(ctx context.Context, code string) error {
-	_, err := r.pool.Exec(ctx, "DELETE FROM languages WHERE code = $1", code)
-	return err
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin delete language tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx, "DELETE FROM languages WHERE code = $1", code); err != nil {
+		return fmt.Errorf("delete language %s: %w", code, err)
+	}
+	for _, table := range translatedTables {
+		if _, err := tx.Exec(ctx,
+			"UPDATE "+table+" SET translations = translations - $1, updated_at = now() WHERE jsonb_exists(translations, $1)",
+			code,
+		); err != nil {
+			return fmt.Errorf("remove %s translations from %s: %w", code, table, err)
+		}
+	}
+
+	return tx.Commit(ctx)
 }

@@ -17,6 +17,8 @@ export type PortfolioProject = {
 	tags: string[];
 	year: number;
 	featured: boolean;
+	/** Порядок внутри группы (услуги); сквозной порядок «всех проектов» — порядок массива. */
+	sort_order: number;
 	image: string;
 	en: ProjectLocale;
 	ru: ProjectLocale;

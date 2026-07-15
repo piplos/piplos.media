@@ -5,6 +5,7 @@
 	import { SITE, getCompanyYears } from '$lib/site';
 	import { PORTFOLIO_FILTER_KEYS } from '$lib/constants/sections';
 	import { getCategoryColor, getProjectLocale } from '$lib/portfolio';
+	import { sortProjectsByGroupOrder } from '$lib/portfolio-api';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -26,10 +27,12 @@
 		}))
 	);
 
+	// «Все» — сквозной порядок из админки (порядок массива);
+	// фильтр по группе — порядок внутри группы (sort_order).
 	let filtered = $derived(
 		activeFilter === 'all'
 			? projects
-			: projects.filter((p) => p.categories?.includes(activeFilter))
+			: sortProjectsByGroupOrder(projects.filter((p) => p.categories?.includes(activeFilter)))
 	);
 
 	function getCount(key: string) {
