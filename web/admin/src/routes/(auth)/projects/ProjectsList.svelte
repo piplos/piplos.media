@@ -191,11 +191,6 @@
 							<tr>
 								<th class="admin-table-cell-drag" aria-label="Порядок"></th>
 								<th>Название</th>
-								{#if globalMode}
-									<th>Группа</th>
-								{/if}
-								<th>Slug</th>
-								<th>Год</th>
 								<th>Языки</th>
 								<th>Статус</th>
 								<th class="admin-table-cell-actions"></th>
@@ -243,23 +238,29 @@
 										</button>
 									</td>
 									<td class="chart-cell-main">
-										<a href={projectHref(project, data.services)} class="admin-text-link">{title(project)}</a>
-										{#if project.featured}
-											<Badge variant="warning" title="Избранный">★</Badge>
-										{/if}
-									</td>
-									{#if globalMode}
-										<td class="chart-cell-muted">
-											{#if groupLabel(project)}
-												{groupLabel(project)}
-											{:else}
-												<Badge variant="warning">Без группы</Badge>
+										<div class="cell-title">
+											<a href={projectHref(project, data.services)} class="admin-text-link">{title(project)}</a>
+											{#if project.featured}
+												<Badge variant="warning" title="Избранный">★</Badge>
 											{/if}
-										</td>
-									{/if}
-									<td class="chart-cell-muted">{project.slug}</td>
-									<td class="chart-cell-muted">{project.year || '—'}</td>
-									<td>
+										</div>
+										<div class="cell-sub">
+											{#if globalMode}
+												{#if groupLabel(project)}
+													<span>{groupLabel(project)}</span>
+												{:else}
+													<Badge variant="warning">Без группы</Badge>
+												{/if}
+												<span class="cell-sub-sep" aria-hidden="true">·</span>
+											{/if}
+											<span>{project.slug}</span>
+											{#if project.year}
+												<span class="cell-sub-sep" aria-hidden="true">·</span>
+												<span>{project.year}</span>
+											{/if}
+										</div>
+									</td>
+									<td class="cell-langs">
 										{#each Object.keys(project.translations) as lang (lang)}
 											<Badge variant={lang} class="cat-badge">{lang.toUpperCase()}</Badge>
 										{/each}
@@ -341,5 +342,26 @@
 	}
 	:global(.cat-badge) {
 		margin-right: 0.25rem;
+	}
+	.cell-title {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+	}
+	.cell-sub {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		margin-top: 0.2rem;
+		font-size: 0.75rem;
+		font-weight: 400;
+		color: #a1a1aa;
+	}
+	.cell-sub-sep {
+		color: #d4d4d8;
+	}
+	.cell-langs {
+		white-space: nowrap;
 	}
 </style>
