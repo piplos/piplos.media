@@ -9,19 +9,32 @@ export function isLang(value: unknown): value is Lang {
 	return value === 'en' || value === 'ru';
 }
 
-/** Язык из localStorage или настроек браузера (для редиректа с `/`). */
-export function resolveInitialLang(): Lang {
-	if (!browser) return DEFAULT_LANG;
-
+/** Язык, явно выбранный пользователем ранее (localStorage), либо null. */
+export function getSavedLang(): Lang | null {
+	if (!browser) return null;
 	const saved = localStorage.getItem(LANG_STORAGE_KEY);
-	if (isLang(saved)) return saved;
-
-	return navigator.language.startsWith('ru') ? 'ru' : DEFAULT_LANG;
+	return isLang(saved) ? saved : null;
 }
 
+/** Язык браузера: ru → ru, иначе язык по умолчанию. */
+export function detectBrowserLang(): Lang {
+	if (!browser) return DEFAULT_LANG;
+	return navigator.language.toLowerCase().startsWith('ru') ? 'ru' : DEFAULT_LANG;
+}
+
+/** Сохранённый выбор пользователя, иначе язык браузера (для входа на сайт). */
+export function resolveInitialLang(): Lang {
+	return getSavedLang() ?? detectBrowserLang();
+}
+
+/** Сохраняет ЯВНЫЙ выбор пользователя. Не вызывать при синхронизации с URL. */
 export function persistLang(lang: Lang) {
 	if (!browser) return;
 	localStorage.setItem(LANG_STORAGE_KEY, lang);
+}
+
+export function applyDocumentLang(lang: Lang) {
+	if (!browser) return;
 	document.documentElement.setAttribute('lang', lang);
 }
 

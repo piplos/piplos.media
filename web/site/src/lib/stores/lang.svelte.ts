@@ -8,7 +8,7 @@ import {
 	termsEn,
 	termsRu
 } from '$lib/i18n/legal';
-import { isLang, persistLang } from '$lib/i18n/routing';
+import { applyDocumentLang } from '$lib/i18n/routing';
 
 export type Lang = 'en' | 'ru';
 
@@ -35,9 +35,11 @@ function resolve(lang: Lang, key: string): unknown {
 function createLangStore() {
 	let lang = $state<Lang>('en');
 
+	// Синхронизация с URL: НЕ сохраняет выбор в localStorage —
+	// запоминается только явный выбор пользователя (persistLang в Header).
 	function set(l: Lang) {
 		lang = l;
-		persistLang(l);
+		applyDocumentLang(l);
 	}
 
 	function t(key: string, params?: Record<string, string | number>): string {

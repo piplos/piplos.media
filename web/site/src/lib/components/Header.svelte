@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { l } from '$lib/i18n/link';
-	import { switchLangHref } from '$lib/i18n/routing';
+	import { persistLang, switchLangHref } from '$lib/i18n/routing';
 	import { langStore } from '$lib/stores/lang.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import Logo from '$lib/components/Logo.svelte';
@@ -35,6 +35,9 @@
 
 	function selectLang(next: Lang) {
 		langOpen = false;
+		// Запоминаем только явный выбор пользователя — он имеет приоритет
+		// над языком браузера при следующих визитах.
+		persistLang(next);
 		// Язык всегда следует из URL: layout синхронизирует langStore после навигации.
 		if (page.params.lang !== next) {
 			goto(switchLangHref(page.url.pathname, page.url.search, page.url.hash, next));

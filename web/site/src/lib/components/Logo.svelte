@@ -105,4 +105,11 @@
 		font-size: calc(var(--logo-mark-size) * 0.46);
 		line-height: 1;
 	}
+
+	/* На узких экранах текст бренда в шапке не помещается — оставляем только иконку. */
+	@media (max-width: 640px) {
+		.logo--header .logo-text {
+			display: none;
+		}
+	}
 </style>
