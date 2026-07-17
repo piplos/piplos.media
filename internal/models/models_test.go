@@ -1,6 +1,33 @@
 package models
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
+
+func TestPageIsLive(t *testing.T) {
+	now := time.Date(2026, 7, 17, 12, 0, 0, 0, time.UTC)
+	past := now.Add(-time.Hour)
+	future := now.Add(time.Hour)
+
+	tests := []struct {
+		name string
+		page Page
+		want bool
+	}{
+		{"draft", Page{Published: false}, false},
+		{"published no schedule", Page{Published: true}, true},
+		{"published in past", Page{Published: true, PublishAt: &past}, true},
+		{"scheduled for future", Page{Published: true, PublishAt: &future}, false},
+		{"draft with past schedule", Page{Published: false, PublishAt: &past}, false},
+	}
+
+	for _, tt := range tests {
+		if got := tt.page.IsLive(now); got != tt.want {
+			t.Errorf("%s: IsLive() = %v, want %v", tt.name, got, tt.want)
+		}
+	}
+}
 
 func TestEnabledLanguageCodes(t *testing.T) {
 	got := EnabledLanguageCodes([]Language{

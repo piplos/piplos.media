@@ -25,7 +25,7 @@
 </script>
 
 <svelte:head>
-	<title>{status} — {langStore.t(`error.${kind}.title`)} | {SITE.name}</title>
+	<title>{status} — {langStore.t(`error.${kind}.title`)} | {SITE.displayName}</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 

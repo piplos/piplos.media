@@ -39,6 +39,7 @@
 	// При очистке поля slug используем исходный slug, чтобы табы «Контент/SEO» не пропадали.
 	const seoSlug = $derived(slug.trim() || initial.slug || '');
 	const seoPath = $derived(isEdit && seoSlug ? `/services/${seoSlug}` : '');
+	const seoPathDisplay = $derived(seoPath ? `/{lang}${seoPath}` : '');
 
 	const defaultLang = $derived(languages.find((l) => l.is_default)?.code ?? languages[0]?.code ?? 'en');
 	const slugSource = $derived.by(() => {
@@ -174,7 +175,7 @@
 				<TranslationsEditor {languages} fields={translationFields} bind:translations idPrefix="svc" />
 			{:else}
 				<FormField label="Путь страницы" id="svc-seo-path">
-					<p class="seo-path">{seoPath}</p>
+					<p class="seo-path">{seoPathDisplay}</p>
 				</FormField>
 				<div class="seo-editor">
 					<h3 class="subsection-title">Meta-теги по языкам</h3>

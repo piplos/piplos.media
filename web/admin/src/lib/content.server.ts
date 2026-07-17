@@ -12,10 +12,18 @@ export function parseTranslations(fd: FormData, field = 'translations'): Transla
 }
 
 export function parseList(fd: FormData, name: string): string[] {
-	return (fd.get(name)?.toString() ?? '')
-		.split(',')
-		.map((s) => s.trim())
-		.filter(Boolean);
+	const seen = new Set<string>();
+	const out: string[] = [];
+	for (const entry of fd.getAll(name)) {
+		for (const part of entry.toString().split(',')) {
+			const value = part.trim();
+			if (value && !seen.has(value)) {
+				seen.add(value);
+				out.push(value);
+			}
+		}
+	}
+	return out;
 }
 
 export function parseIntField(fd: FormData, name: string, fallback = 0): number {
@@ -112,6 +120,18 @@ function seoTranslationsFilled(translations: Translations): boolean {
 
 export function shouldSaveSeo(seo: { id: string; translations: Translations }): boolean {
 	return Boolean(seo.id) || seoTranslationsFilled(seo.translations);
+}
+
+export function pagePayload(fd: FormData) {
+	const publishAt = fd.get('publish_at')?.toString().trim() ?? '';
+	return {
+		slug: fd.get('slug')?.toString().trim() ?? '',
+		published: fd.get('published') === 'on',
+		publish_at: publishAt || null,
+		image: fd.get('image')?.toString().trim() ?? '',
+		tags: parseList(fd, 'tags'),
+		translations: parseTranslations(fd)
+	};
 }
 
 export function legalPayload(fd: FormData): { translations: LegalTranslations } {

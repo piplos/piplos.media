@@ -3,48 +3,40 @@
 	import toast from 'svelte-french-toast';
 	import Button from '$lib/components/Button.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import FilePickerDrawer from '$lib/components/FilePickerDrawer.svelte';
 	import FormField from '$lib/components/FormField.svelte';
 	import Input from '$lib/components/Input.svelte';
-	import Select from '$lib/components/Select.svelte';
 	import SlugInput from '$lib/components/SlugInput.svelte';
 	import TagSelect from '$lib/components/TagSelect.svelte';
-	import FilePickerDrawer from '$lib/components/FilePickerDrawer.svelte';
 	import TranslationsEditor from '$lib/components/TranslationsEditor.svelte';
-	import type { Language, Project, SEOPage, Service, StackItem, Translations } from '$lib/types';
+	import type { Language, Page, SEOPage, StackItem, Translations } from '$lib/types';
 
 	interface Props {
-		project?: Partial<Project>;
+		page?: Partial<Page>;
 		seo?: Partial<SEOPage> | null;
 		languages: Language[];
-		services: Service[];
-		stack: StackItem[];
+		stack?: StackItem[];
 		submitLabel: string;
 	}
-	let { project = {}, seo = null, languages = [], services = [], stack = [], submitLabel }: Props = $props();
+	let { page = {}, seo = null, languages = [], stack = [], submitLabel }: Props = $props();
 
 	let submitting = $state(false);
 	// Начальные значения формы фиксируются при монтировании; страница перемонтирует форму через {#key}.
 	// svelte-ignore state_referenced_locally
-	const initial = $state.snapshot(project) as Partial<Project>;
+	const initial = $state.snapshot(page) as Partial<Page>;
 	// svelte-ignore state_referenced_locally
 	const initialSeo = $state.snapshot(seo) as Partial<SEOPage> | null;
-	const isEdit = Boolean(initial.id);
+
 	let slug = $state(initial.slug ?? '');
-	// svelte-ignore state_referenced_locally
-	const defaultCategory =
-		[...services].sort((a, b) => a.sort_order - b.sort_order || a.slug.localeCompare(b.slug))[0]?.slug ?? '';
-	// svelte-ignore state_referenced_locally
-	let category = $state(
-		initial.category && services.some((s) => s.slug === initial.category) ? initial.category : defaultCategory
-	);
-	let tags = $state(initial.tags ?? []);
-	let year = $state(String(initial.year ?? new Date().getFullYear()));
-	let featured = $state(initial.featured ?? false);
+	// Новые страницы публикуются сразу (как проекты/услуги); черновик — снять галочку.
 	let published = $state(initial.published ?? true);
 	let image = $state(initial.image ?? '');
+	let tags = $state(initial.tags ?? []);
 	let imageInput = $state<HTMLInputElement | null>(null);
 	let uploadingImage = $state(false);
 	let imagePickerOpen = $state(false);
+	let translations = $state<Translations>((initial.translations ?? {}) as Translations);
+	let seoTranslations = $state<Translations>((initialSeo?.translations ?? {}) as Translations);
 
 	async function onImageFileChange(e: Event) {
 		const input = e.currentTarget as HTMLInputElement;
@@ -68,15 +60,32 @@
 			uploadingImage = false;
 		}
 	}
-	let translations = $state<Translations>((initial.translations ?? {}) as Translations);
-	let seoTranslations = $state<Translations>((initialSeo?.translations ?? {}) as Translations);
+
+	/** ISO → значение для input type="datetime-local" в локальном времени. */
+	function toLocalInput(iso: string | null | undefined): string {
+		if (!iso) return '';
+		const d = new Date(iso);
+		if (Number.isNaN(d.getTime())) return '';
+		const pad = (n: number) => String(n).padStart(2, '0');
+		return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+	}
+
+	let publishAtLocal = $state(toLocalInput(initial.publish_at));
+	// В скрытое поле уходит ISO (UTC): datetime-local интерпретируется в браузере пользователя.
+	const publishAtISO = $derived.by(() => {
+		if (!publishAtLocal) return '';
+		const d = new Date(publishAtLocal);
+		return Number.isNaN(d.getTime()) ? '' : d.toISOString();
+	});
 
 	// При очистке поля slug используем исходный slug, чтобы табы «Контент/SEO» не пропадали.
 	const seoSlug = $derived(slug.trim() || initial.slug || '');
-	const seoPath = $derived(isEdit && seoSlug ? `/portfolio/${seoSlug}` : '');
+	// SEO-ключ в БД без языка (как у проектов/услуг); в UI показываем публичный URL с /{lang}.
+	const seoPath = $derived(seoSlug ? `/articles/${seoSlug}` : '');
 	const seoPathDisplay = $derived(seoPath ? `/{lang}${seoPath}` : '');
 
 	const defaultLang = $derived(languages.find((l) => l.is_default)?.code ?? languages[0]?.code ?? 'en');
+	const stackOptions = $derived(stack.map((item) => ({ value: item.label, label: item.label })));
 	const slugSource = $derived.by(() => {
 		const fromDefault = translations[defaultLang]?.title?.trim();
 		if (fromDefault) return fromDefault;
@@ -87,34 +96,10 @@
 		return '';
 	});
 
-	const stackOptions = $derived.by(() => {
-		const fromStack = stack.map((item) => ({ value: item.label, label: item.label }));
-		const known = new Set(fromStack.map((option) => option.value));
-		const extras = tags
-			.filter((tag) => !known.has(tag))
-			.map((tag) => ({ value: tag, label: tag }));
-		return [...extras, ...fromStack];
-	});
-
-	function serviceTitle(service: Service): string {
-		const translations = service.translations ?? {};
-		const langs = Object.keys(translations);
-		return translations['en']?.title ?? (langs.length ? translations[langs[0]]?.title : '') ?? service.slug;
-	}
-
-	const serviceOptions = $derived(
-		[...services]
-			.sort((a, b) => a.sort_order - b.sort_order || a.slug.localeCompare(b.slug))
-			.map((service) => ({ value: service.slug, label: `${serviceTitle(service)} (${service.slug})` }))
-	);
-
 	const translationFields = [
-		{ key: 'title', label: 'Название' },
-		{ key: 'subtitle', label: 'Подзаголовок' },
-		{ key: 'description', label: 'Описание', type: 'textarea' as const },
-		{ key: 'challenge', label: 'Задача (challenge)', type: 'textarea' as const },
-		{ key: 'solution', label: 'Решение (solution, Markdown)', type: 'markdown' as const },
-		{ key: 'result', label: 'Результат (result)', type: 'textarea' as const }
+		{ key: 'title', label: 'Заголовок' },
+		{ key: 'description', label: 'Краткое описание (анонс)', type: 'textarea' as const, rows: 3 },
+		{ key: 'body', label: 'Текст (Markdown)', type: 'markdown' as const }
 	];
 
 	const seoFields = [
@@ -140,48 +125,44 @@
 			submitting = false;
 			if (result.type === 'failure') {
 				toast.error((result.data?.error as string) ?? 'Не удалось сохранить');
+			} else if (result.type === 'success') {
+				toast.success('Страница сохранена');
 			}
 			await update({ reset: false });
 		};
 	}}
 >
 	<input type="hidden" name="translations" value={JSON.stringify(translations)} />
-	{#if seoPath}
-		<input type="hidden" name="seo_id" value={initialSeo?.id ?? ''} />
-		<input type="hidden" name="seo_path" value={seoPath} />
-		<input type="hidden" name="seo_translations" value={JSON.stringify(seoTranslations)} />
-	{/if}
+	<input type="hidden" name="publish_at" value={publishAtISO} />
+	<input type="hidden" name="seo_id" value={initialSeo?.id ?? ''} />
+	<input type="hidden" name="seo_path" value={seoPath} />
+	<input type="hidden" name="seo_translations" value={JSON.stringify(seoTranslations)} />
 
 	<Card padding="sm">
 		<div class="fields">
-			<div class="grid-3">
-				<FormField label="Slug" id="project-slug">
+			<div class="grid-2">
+				<FormField label="Slug" id="page-slug">
 					<SlugInput
-						id="project-slug"
+						id="page-slug"
 						name="slug"
 						bind:value={slug}
-						placeholder="analytics-dashboard"
+						placeholder="company-news"
 						required
 						source={slugSource}
 					/>
 				</FormField>
-				<FormField label="Год" id="project-year">
-					<Input id="project-year" name="year" type="number" bind:value={year} />
-				</FormField>
-				<FormField label="Группа (услуга)" id="project-category">
-					<Select
-						id="project-category"
-						name="category"
-						options={serviceOptions}
-						bind:value={category}
-						disabled={!serviceOptions.length}
+				<FormField label="Отложенная публикация" id="page-publish-at">
+					<Input
+						id="page-publish-at"
+						type="datetime-local"
+						bind:value={publishAtLocal}
 					/>
 				</FormField>
 			</div>
-			<FormField label="Превью (картинка)" id="project-image">
+			<FormField label="Превью (картинка)" id="page-image">
 				<div class="image-field">
 					<div class="image-controls">
-						<Input id="project-image" name="image" bind:value={image} placeholder="/uploads/… или https://…" />
+						<Input id="page-image" name="image" bind:value={image} placeholder="/uploads/… или https://…" />
 						<div class="image-buttons">
 							<Button variant="secondary" loading={uploadingImage} onclick={() => imageInput?.click()}>
 								Загрузить
@@ -196,7 +177,7 @@
 					</div>
 					{#if image}
 						<a class="image-thumb" href={image} target="_blank" rel="noreferrer" title="Открыть в новой вкладке">
-							<img src={image} alt="Превью проекта" />
+							<img src={image} alt="Превью статьи" />
 						</a>
 					{/if}
 				</div>
@@ -208,61 +189,57 @@
 					hidden
 				/>
 			</FormField>
-			<FormField label="Стек" id="project-stack">
+			<FormField label="Стек" id="page-tags">
 				<TagSelect
-					id="project-stack"
+					id="page-tags"
 					name="tags"
 					options={stackOptions}
 					bind:values={tags}
 					placeholder={stackOptions.length ? 'Выберите технологии' : 'Список стека пуст'}
 				/>
 			</FormField>
-			<div class="checks-row">
-				<label class="check">
-					<input type="checkbox" name="featured" bind:checked={featured} />
-					Избранный (featured)
-				</label>
-				<label class="check">
-					<input type="checkbox" name="published" bind:checked={published} />
-					Опубликован
-				</label>
-			</div>
+			<p class="page-hint">
+				Страница появится на сайте по адресу <code>/{'{lang}'}/articles/{seoSlug || '…'}</code>
+				сразу после сохранения (если включено «Опубликована»).
+				Превью показывается фоном в карточке списка статей (как в портфолио).
+				Дата отложенной публикации необязательна: заполните её, чтобы отложить показ на сайте.
+			</p>
+			<label class="check">
+				<input type="checkbox" name="published" bind:checked={published} />
+				Опубликована
+			</label>
 		</div>
 	</Card>
 
 	<Card padding="sm">
 		<div class="fields">
-			{#if seoPath}
-				<div class="form-tabs" aria-label="Разделы контента" role="tablist">
-					<button
-						type="button"
-						role="tab"
-						class="form-tab"
-						class:form-tab--active={activeTab === 'content'}
-						aria-selected={activeTab === 'content'}
-						onclick={() => (activeTab = 'content')}
-					>
-						Контент по языкам
-					</button>
-					<button
-						type="button"
-						role="tab"
-						class="form-tab"
-						class:form-tab--active={activeTab === 'seo'}
-						aria-selected={activeTab === 'seo'}
-						onclick={() => (activeTab = 'seo')}
-					>
-						SEO
-					</button>
-				</div>
-			{:else}
-				<h2 class="section-title">Контент по языкам</h2>
-			{/if}
+			<div class="form-tabs" aria-label="Разделы контента" role="tablist">
+				<button
+					type="button"
+					role="tab"
+					class="form-tab"
+					class:form-tab--active={activeTab === 'content'}
+					aria-selected={activeTab === 'content'}
+					onclick={() => (activeTab = 'content')}
+				>
+					Контент по языкам
+				</button>
+				<button
+					type="button"
+					role="tab"
+					class="form-tab"
+					class:form-tab--active={activeTab === 'seo'}
+					aria-selected={activeTab === 'seo'}
+					onclick={() => (activeTab = 'seo')}
+				>
+					SEO
+				</button>
+			</div>
 
-			{#if !seoPath || activeTab === 'content'}
-				<TranslationsEditor {languages} fields={translationFields} bind:translations idPrefix="project" />
-			{:else}
-				<FormField label="Путь страницы" id="seo-path">
+			{#if activeTab === 'content'}
+				<TranslationsEditor {languages} fields={translationFields} bind:translations idPrefix="page" />
+			{:else if seoPath}
+				<FormField label="Путь страницы" id="page-seo-path">
 					<p class="seo-path">{seoPathDisplay}</p>
 				</FormField>
 				<div class="seo-editor">
@@ -271,9 +248,11 @@
 						{languages}
 						fields={seoFields}
 						bind:translations={seoTranslations}
-						idPrefix="project-seo"
+						idPrefix="page-seo"
 					/>
 				</div>
+			{:else}
+				<p class="page-hint">Укажите slug выше — тогда можно заполнить SEO (путь <code>/{'{lang}'}/articles/…</code>).</p>
 			{/if}
 		</div>
 	</Card>
@@ -300,21 +279,16 @@
 		flex-direction: column;
 		gap: 1rem;
 	}
-	.grid-3 {
+	.grid-2 {
 		display: grid;
-		grid-template-columns: minmax(0, 2fr) minmax(5.5rem, 0.75fr) minmax(0, 1.5fr);
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 		gap: 1rem;
 		align-items: start;
 	}
 	@media (max-width: 640px) {
-		.grid-3 {
+		.grid-2 {
 			grid-template-columns: 1fr;
 		}
-	}
-	.checks-row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1.5rem;
 	}
 	.image-field {
 		display: flex;
@@ -353,11 +327,24 @@
 			flex-direction: column;
 		}
 	}
-	.image-field {
+	.page-hint {
 		margin: 0;
-		font-size: 1rem;
-		font-weight: 600;
-		color: #18181b;
+		font-size: 0.8125rem;
+		line-height: 1.5;
+		color: #71717a;
+	}
+	.page-hint code {
+		font-size: 0.75rem;
+		padding: 0.125rem 0.375rem;
+		background: #f4f4f5;
+		border-radius: 4px;
+	}
+	.check {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.875rem;
+		color: #374151;
 	}
 	.form-tabs {
 		display: flex;

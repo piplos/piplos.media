@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Делегирует в скрипт локального плагина cursor-agent-auto-hook.
+# Публичный интерфейс: start | stop | status | send
+#
+# Переменные:
+#   CURSOR_AGENT_AUTO_HOOK_ROOT  Корень плагина (по умолчанию: ~/.cursor/plugins/local/cursor-agent-auto-hook)
+#   CURSOR_AGENT_AUTO_SCRIPT     Полный путь к hooks/cursor-agent-auto (переопределяет разрешение)
+#   CURSOR_AGENT_WORKSPACE       Рабочая директория для cursor-agent (по умолчанию: корень репозитория)
+
+set -euo pipefail
+
+ROOT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck disable=SC1091
+source "${ROOT_PATH}/scripts/_helper"
+
+readonly PLUGIN_ROOT="${CURSOR_AGENT_AUTO_HOOK_ROOT:-${HOME}/.cursor/plugins/local/cursor-agent-auto-hook}"
+readonly IMPL="${CURSOR_AGENT_AUTO_SCRIPT:-${PLUGIN_ROOT}/hooks/cursor-agent-auto}"
+
+die() {
+  print_answer "Error: $1" red
+  exit 1
+}
+
+show_usage() {
+  echo "Usage: $0 {start|stop|status|send}" >&2
+  echo "" >&2
+  echo "Delegates to plugin script:" >&2
+  echo "  ${IMPL}" >&2
+  echo "" >&2
+  echo "Override plugin root: CURSOR_AGENT_AUTO_HOOK_ROOT" >&2
+  echo "Workspace (default: repo root): CURSOR_AGENT_WORKSPACE" >&2
+}
+
+main() {
+  if [ ! -f "${IMPL}" ]; then
+    die "Plugin script not found: ${IMPL} (install cursor-agent-auto-hook or set CURSOR_AGENT_AUTO_SCRIPT)"
+  fi
+  if [ ! -x "${IMPL}" ]; then
+    die "Plugin script is not executable: ${IMPL}"
+  fi
+
+  export CURSOR_AGENT_WORKSPACE="${CURSOR_AGENT_WORKSPACE:-${ROOT_PATH}}"
+
+  local cmd="${1:-}"
+  case "${cmd}" in
+    start | stop | status | send) exec "${IMPL}" "$@" ;;
+    "")
+      show_usage
+      exit 1
+      ;;
+    *)
+      print_answer "Unknown command: ${cmd}" red
+      show_usage
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

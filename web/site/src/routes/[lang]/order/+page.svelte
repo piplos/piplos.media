@@ -219,7 +219,7 @@
 {/snippet}
 
 <svelte:head>
-	<title>{langStore.t('order.title_1')} {langStore.t('order.title_2')} — {SITE.name}</title>
+	<title>{langStore.t('order.title_1')} {langStore.t('order.title_2')} — {SITE.displayName}</title>
 	<meta name="description" content="Tell us about your project — web, mobile, backend, data or DevOps. Get a free estimate within 24 hours." />
 	<link rel="canonical" href="{SITE.url}{l('/order')}" />
 </svelte:head>

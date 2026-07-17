@@ -1,6 +1,6 @@
 {
-  "name": "piplos.media",
-  "short_name": "piplos",
+  "name": "Piplos Media",
+  "short_name": "Piplos",
   "description": "Web, mobile and backend development",
   "start_url": "/",
   "display": "standalone",

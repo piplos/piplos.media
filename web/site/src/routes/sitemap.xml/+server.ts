@@ -1,22 +1,25 @@
+import { fetchArticles } from '$lib/articles-api';
 import { fetchPortfolioProjects } from '$lib/portfolio-api';
 import { fetchServices } from '$lib/services-api';
 import { SUPPORTED_LANGS } from '$lib/i18n/routing';
 import { SITE } from '$lib/site';
 import type { RequestHandler } from './$types';
 
-const STATIC_PATHS = ['', '/portfolio', '/order', '/legal/privacy', '/legal/terms', '/legal/cookies'];
+const STATIC_PATHS = ['', '/portfolio', '/articles', '/order', '/legal/privacy', '/legal/terms', '/legal/cookies'];
 
 /** Динамическая карта сайта: все страницы в обеих локалях с hreflang-альтернативами. */
 export const GET: RequestHandler = async ({ fetch, platform }) => {
-	const [projects, services] = await Promise.all([
+	const [projects, services, articles] = await Promise.all([
 		fetchPortfolioProjects(fetch, {}, { platform }),
-		fetchServices(fetch, undefined, { platform })
+		fetchServices(fetch, undefined, { platform }),
+		fetchArticles(fetch, undefined, { platform })
 	]);
 
 	const paths = [
 		...STATIC_PATHS,
 		...services.map((s) => `/services/${s.slug}`),
-		...projects.map((p) => `/portfolio/${p.slug}`)
+		...projects.map((p) => `/portfolio/${p.slug}`),
+		...articles.map((a) => `/articles/${a.slug}`)
 	];
 
 	const urls = paths

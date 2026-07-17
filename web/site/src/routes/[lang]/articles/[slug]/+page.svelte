@@ -2,6 +2,7 @@
 	import { l } from '$lib/i18n/link';
 	import { langStore } from '$lib/stores/lang.svelte';
 	import { resolveUploadUrl } from '$lib/api';
+	import { articleDate, formatArticleDate, getArticleLocale } from '$lib/articles-api';
 	import { getCategoryColor, getProjectLocale } from '$lib/portfolio';
 	import SafeHtml from '$lib/components/SafeHtml.svelte';
 	import { SITE } from '$lib/site';
@@ -9,33 +10,35 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const service = $derived(data.service);
+	const article = $derived(data.article);
 	const related = $derived(data.related);
+	const loc = $derived(getArticleLocale(article, langStore.value));
+	const title = $derived(loc.title || article.slug);
+	const tags = $derived(article.tags ?? []);
 
 	const seoLoc = $derived(data.seo?.[langStore.value]);
-	const seoTitle = $derived(
-		seoLoc?.title || `${service.title} — ${langStore.t('services.title')} | ${SITE.displayName}`
-	);
-	const seoDescription = $derived(seoLoc?.description || service.description);
+	const seoTitle = $derived(seoLoc?.title || `${title} — ${langStore.t('articles.title')} | ${SITE.displayName}`);
+	const seoDescription = $derived(seoLoc?.description || loc.description || '');
 	const ogTitle = $derived(seoLoc?.og_title || seoTitle);
 	const ogDescription = $derived(seoLoc?.og_description || seoDescription);
-	const ogImage = $derived(resolveUploadUrl(seoLoc?.og_image || ''));
-	const canonicalUrl = $derived(`${SITE.url}${l(`/services/${service.slug}`)}`);
+	const ogImage = $derived(resolveUploadUrl(seoLoc?.og_image || article.image || ''));
+	const canonicalUrl = $derived(`${SITE.url}${l(`/articles/${article.slug}`)}`);
 </script>
 
 <svelte:head>
 	<title>{seoTitle}</title>
 	<meta name="description" content={seoDescription} />
 	<link rel="canonical" href={canonicalUrl} />
-	<link rel="alternate" hreflang="en" href="{SITE.url}/en/services/{service.slug}" />
-	<link rel="alternate" hreflang="ru" href="{SITE.url}/ru/services/{service.slug}" />
-	<link rel="alternate" hreflang="x-default" href="{SITE.url}/en/services/{service.slug}" />
-	<meta property="og:type" content="website" />
+	<link rel="alternate" hreflang="en" href="{SITE.url}/en/articles/{article.slug}" />
+	<link rel="alternate" hreflang="ru" href="{SITE.url}/ru/articles/{article.slug}" />
+	<link rel="alternate" hreflang="x-default" href="{SITE.url}/en/articles/{article.slug}" />
+	<meta property="og:type" content="article" />
 	<meta property="og:site_name" content={SITE.displayName} />
 	<meta property="og:locale" content={langStore.value === 'ru' ? 'ru_RU' : 'en_US'} />
 	<meta property="og:title" content={ogTitle} />
 	<meta property="og:description" content={ogDescription} />
 	<meta property="og:url" content={canonicalUrl} />
+	<meta property="article:published_time" content={articleDate(article)} />
 	{#if ogImage}
 		<meta property="og:image" content={ogImage} />
 	{/if}
@@ -51,57 +54,57 @@
 	<div class="container">
 		<a href={l('/')}>{langStore.t('nav.home')}</a>
 		<span class="sep" aria-hidden="true">/</span>
-		<a href={l('/#services')}>{langStore.t('services.title')}</a>
+		<a href={l('/articles')}>{langStore.t('nav.articles')}</a>
 		<span class="sep" aria-hidden="true">/</span>
-		<span class="current" aria-current="page">{service.title}</span>
+		<span class="current" aria-current="page">{title}</span>
 	</div>
 </nav>
 
-<main id="main">
-	<section class="svc-hero" aria-labelledby="svc-title">
+<main id="main" itemscope itemtype="https://schema.org/Article">
+	<section class="article-hero" aria-labelledby="article-title">
 		<div class="container">
-			<a href={l('/#services')} class="svc-back">
+			<a href={l('/articles')} class="article-back">
 				<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
 					<path d="M7 2L3 6l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 				</svg>
-				{langStore.t('service_page.back')}
+				{langStore.t('articles.back')}
 			</a>
 
-			<div class="svc-hero-row">
-				<div class="svc-icon" aria-hidden="true">{service.icon}</div>
-				<div>
-					<h1 class="svc-title" id="svc-title">{service.title}</h1>
-					<p class="svc-desc">{service.description}</p>
-				</div>
-			</div>
+			<time class="article-date" datetime={articleDate(article)} itemprop="datePublished">
+				{formatArticleDate(articleDate(article), langStore.value)}
+			</time>
+			<h1 class="article-title" id="article-title" itemprop="headline">{title}</h1>
+			{#if loc.description}
+				<p class="article-desc" itemprop="description">{loc.description}</p>
+			{/if}
 		</div>
 	</section>
 
-	<section class="svc-content">
+	<section class="article-content">
 		<div class="container">
-			<div class="svc-layout">
-				<div class="svc-main">
-					{#if service.body?.trim()}
-						<div class="svc-block">
-							<SafeHtml html={service.body} class="rich-text" />
+			<div class="article-layout">
+				<div class="article-main">
+					{#if loc.body?.trim()}
+						<div class="article-block" itemprop="articleBody">
+							<SafeHtml html={loc.body} class="rich-text" />
 						</div>
 					{/if}
 				</div>
 
-				<aside class="svc-sidebar">
-					{#if service.tags.length > 0}
-						<div class="svc-card">
-							<p class="section-label">{langStore.t('service_page.stack')}</p>
-							<div class="svc-tags">
-								{#each service.tags as tag (tag)}
-									<span class="svc-tag">{tag}</span>
+				<aside class="article-sidebar">
+					{#if tags.length > 0}
+						<div class="article-card">
+							<p class="section-label">{langStore.t('articles.stack')}</p>
+							<div class="article-tags">
+								{#each tags as tag (tag)}
+									<span class="article-tag">{tag}</span>
 								{/each}
 							</div>
 						</div>
 					{/if}
 
-					<a href="{l('/order')}?type={service.slug}" class="svc-cta">
-						{langStore.t('service_page.start_project')}
+					<a href={l('/order')} class="article-cta">
+						{langStore.t('articles.start_project')}
 						<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
 							<path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
@@ -112,12 +115,12 @@
 	</section>
 
 	{#if related.length > 0}
-		<section class="section" style="padding-top: 0" aria-labelledby="svc-projects-heading">
+		<section class="section" style="padding-top: 0" aria-labelledby="article-projects-heading">
 			<div class="container">
 				<div class="section-header">
 					<div>
 						<p class="section-label">{langStore.t('service_page.projects')}</p>
-						<h2 class="section-title" id="svc-projects-heading">{langStore.t('work.title')}</h2>
+						<h2 class="section-title" id="article-projects-heading">{langStore.t('work.title')}</h2>
 					</div>
 					<a href={l('/portfolio')} class="section-link" aria-label="View full portfolio">
 						{langStore.t('work.cta')}
@@ -128,7 +131,7 @@
 				</div>
 				<div class="work-grid" role="list">
 					{#each related as project (project.id)}
-						{@const loc = getProjectLocale(project, langStore.value)}
+						{@const projectLoc = getProjectLocale(project, langStore.value)}
 						<article class="work-card" role="listitem" itemscope itemtype="https://schema.org/CreativeWork">
 							{#if project.image}
 								<div class="pc-bg" aria-hidden="true">
@@ -137,13 +140,13 @@
 							{/if}
 							<div class="work-type">
 								<span class="work-type-dot" style="background:{getCategoryColor(project.category)}" aria-hidden="true"></span>
-								{loc.subtitle}
+								{projectLoc.subtitle}
 							</div>
 							<h3 class="work-title" itemprop="name">
-								<a href={l(`/portfolio/${project.id}`)} class="work-title-link" aria-label="View {loc.title} case study">{loc.title}</a>
+								<a href={l(`/portfolio/${project.id}`)} class="work-title-link" aria-label="View {projectLoc.title} case study">{projectLoc.title}</a>
 							</h3>
-							<p class="work-desc" itemprop="description">{loc.description}</p>
-							<a href={l(`/portfolio/${project.id}`)} class="work-link" itemprop="url" aria-label="View {loc.title} case study">
+							<p class="work-desc" itemprop="description">{projectLoc.description}</p>
+							<a href={l(`/portfolio/${project.id}`)} class="work-link" itemprop="url" aria-label="View {projectLoc.title} case study">
 								{langStore.t('work.case_study')}
 								<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
 									<path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -158,12 +161,12 @@
 </main>
 
 <style>
-	.svc-hero {
+	.article-hero {
 		padding: 64px 0;
 		border-bottom: 1px solid var(--c-border);
 	}
 
-	.svc-back {
+	.article-back {
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
@@ -177,28 +180,22 @@
 		transition: color 0.2s;
 	}
 
-	.svc-back:hover { color: var(--c-white); }
-
-	.svc-hero-row {
-		display: flex;
-		align-items: flex-start;
-		gap: 24px;
+	.article-back:hover {
+		color: var(--c-white);
 	}
 
-	.svc-icon {
-		flex-shrink: 0;
-		width: 72px;
-		height: 72px;
-		display: grid;
-		place-items: center;
-		font-size: 32px;
-		color: var(--c-accent);
-		background: var(--c-surface);
-		border: 1px solid var(--c-border2);
-		border-radius: var(--radius);
+	.article-date {
+		display: block;
+		font-family: var(--f-mono);
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--c-muted);
+		margin-bottom: 16px;
 	}
 
-	.svc-title {
+	.article-title {
 		font-family: var(--f-display);
 		font-size: clamp(36px, 5vw, 56px);
 		font-weight: 700;
@@ -208,40 +205,41 @@
 		margin-bottom: 20px;
 	}
 
-	.svc-desc {
+	.article-desc {
 		font-size: 18px;
 		color: var(--c-muted);
 		line-height: 1.7;
 		max-width: 720px;
 	}
 
-	.svc-content { padding: 80px 0 100px; }
+	.article-content {
+		padding: 80px 0 100px;
+	}
 
-	.svc-layout {
+	.article-layout {
 		display: grid;
 		grid-template-columns: 1fr 320px;
 		gap: 64px;
 		align-items: stretch;
 	}
 
-	.svc-main {
+	.article-main {
 		display: flex;
 		flex-direction: column;
 		min-height: 100%;
 	}
 
-	.svc-block {
+	.article-block {
 		flex: 1;
 		max-width: 720px;
 	}
 
-	/* Иллюстрации услуг — компактные и по центру, в отличие от общих правил rich-text */
-	.svc-block :global(img) {
+	.article-block :global(img) {
 		max-width: min(360px, 100%);
 		margin: 2rem auto;
 	}
 
-	.svc-sidebar {
+	.article-sidebar {
 		display: flex;
 		flex-direction: column;
 		gap: 24px;
@@ -249,24 +247,24 @@
 		top: calc(var(--nav-h) + 24px);
 	}
 
-	.svc-card {
+	.article-card {
 		background: var(--c-surface);
 		border: 1px solid var(--c-border2);
 		border-radius: var(--radius);
 		padding: 28px 24px;
 	}
 
-	.svc-card .section-label {
+	.article-card .section-label {
 		margin-bottom: 16px;
 	}
 
-	.svc-tags {
+	.article-tags {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 8px;
 	}
 
-	.svc-tag {
+	.article-tag {
 		font-family: var(--f-mono);
 		font-size: 11px;
 		color: var(--c-muted);
@@ -275,7 +273,7 @@
 		border-radius: 100px;
 	}
 
-	.svc-cta {
+	.article-cta {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -293,18 +291,33 @@
 		transition: opacity 0.2s, transform 0.2s;
 	}
 
-	.svc-cta:hover { opacity: 0.88; transform: translateY(-1px); }
+	.article-cta:hover {
+		opacity: 0.88;
+		transform: translateY(-1px);
+	}
 
-	:global([data-theme="light"]) .svc-cta { color: #fff; }
+	:global([data-theme='light']) .article-cta {
+		color: #fff;
+	}
 
 	@media (max-width: 1024px) {
-		.svc-layout { grid-template-columns: 1fr; gap: 48px; }
-		.svc-sidebar { position: static; }
+		.article-layout {
+			grid-template-columns: 1fr;
+			gap: 48px;
+		}
+
+		.article-sidebar {
+			position: static;
+		}
 	}
 
 	@media (max-width: 768px) {
-		.svc-hero { padding: 48px 0; }
-		.svc-content { padding: 56px 0 80px; }
-		.svc-hero-row { flex-direction: column; }
+		.article-hero {
+			padding: 48px 0;
+		}
+
+		.article-content {
+			padding: 56px 0 80px;
+		}
 	}
 </style>

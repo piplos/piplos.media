@@ -29,6 +29,7 @@ var (
 		{http.MethodGet, "/v1/public/services/web"},
 		{http.MethodGet, "/v1/public/stack"},
 		{http.MethodGet, "/v1/public/seo"},
+		{http.MethodGet, "/v1/public/pages"},
 		{http.MethodGet, "/v1/public/legal"},
 		{http.MethodGet, "/v1/public/languages"},
 		{http.MethodPost, "/v1/leads"},
@@ -47,6 +48,8 @@ var (
 		{http.MethodPost, "/v1/stack"},
 		{http.MethodGet, "/v1/seo"},
 		{http.MethodPost, "/v1/seo"},
+		{http.MethodGet, "/v1/pages"},
+		{http.MethodPost, "/v1/pages"},
 		{http.MethodGet, "/v1/legal"},
 		{http.MethodGet, "/v1/leads"},
 		{http.MethodPost, "/v1/uploads"},
@@ -116,6 +119,8 @@ func newAuthTestApp(t *testing.T) (*fiber.App, *authsvc.Service, *fakeUserLookup
 	pub.Get("/services/:slug", ok)
 	pub.Get("/stack", ok)
 	pub.Get("/seo", ok)
+	pub.Get("/pages", ok)
+	pub.Get("/pages/:slug", ok)
 	pub.Get("/legal", ok)
 	pub.Get("/legal/:slug", ok)
 	pub.Get("/languages", ok)

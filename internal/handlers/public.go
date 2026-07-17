@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v3"
 
 	apperrors "github.com/piplos/piplos.media/internal/errors"
@@ -151,6 +153,42 @@ func (h *PublicHandler) SEO(c fiber.Ctx) error {
 		return apperrors.ErrInternal("failed to load seo")
 	}
 	return c.JSON(fiber.Map{"pages": items})
+}
+
+// Pages returns live custom pages (site "Articles" section):
+// published and not scheduled for a future date.
+// Query: lang — return only this translation.
+func (h *PublicHandler) Pages(c fiber.Ctx) error {
+	items, err := h.repo.ListPages(c.Context())
+	if err != nil {
+		return apperrors.ErrInternal("failed to load pages")
+	}
+	lang := c.Query("lang")
+	now := time.Now()
+	live := []models.Page{}
+	for _, p := range items {
+		if !p.IsLive(now) {
+			continue
+		}
+		p.Translations = renderMarkdownFields(filteredTranslations(p.Translations, lang), "body")
+		live = append(live, p)
+	}
+	return c.JSON(fiber.Map{"pages": live})
+}
+
+// Page returns a single live custom page by slug.
+// Query: lang — return only this translation.
+func (h *PublicHandler) Page(c fiber.Ctx) error {
+	p, err := h.repo.GetPageBySlug(c.Context(), c.Params("slug"))
+	if err != nil {
+		return apperrors.ErrInternal("failed to load page")
+	}
+	if p == nil || !p.IsLive(time.Now()) {
+		return apperrors.ErrNotFound("page not found")
+	}
+	p.Translations = renderMarkdownFields(
+		filteredTranslations(p.Translations, c.Query("lang")), "body")
+	return c.JSON(fiber.Map{"page": p})
 }
 
 // Legal returns all legal documents for the public site.

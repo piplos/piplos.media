@@ -87,7 +87,9 @@
 
 <div class="tag-select" class:tag-select--open={open} bind:this={root} onfocusout={onFocusOut}>
 	{#if name}
-		<input type="hidden" {name} value={values.join(', ')} />
+		{#each values as value (value)}
+			<input type="hidden" {name} {value} />
+		{/each}
 	{/if}
 	<div
 		class="tag-select-box"

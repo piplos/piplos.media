@@ -102,6 +102,43 @@ export const LEGAL_SLUG_LABELS: Record<string, string> = {
 	cookies: 'Cookie'
 };
 
+/** Пользовательская страница (раздел «Статьи» на сайте). */
+export interface Page {
+	id: string;
+	slug: string;
+	published: boolean;
+	/** ISO-дата отложенной публикации или null (сразу). */
+	publish_at: string | null;
+	/** Превью: фон карточки в списке статей. */
+	image: string;
+	/** Технологический стек (метки из каталога стека). */
+	tags: string[];
+	translations: Translations;
+	created_at: string;
+	updated_at: string;
+}
+
+export type PageStatus = 'draft' | 'scheduled' | 'published';
+
+/** Статус страницы: черновик / запланирована / опубликована. */
+export function pageStatus(page: Pick<Page, 'published' | 'publish_at'>, now = new Date()): PageStatus {
+	if (!page.published) return 'draft';
+	if (page.publish_at && new Date(page.publish_at) > now) return 'scheduled';
+	return 'published';
+}
+
+export const PAGE_STATUS_LABELS: Record<PageStatus, string> = {
+	draft: 'Черновик',
+	scheduled: 'Запланирована',
+	published: 'Опубликована'
+};
+
+export const PAGE_STATUS_VARIANTS: Record<PageStatus, 'neutral' | 'warning' | 'success'> = {
+	draft: 'neutral',
+	scheduled: 'warning',
+	published: 'success'
+};
+
 export type LeadStatus = 'new' | 'in_progress' | 'done' | 'spam';
 
 export interface Lead {

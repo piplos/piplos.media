@@ -37,6 +37,7 @@
 				<h3>{langStore.t('footer.company')}</h3>
 				<ul>
 					<li><a href={l('/portfolio')}>{langStore.t('footer.links.portfolio')}</a></li>
+					<li><a href={l('/articles')}>{langStore.t('footer.links.articles')}</a></li>
 					<li><a href={l('/#stack')}>{langStore.t('footer.links.stack')}</a></li>
 					<li><a href={l('/#about')}>{langStore.t('nav.about')}</a></li>
 					<li><a href={l('/order')}>{langStore.t('footer.links.start')}</a></li>

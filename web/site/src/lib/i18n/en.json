@@ -4,8 +4,19 @@
     "services": "Services",
     "portfolio": "Portfolio",
     "stack": "Stack",
+    "articles": "Articles",
     "about": "About",
     "start_project": "Start Project"
+  },
+  "articles": {
+    "title": "Articles",
+    "eyebrow": "Blog & updates",
+    "description": "News, engineering notes and updates from the Piplos Media team.",
+    "empty": "No articles yet — check back soon.",
+    "read": "Read Article",
+    "back": "All articles",
+    "stack": "Technologies",
+    "start_project": "Start a Project"
   },
   "hero": {
     "headline_1": "We build software",
@@ -197,6 +208,7 @@
       "devops": "DevOps & Cloud",
       "consulting": "Tech Consulting",
       "portfolio": "Portfolio",
+      "articles": "Articles",
       "stack": "Tech Stack",
       "start": "Start a Project",
       "privacy": "Personal Data",

@@ -2,7 +2,7 @@
 import { fail, type ActionFailure } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import { fetchWithAuth } from '$lib/api.server';
-import type { Project, Service, StackItem } from '$lib/types';
+import type { Page, Project, Service, StackItem } from '$lib/types';
 
 type ToggleResult = ActionFailure<{ error: string }> | { ok: true };
 
@@ -52,6 +52,30 @@ export async function toggleServicePublished(event: RequestEvent, id: string): P
 			published: !service.published,
 			sort_order: service.sort_order,
 			translations: service.translations ?? {}
+		})
+	});
+	if (!res.ok) {
+		const data = (await res.json().catch(() => ({}))) as { message?: string };
+		return fail(res.status, { error: data.message ?? 'Не удалось обновить статус' });
+	}
+	return { ok: true };
+}
+
+export async function togglePagePublished(event: RequestEvent, id: string): Promise<ToggleResult> {
+	const getRes = await fetchWithAuth(event, `/v1/pages/${id}`);
+	if (!getRes.ok) return fail(getRes.status, { error: 'Страница не найдена' });
+
+	const { page } = (await getRes.json()) as { page: Page };
+	const res = await fetchWithAuth(event, `/v1/pages/${id}`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+			slug: page.slug,
+			published: !page.published,
+			publish_at: page.publish_at,
+			image: page.image ?? '',
+			tags: page.tags ?? [],
+			translations: page.translations ?? {}
 		})
 	});
 	if (!res.ok) {

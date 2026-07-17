@@ -17,7 +17,7 @@
 </script>
 
 <svelte:head>
-	<title>{SITE.name}</title>
+	<title>{SITE.displayName}</title>
 </svelte:head>
 
 <main id="main">

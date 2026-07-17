@@ -7,13 +7,13 @@
 
 	const docTitle = $derived(LEGAL_SLUG_LABELS[data.page.slug] ?? data.page.slug);
 	const breadcrumbs = $derived([
-		{ label: 'Правовое', href: '/legal' },
+		{ label: 'Страницы', href: '/pages' },
 		{ label: docTitle }
 	]);
 </script>
 
 <svelte:head>
-	<title>{docTitle} — Правовое — Piplos Admin</title>
+	<title>{docTitle} — Страницы — Piplos Admin</title>
 </svelte:head>
 
 <AdminPage title={docTitle} breadcrumbs={breadcrumbs}>

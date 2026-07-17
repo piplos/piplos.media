@@ -17,7 +17,7 @@
 	let projectLinks = $derived(solutionParts.links);
 
 	let seoLoc = $derived(data.seo?.[langStore.value]);
-	let seoTitle = $derived(seoLoc?.title || `${loc.title} — Case Study | ${SITE.name}`);
+	let seoTitle = $derived(seoLoc?.title || `${loc.title} — Case Study | ${SITE.displayName}`);
 	let seoDescription = $derived(seoLoc?.description || loc.description);
 	let ogTitle = $derived(seoLoc?.og_title || seoTitle);
 	let ogDescription = $derived(seoLoc?.og_description || seoDescription);

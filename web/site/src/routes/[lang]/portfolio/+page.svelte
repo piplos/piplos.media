@@ -44,8 +44,8 @@
 </script>
 
 <svelte:head>
-	<title>Portfolio — {SITE.name}</title>
-	<meta name="description" content="Browse {SITE.name} portfolio of 240+ projects: web apps, mobile apps, SaaS platforms, fintech and enterprise systems." />
+	<title>Portfolio — {SITE.displayName}</title>
+	<meta name="description" content="Browse {SITE.displayName} portfolio of 240+ projects: web apps, mobile apps, SaaS platforms, fintech and enterprise systems." />
 	<link rel="canonical" href="{SITE.url}{l('/portfolio')}" />
 </svelte:head>
 

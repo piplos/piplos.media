@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -500,6 +501,102 @@ func (h *ContentHandler) UpdateSEO(c fiber.Ctx) error {
 func (h *ContentHandler) DeleteSEO(c fiber.Ctx) error {
 	if err := h.repo.DeleteSEOPage(c.Context(), c.Params("id")); err != nil {
 		return apperrors.ErrInternal("failed to delete seo page")
+	}
+	return c.JSON(fiber.Map{"ok": true})
+}
+
+// ---------- Pages (custom, site "Articles" section) ----------
+
+type pageRequest struct {
+	Slug         string              `json:"slug"`
+	Published    bool                `json:"published"`
+	PublishAt    *time.Time          `json:"publish_at"`
+	Image        string              `json:"image"`
+	Tags         []string            `json:"tags"`
+	Translations models.Translations `json:"translations"`
+}
+
+func (req *pageRequest) toModel(id string) (*models.Page, error) {
+	req.Slug = strings.TrimSpace(req.Slug)
+	if req.Slug == "" {
+		return nil, apperrors.ErrInvalidRequest("slug is required")
+	}
+	if req.Translations == nil {
+		req.Translations = models.Translations{}
+	}
+	if req.Tags == nil {
+		req.Tags = []string{}
+	}
+	return &models.Page{
+		ID: id, Slug: req.Slug, Published: req.Published,
+		PublishAt: req.PublishAt, Image: strings.TrimSpace(req.Image),
+		Tags: req.Tags, Translations: req.Translations,
+	}, nil
+}
+
+// ListPages returns all custom pages (admin view).
+func (h *ContentHandler) ListPages(c fiber.Ctx) error {
+	items, err := h.repo.ListPages(c.Context())
+	if err != nil {
+		return apperrors.ErrInternal("failed to list pages")
+	}
+	return c.JSON(fiber.Map{"pages": items})
+}
+
+// GetPage returns one custom page.
+func (h *ContentHandler) GetPage(c fiber.Ctx) error {
+	p, err := h.repo.GetPage(c.Context(), c.Params("id"))
+	if err != nil {
+		return apperrors.ErrInternal("failed to get page")
+	}
+	if p == nil {
+		return apperrors.ErrNotFound("page not found")
+	}
+	return c.JSON(fiber.Map{"page": p})
+}
+
+// CreatePage adds a custom page.
+func (h *ContentHandler) CreatePage(c fiber.Ctx) error {
+	var req pageRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return apperrors.ErrInvalidRequest("invalid request body")
+	}
+	p, err := req.toModel("")
+	if err != nil {
+		return err
+	}
+	created, err := h.repo.CreatePage(c.Context(), p)
+	if err != nil {
+		return apperrors.ErrInternal("failed to create page")
+	}
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"page": created})
+}
+
+// UpdatePage modifies a custom page.
+func (h *ContentHandler) UpdatePage(c fiber.Ctx) error {
+	var req pageRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return apperrors.ErrInvalidRequest("invalid request body")
+	}
+	p, err := req.toModel(c.Params("id"))
+	if err != nil {
+		return err
+	}
+	updated, err := h.repo.UpdatePage(c.Context(), p)
+	if err != nil {
+		return apperrors.ErrInternal("failed to update page")
+	}
+	if updated == nil {
+		return apperrors.ErrNotFound("page not found")
+	}
+	return c.JSON(fiber.Map{"page": updated})
+}
+
+// DeletePage removes a custom page. Legal documents live in a separate
+// table and cannot be deleted through this endpoint.
+func (h *ContentHandler) DeletePage(c fiber.Ctx) error {
+	if err := h.repo.DeletePage(c.Context(), c.Params("id")); err != nil {
+		return apperrors.ErrInternal("failed to delete page")
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }

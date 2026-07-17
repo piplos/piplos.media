@@ -43,3 +43,7 @@ export function projectSeoPath(projectSlug: string): string {
 export function serviceSeoPath(serviceSlug: string): string {
 	return `/services/${serviceSlug}`;
 }
+
+export function articleSeoPath(pageSlug: string): string {
+	return `/articles/${pageSlug}`;
+}

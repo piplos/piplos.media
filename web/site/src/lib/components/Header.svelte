@@ -60,6 +60,7 @@
 		{ key: 'nav.services', href: '/#services' },
 		{ key: 'nav.portfolio', href: '/portfolio' },
 		{ key: 'nav.stack', href: '/#stack' },
+		{ key: 'nav.articles', href: '/articles' },
 		{ key: 'nav.about', href: '/#about' }
 	];
 

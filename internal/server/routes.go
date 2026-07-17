@@ -41,6 +41,8 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	pub.Get("/services/:slug", h.Public.Service)
 	pub.Get("/stack", h.Public.Stack)
 	pub.Get("/seo", h.Public.SEO)
+	pub.Get("/pages", h.Public.Pages)
+	pub.Get("/pages/:slug", h.Public.Page)
 	pub.Get("/legal", h.Public.Legal)
 	pub.Get("/legal/:slug", h.Public.LegalPage)
 	pub.Get("/languages", h.Public.Languages)
@@ -81,6 +83,12 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	staff.Post("/seo", h.Content.CreateSEO)
 	staff.Put("/seo/:id", h.Content.UpdateSEO)
 	staff.Delete("/seo/:id", h.Content.DeleteSEO)
+
+	staff.Get("/pages", h.Content.ListPages)
+	staff.Post("/pages", h.Content.CreatePage)
+	staff.Get("/pages/:id", h.Content.GetPage)
+	staff.Put("/pages/:id", h.Content.UpdatePage)
+	staff.Delete("/pages/:id", h.Content.DeletePage)
 
 	staff.Get("/legal", h.Content.ListLegal)
 	staff.Get("/legal/:id", h.Content.GetLegal)

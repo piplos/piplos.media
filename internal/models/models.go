@@ -137,6 +137,29 @@ type LegalPage struct {
 // LegalSlugs are fixed document identifiers.
 var LegalSlugs = []string{"privacy", "terms", "cookies"}
 
+// Page is a custom site page (published in the site "Articles" section).
+// Unlike legal documents, pages are created and deleted in the admin panel.
+type Page struct {
+	ID           string       `json:"id"`
+	Slug         string       `json:"slug"`
+	Published    bool         `json:"published"`
+	PublishAt    *time.Time   `json:"publish_at"`
+	Image        string       `json:"image"`
+	Tags         []string     `json:"tags"`
+	Translations Translations `json:"translations"`
+	CreatedAt    time.Time    `json:"created_at"`
+	UpdatedAt    time.Time    `json:"updated_at"`
+}
+
+// IsLive reports whether the page is visible on the public site:
+// published and not scheduled for a future date.
+func (p *Page) IsLive(now time.Time) bool {
+	if !p.Published {
+		return false
+	}
+	return p.PublishAt == nil || !p.PublishAt.After(now)
+}
+
 // EnabledLanguageCodes returns codes of enabled content languages.
 func EnabledLanguageCodes(langs []Language) []string {
 	codes := make([]string, 0, len(langs))

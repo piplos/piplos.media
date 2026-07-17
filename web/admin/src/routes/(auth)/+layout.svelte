@@ -20,7 +20,7 @@
 		{ href: '/services', label: 'Услуги' },
 		{ href: '/stack', label: 'Стек' },
 		{ href: '/files', label: 'Файлы' },
-		{ href: '/legal', label: 'Правовое' }
+		{ href: '/pages', label: 'Страницы' }
 	];
 
 	const pathname = $derived($page.url.pathname);

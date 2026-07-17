@@ -73,9 +73,9 @@
 </script>
 
 <svelte:head>
-	<title>{SITE.name} — Web, Mobile & Backend</title>
-	<meta name="description" content="{SITE.name} builds web applications, mobile apps, backend systems and DevOps infrastructure for startups and enterprises." />
-	<meta property="og:title" content="{SITE.name} — Web, Mobile & Backend" />
+	<title>{SITE.displayName} — Web, Mobile & Backend</title>
+	<meta name="description" content="{SITE.displayName} builds web applications, mobile apps, backend systems and DevOps infrastructure for startups and enterprises." />
+	<meta property="og:title" content="{SITE.displayName} — Web, Mobile & Backend" />
 	<meta property="og:description" content="Engineering-first team building web apps, mobile apps and backend systems." />
 	<meta property="og:url" content={SITE.url} />
 	<meta property="og:type" content="website" />
