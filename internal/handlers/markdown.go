@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"regexp"
 	"strings"
 
 	"github.com/yuin/goldmark"
@@ -40,14 +41,19 @@ func renderMarkdownFields(t models.Translations, fields ...string) models.Transl
 	return out
 }
 
+// legacyHTMLRe detects content saved as HTML by the old rich-text editor: it
+// always starts with a block-level tag. Markdown that begins with an inline
+// tag (e.g. an <a class="btn-…"> inserted by the editor) is still rendered.
+var legacyHTMLRe = regexp.MustCompile(`(?i)^<(p|div|h[1-6]|ul|ol|table|blockquote|figure|section|article|pre|img|br)[\s>/]`)
+
 // markdownToHTML converts Markdown to HTML. Content that already starts with a
-// tag is treated as legacy HTML and returned as is.
+// block-level tag is treated as legacy HTML and returned as is.
 func markdownToHTML(src string) string {
 	trimmed := strings.TrimSpace(src)
 	if trimmed == "" {
 		return ""
 	}
-	if strings.HasPrefix(trimmed, "<") {
+	if legacyHTMLRe.MatchString(trimmed) {
 		return trimmed
 	}
 	var buf bytes.Buffer

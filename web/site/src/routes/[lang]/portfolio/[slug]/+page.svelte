@@ -6,7 +6,7 @@
 	import { getProjectLocale, getProjectStackItems, type PortfolioProject } from '$lib/portfolio';
 	import { extractAndStripProjectLinks } from '$lib/project-links';
 	import ProjectLinkIcon from '$lib/components/ProjectLinkIcon.svelte';
-	import SafeHtml from '$lib/components/SafeHtml.svelte';
+	import RichBody from '$lib/components/RichBody.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -89,7 +89,12 @@
 					<article class="cs-block">
 						<h2 class="cs-heading">{langStore.t('case_study.solution')}</h2>
 						{#if solutionParts.html.trim()}
-							<SafeHtml html={solutionParts.html} class="rich-text" />
+							<RichBody
+								html={solutionParts.html}
+								projects={data.projects}
+								services={data.services}
+								class="rich-text"
+							/>
 						{:else}
 							<p class="cs-text"></p>
 						{/if}

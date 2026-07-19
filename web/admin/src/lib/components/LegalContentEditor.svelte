@@ -11,8 +11,10 @@
 		languages: { code: string; name: string; is_default: boolean }[];
 		translations: LegalTranslations;
 		idPrefix?: string;
+		/** Папка архива для загрузок в markdown-полях (например, legal/privacy). */
+		uploadPath?: string;
 	}
-	let { languages, translations = $bindable(), idPrefix = 'legal' }: Props = $props();
+	let { languages, translations = $bindable(), idPrefix = 'legal', uploadPath = '' }: Props = $props();
 
 	const defaultLang = $derived(languages.find((l) => l.is_default)?.code ?? languages[0]?.code ?? 'en');
 	let activeLang = $state('');
@@ -114,6 +116,8 @@
 									id="{idPrefix}-{activeLang}-sec-{index}-body"
 									bind:value={section.body}
 									rows={10}
+									embeds={false}
+									{uploadPath}
 								/>
 							</FormField>
 						</div>

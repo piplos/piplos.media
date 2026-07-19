@@ -47,7 +47,7 @@
 		}
 	}
 
-	function onMenuPointerDown(e: PointerEvent) {
+	function onMenuPointerDown(e: MouseEvent) {
 		e.preventDefault();
 	}
 

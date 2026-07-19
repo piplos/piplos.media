@@ -19,6 +19,11 @@ func TestMarkdownToHTML(t *testing.T) {
 		{"heading and list", "## Заголовок\n\n- один\n- два", "<h2>Заголовок</h2>\n<ul>\n<li>один</li>\n<li>два</li>\n</ul>"},
 		{"image", "![alt](https://example.com/a.png)", `<p><img src="https://example.com/a.png" alt="alt"></p>`},
 		{"legacy html passthrough", "<p>Старый <strong>HTML</strong></p>", "<p>Старый <strong>HTML</strong></p>"},
+		{
+			"markdown starting with inline link",
+			`<a href="https://example.com" class="btn-primary">Кнопка</a>` + "\n\n**дальше** markdown",
+			"<p><a href=\"https://example.com\" class=\"btn-primary\">Кнопка</a></p>\n<p><strong>дальше</strong> markdown</p>",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

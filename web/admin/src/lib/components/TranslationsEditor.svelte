@@ -3,7 +3,7 @@
 	import toast from 'svelte-french-toast';
 	import type { Language, Translations } from '$lib/types';
 	import Button from '$lib/components/Button.svelte';
-	import FilePickerDrawer from '$lib/components/FilePickerDrawer.svelte';
+	import ImageField from '$lib/components/ImageField.svelte';
 	import LangTabs from '$lib/components/LangTabs.svelte';
 	import Input from '$lib/components/Input.svelte';
 	import MarkdownEditor from '$lib/components/MarkdownEditor.svelte';
@@ -22,8 +22,10 @@
 		fields: FieldDef[];
 		translations: Translations;
 		idPrefix?: string;
+		/** Папка архива для загрузок в markdown/image-полях (например, projects/site-dev). */
+		uploadPath?: string;
 	}
-	let { languages, fields, translations = $bindable(), idPrefix = 'tr' }: Props = $props();
+	let { languages, fields, translations = $bindable(), idPrefix = 'tr', uploadPath = '' }: Props = $props();
 
 	const defaultLang = $derived(languages.find((l) => l.is_default)?.code ?? languages[0]?.code ?? 'en');
 	let activeLang = $state('');
@@ -98,9 +100,6 @@
 		const source = translations[sourceLang] ?? {};
 		return fields.some((f) => (source[f.key] ?? '').trim() !== '');
 	}
-
-	/** Ключ image-поля, для которого открыт выбор из архива. */
-	let imagePickerField = $state('');
 
 	function setField(key: string, value: string) {
 		ensureLang(activeLang);
@@ -189,6 +188,7 @@
 					<MarkdownEditor
 						id={fieldId}
 						rows={field.rows ?? 12}
+						{uploadPath}
 						bind:value={
 							() => translations[activeLang]?.[field.key] ?? '',
 							(v) => {
@@ -199,6 +199,7 @@
 					/>
 					<p class="tr-hint">
 						Поддерживается Markdown. HTML для сайта генерируется автоматически при выводе через API.
+						Кнопка «▦ Блок» вставляет переменную с проектами или услугами.
 					</p>
 				{:else if field.type === 'textarea'}
 					<Textarea
@@ -213,38 +214,15 @@
 						}
 					/>
 				{:else if field.type === 'image'}
-					{@const imageUrl = translations[activeLang]?.[field.key] ?? ''}
-					<div class="tr-image-field">
-						<div class="tr-image-controls">
-							<Input
-								id={fieldId}
-								placeholder="/uploads/… или https://…"
-								bind:value={
-									() => translations[activeLang]?.[field.key] ?? '',
-									(v) => setField(field.key, v)
-								}
-							/>
-							<div class="tr-image-buttons">
-								<Button variant="secondary" onclick={() => (imagePickerField = field.key)}>
-									Из архива
-								</Button>
-								{#if imageUrl}
-									<Button variant="ghost" onclick={() => setField(field.key, '')}>Убрать</Button>
-								{/if}
-							</div>
-						</div>
-						{#if imageUrl}
-							<a
-								class="tr-image-thumb"
-								href={imageUrl}
-								target="_blank"
-								rel="noreferrer"
-								title="Открыть в новой вкладке"
-							>
-								<img src={imageUrl} alt={field.label} />
-							</a>
-						{/if}
-					</div>
+					<ImageField
+						id={fieldId}
+						{uploadPath}
+						alt={field.label}
+						bind:value={
+							() => translations[activeLang]?.[field.key] ?? '',
+							(v) => setField(field.key, v)
+						}
+					/>
 				{:else}
 					<Input
 						id={fieldId}
@@ -261,21 +239,6 @@
 		{/each}
 	{/if}
 </div>
-
-{#if fields.some((f) => f.type === 'image')}
-	<FilePickerDrawer
-		bind:open={
-			() => imagePickerField !== '',
-			(v) => {
-				if (!v) imagePickerField = '';
-			}
-		}
-		title="Выбор картинки из архива"
-		onselect={(file) => {
-			if (imagePickerField) setField(imagePickerField, file.url);
-		}}
-	/>
-{/if}
 
 <style>
 	.tr-editor {
@@ -297,42 +260,5 @@
 		margin: 0;
 		font-size: 0.75rem;
 		color: #a1a1aa;
-	}
-	.tr-image-field {
-		display: flex;
-		gap: 1rem;
-		align-items: flex-start;
-	}
-	.tr-image-controls {
-		flex: 1;
-		min-width: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-	.tr-image-buttons {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-	.tr-image-thumb {
-		flex-shrink: 0;
-		display: block;
-		width: 10rem;
-		height: 6.25rem;
-		border: 1px solid #e5e7eb;
-		border-radius: 8px;
-		overflow: hidden;
-		background: #f4f4f5;
-	}
-	.tr-image-thumb img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-	@media (max-width: 640px) {
-		.tr-image-field {
-			flex-direction: column;
-		}
 	}
 </style>

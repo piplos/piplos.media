@@ -126,10 +126,11 @@
 			placeholder: 'images'
 		});
 		if (!name) return;
+		const next = path ? `${path}/${name}` : name;
 		busy = true;
 		try {
-			await createFolder(path ? `${path}/${name}` : name);
-			await refresh();
+			await createFolder(next);
+			navigate(next);
 		} catch (e) {
 			fail(e, 'Не удалось создать папку');
 		} finally {

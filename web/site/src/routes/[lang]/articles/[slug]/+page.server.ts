@@ -4,6 +4,7 @@ import { fetchArticle } from '$lib/articles-api';
 import { loadPortfolioProjects } from '$lib/portfolio-api';
 import type { PortfolioProject } from '$lib/portfolio';
 import { fetchSEOPage } from '$lib/seo-api';
+import { fetchServices } from '$lib/services-api';
 import type { PageServerLoad } from './$types';
 
 /** До 3 связанных проектов: пересечение по стеку статьи, иначе — сквозной порядок портфолио. */
@@ -19,9 +20,10 @@ function relatedProjects(projects: PortfolioProject[], articleTags: string[]): P
 
 export const load: PageServerLoad = async ({ params, fetch, platform }) => {
 	const ctx = { platform };
-	const [article, projects, seo] = await Promise.all([
+	const [article, projects, services, seo] = await Promise.all([
 		fetchArticle(params.slug, fetch, params.lang, ctx),
 		loadPortfolioProjects(fetch, { lang: params.lang }, ctx),
+		fetchServices(fetch, params.lang, ctx),
 		fetchSEOPage(`/articles/${params.slug}`, fetch, ctx)
 	]);
 	if (!article) throw error(404, 'Article not found');
@@ -32,5 +34,5 @@ export const load: PageServerLoad = async ({ params, fetch, platform }) => {
 
 	const related = relatedProjects(projects, article.tags ?? []);
 
-	return { article, related, seo };
+	return { article, related, projects, services, seo };
 };

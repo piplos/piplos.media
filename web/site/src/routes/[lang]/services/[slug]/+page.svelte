@@ -3,7 +3,7 @@
 	import { langStore } from '$lib/stores/lang.svelte';
 	import { resolveUploadUrl } from '$lib/api';
 	import { getCategoryColor, getProjectLocale } from '$lib/portfolio';
-	import SafeHtml from '$lib/components/SafeHtml.svelte';
+	import RichBody from '$lib/components/RichBody.svelte';
 	import { SITE } from '$lib/site';
 	import type { PageData } from './$types';
 
@@ -83,7 +83,12 @@
 				<div class="svc-main">
 					{#if service.body?.trim()}
 						<div class="svc-block">
-							<SafeHtml html={service.body} class="rich-text" />
+							<RichBody
+								html={service.body}
+								projects={data.projects}
+								services={data.services}
+								class="rich-text"
+							/>
 						</div>
 					{/if}
 				</div>

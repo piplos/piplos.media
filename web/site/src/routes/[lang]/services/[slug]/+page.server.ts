@@ -2,7 +2,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { resolveUploadUrlsInHtml } from '$lib/api';
 import { loadPortfolioProjects, sortProjectsByGroupOrder } from '$lib/portfolio-api';
 import { fetchSEOPage } from '$lib/seo-api';
-import { loadServicePageItem } from '$lib/services-api';
+import { fetchServices, loadServicePageItem } from '$lib/services-api';
 import type { PageServerLoad } from './$types';
 
 /** Слаги услуг старого сайта → новые (301 для сохранения SEO-веса). */
@@ -20,9 +20,10 @@ export const load: PageServerLoad = async ({ params, fetch, platform }) => {
 	if (legacy) throw redirect(301, `/${params.lang}/services/${legacy}`);
 
 	const ctx = { platform };
-	const [service, projects, seo] = await Promise.all([
+	const [service, projects, services, seo] = await Promise.all([
 		loadServicePageItem(params.slug, fetch, params.lang, ctx),
 		loadPortfolioProjects(fetch, { lang: params.lang }, ctx),
+		fetchServices(fetch, params.lang, ctx),
 		fetchSEOPage(`/services/${params.slug}`, fetch, ctx)
 	]);
 	if (!service) throw error(404, 'Service not found');
@@ -37,5 +38,5 @@ export const load: PageServerLoad = async ({ params, fetch, platform }) => {
 		)
 	).slice(0, 3);
 
-	return { service, related, seo };
+	return { service, related, projects, services, seo };
 };

@@ -690,6 +690,12 @@ ul, ol { list-style: none; }
 .rich-text a { color: var(--c-accent); text-decoration: underline; text-underline-offset: 2px; transition: color 0.2s; }
 .rich-text a:hover { color: var(--c-accent-hover); }
 
+/* Ссылки-кнопки из редактора (<a class="btn-…">) — вид кнопок, не ссылок. */
+.rich-text a.btn-primary, .rich-text a.btn-secondary { text-decoration: none; }
+.rich-text a.btn-primary, .rich-text a.btn-primary:hover { color: #fff; }
+.rich-text a.btn-secondary { color: var(--c-muted); }
+.rich-text a.btn-secondary:hover { color: var(--c-white); }
+
 .rich-text h2, .rich-text h3, .rich-text h4 {
   font-family: var(--f-display);
   color: var(--c-white);

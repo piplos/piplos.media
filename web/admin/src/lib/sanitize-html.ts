@@ -28,7 +28,7 @@ const ALLOWED_TAGS = [
 	'td'
 ];
 
-const ALLOWED_ATTR = ['href', 'src', 'alt', 'title', 'target', 'rel'];
+const ALLOWED_ATTR = ['href', 'src', 'alt', 'title', 'target', 'rel', 'class'];
 
 const PURIFY_CONFIG = {
 	ALLOWED_TAGS,

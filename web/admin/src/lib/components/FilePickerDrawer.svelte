@@ -5,10 +5,13 @@
 	import toast from 'svelte-french-toast';
 	import Button from './Button.svelte';
 	import {
+		createFolder,
+		FilesApiError,
 		listFiles,
 		isImageFile,
 		pathCrumbs,
 		formatSize,
+		uploadFile,
 		type FileInfo,
 		type FileListing
 	} from '$lib/files';
@@ -24,7 +27,8 @@
 		imagesOnly?: boolean;
 		/** Пути, которые нельзя выбрать/открыть (например, перемещаемые папки). */
 		disabledPaths?: string[];
-		/** Начальная папка при открытии (например, stack). */
+		/** Начальная папка при открытии (например, projects/site-dev).
+		 *  Если папки ещё нет, она показывается пустой и создастся при первой загрузке. */
 		initialPath?: string;
 		onselect: (value: { path: string; url: string }) => void;
 	}
@@ -43,6 +47,9 @@
 	let loading = $state(false);
 	let search = $state('');
 	let visibleCount = $state(PAGE_SIZE);
+	let uploading = $state(false);
+	let uploadInput = $state<HTMLInputElement | null>(null);
+	let dragDepth = $state(0);
 
 	async function load(target: string) {
 		loading = true;
@@ -52,7 +59,15 @@
 			search = '';
 			visibleCount = PAGE_SIZE;
 		} catch (e) {
-			toast.error(e instanceof Error ? e.message : 'Не удалось загрузить список файлов');
+			if (e instanceof FilesApiError && e.status === 404) {
+				// Папки сущности ещё нет — показываем пустую, создастся при загрузке.
+				listing = { path: target, folders: [], files: [] };
+				path = target;
+				search = '';
+				visibleCount = PAGE_SIZE;
+			} else {
+				toast.error(e instanceof Error ? e.message : 'Не удалось загрузить список файлов');
+			}
 		} finally {
 			loading = false;
 		}
@@ -87,6 +102,78 @@
 	function pickFolder() {
 		onselect({ path, url: '' });
 		open = false;
+	}
+
+	// ---------- загрузка и создание папок ----------
+
+	async function uploadAll(files: File[]) {
+		if (!files.length || mode !== 'file') return;
+		uploading = true;
+		try {
+			for (const file of files) {
+				await uploadFile(file, path);
+			}
+			toast.success(files.length === 1 ? 'Файл загружен' : `Загружено файлов: ${files.length}`);
+			await load(path);
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : 'Не удалось загрузить файл');
+		} finally {
+			uploading = false;
+		}
+	}
+
+	function onUploadChange(e: Event) {
+		const input = e.currentTarget as HTMLInputElement;
+		const files = [...(input.files ?? [])];
+		input.value = '';
+		void uploadAll(files);
+	}
+
+	let newFolderOpen = $state(false);
+	let newFolderName = $state('');
+
+	async function onCreateFolder() {
+		const name = newFolderName.trim();
+		if (!name) return;
+		const next = path ? `${path}/${name}` : name;
+		try {
+			await createFolder(next);
+			newFolderOpen = false;
+			newFolderName = '';
+			await load(next);
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : 'Не удалось создать папку');
+		}
+	}
+
+	// ---------- drag & drop файлов из ОС ----------
+
+	function isOsFileDrag(e: DragEvent): boolean {
+		return !!e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+	}
+
+	function onDragEnter(e: DragEvent) {
+		if (mode !== 'file' || !isOsFileDrag(e)) return;
+		e.preventDefault();
+		dragDepth += 1;
+	}
+
+	function onDragOver(e: DragEvent) {
+		if (mode !== 'file' || !isOsFileDrag(e)) return;
+		e.preventDefault();
+		if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+	}
+
+	function onDragLeave(e: DragEvent) {
+		if (mode !== 'file' || !isOsFileDrag(e)) return;
+		dragDepth = Math.max(0, dragDepth - 1);
+	}
+
+	function onDrop(e: DragEvent) {
+		if (mode !== 'file' || !isOsFileDrag(e)) return;
+		e.preventDefault();
+		dragDepth = 0;
+		void uploadAll([...(e.dataTransfer?.files ?? [])]);
 	}
 </script>
 
@@ -141,20 +228,80 @@
 								{/each}
 							</nav>
 							{#if mode === 'file'}
-								<input
-									type="search"
-									class="fp-search"
-									placeholder="Поиск по имени…"
-									bind:value={search}
-								/>
+								<div class="fp-tools">
+									<input
+										type="search"
+										class="fp-search"
+										placeholder="Поиск по имени…"
+										bind:value={search}
+									/>
+									<Button variant="secondary" onclick={() => (newFolderOpen = !newFolderOpen)}>
+										Новая папка
+									</Button>
+									<Button loading={uploading} onclick={() => uploadInput?.click()}>Загрузить</Button>
+								</div>
 							{/if}
 						</div>
 
-						<div class="fp-body">
+						{#if newFolderOpen && mode === 'file'}
+							<form
+								class="fp-new-folder"
+								onsubmit={(e) => {
+									e.preventDefault();
+									void onCreateFolder();
+								}}
+							>
+								<!-- Форма появляется по явному действию пользователя. -->
+								<!-- svelte-ignore a11y_autofocus -->
+								<input
+									type="text"
+									class="fp-search fp-new-folder-input"
+									placeholder="Название папки"
+									autofocus
+									bind:value={newFolderName}
+								/>
+								<Button type="submit" variant="secondary">Создать</Button>
+								<Button
+									variant="ghost"
+									onclick={() => {
+										newFolderOpen = false;
+										newFolderName = '';
+									}}
+								>
+									Отмена
+								</Button>
+							</form>
+						{/if}
+
+						<input
+							type="file"
+							accept="image/*"
+							multiple
+							bind:this={uploadInput}
+							onchange={onUploadChange}
+							hidden
+						/>
+
+						<div
+							class="fp-body"
+							class:fp-body--drag={dragDepth > 0}
+							role="region"
+							aria-label="Файлы папки"
+							ondragenter={onDragEnter}
+							ondragover={onDragOver}
+							ondragleave={onDragLeave}
+							ondrop={onDrop}
+						>
 							{#if loading}
 								<p class="fp-empty">Загрузка…</p>
 							{:else if visibleFolders.length === 0 && shownFiles.length === 0}
-								<p class="fp-empty">{query ? 'Ничего не найдено' : 'Папка пуста'}</p>
+								<p class="fp-empty">
+									{query
+										? 'Ничего не найдено'
+										: mode === 'file'
+											? 'Папка пуста. Перетащите файлы сюда или нажмите «Загрузить».'
+											: 'Папка пуста'}
+								</p>
 							{:else}
 								{#if visibleFolders.length}
 									<div class="fp-folders">
@@ -313,6 +460,24 @@
 		color: #a1a1aa;
 		font-size: 0.8125rem;
 	}
+	.fp-tools {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+	.fp-new-folder {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.625rem 1.25rem;
+		border-bottom: 1px solid #f1f1f2;
+		flex-shrink: 0;
+	}
+	.fp-new-folder-input {
+		flex: 1;
+		min-width: 0;
+	}
 	.fp-search {
 		width: 12rem;
 		min-height: 2rem;
@@ -331,6 +496,11 @@
 		flex: 1;
 		overflow-y: auto;
 		padding: 1rem 1.25rem;
+		border-radius: 10px;
+		transition: box-shadow 0.15s;
+	}
+	.fp-body--drag {
+		box-shadow: inset 0 0 0 2px #2563eb;
 	}
 	.fp-empty {
 		margin: 2.5rem 0;

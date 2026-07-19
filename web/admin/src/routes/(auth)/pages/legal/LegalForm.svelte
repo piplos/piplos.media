@@ -5,6 +5,7 @@
 	import Card from '$lib/components/Card.svelte';
 	import FormField from '$lib/components/FormField.svelte';
 	import LegalContentEditor from '$lib/components/LegalContentEditor.svelte';
+	import { entityFolder } from '$lib/files';
 	import type { Language, LegalPage, LegalTranslations } from '$lib/types';
 
 	interface Props {
@@ -51,7 +52,12 @@
 
 	<Card padding="sm">
 		<h2 class="section-title">Содержание документа</h2>
-		<LegalContentEditor {languages} bind:translations idPrefix="legal-{page.slug}" />
+		<LegalContentEditor
+			{languages}
+			bind:translations
+			idPrefix="legal-{page.slug}"
+			uploadPath={entityFolder('legal', page.slug)}
+		/>
 	</Card>
 
 	<div class="form-actions">

@@ -111,11 +111,13 @@ func (h *UploadsHandler) Upload(c fiber.Ctx) error {
 	}
 
 	folderRel, folderAbs, ok := resolveUploadPath(h.dir, c.FormValue("path"))
-	if !ok {
+	if !ok || !validFolderPath(folderRel) {
 		return apperrors.ErrInvalidRequest("invalid path")
 	}
-	if st, err := os.Stat(folderAbs); err != nil || !st.IsDir() {
-		return apperrors.ErrInvalidRequest("target folder not found")
+	// Target folder is created on demand: forms upload straight into an
+	// entity folder (projects/<slug> etc.) that may not exist yet.
+	if err := os.MkdirAll(folderAbs, 0o755); err != nil {
+		return apperrors.ErrInternal("failed to create target folder")
 	}
 
 	name := uuid.NewString() + ext

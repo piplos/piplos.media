@@ -3,12 +3,13 @@
 	import toast from 'svelte-french-toast';
 	import Button from '$lib/components/Button.svelte';
 	import Card from '$lib/components/Card.svelte';
-	import FilePickerDrawer from '$lib/components/FilePickerDrawer.svelte';
 	import FormField from '$lib/components/FormField.svelte';
+	import ImageField from '$lib/components/ImageField.svelte';
 	import Input from '$lib/components/Input.svelte';
 	import SlugInput from '$lib/components/SlugInput.svelte';
 	import TagSelect from '$lib/components/TagSelect.svelte';
 	import TranslationsEditor from '$lib/components/TranslationsEditor.svelte';
+	import { entityFolder } from '$lib/files';
 	import type { Language, Page, SEOPage, StackItem, Translations } from '$lib/types';
 
 	interface Props {
@@ -32,34 +33,8 @@
 	let published = $state(initial.published ?? true);
 	let image = $state(initial.image ?? '');
 	let tags = $state(initial.tags ?? []);
-	let imageInput = $state<HTMLInputElement | null>(null);
-	let uploadingImage = $state(false);
-	let imagePickerOpen = $state(false);
 	let translations = $state<Translations>((initial.translations ?? {}) as Translations);
 	let seoTranslations = $state<Translations>((initialSeo?.translations ?? {}) as Translations);
-
-	async function onImageFileChange(e: Event) {
-		const input = e.currentTarget as HTMLInputElement;
-		const file = input.files?.[0];
-		input.value = '';
-		if (!file) return;
-		uploadingImage = true;
-		try {
-			const fd = new FormData();
-			fd.append('file', file);
-			const res = await fetch('/api/upload', { method: 'POST', body: fd });
-			const data = (await res.json().catch(() => ({}))) as { url?: string; message?: string };
-			if (!res.ok || !data.url) {
-				toast.error(data.message ?? 'Не удалось загрузить изображение');
-				return;
-			}
-			image = data.url;
-		} catch {
-			toast.error('Сервис загрузки недоступен');
-		} finally {
-			uploadingImage = false;
-		}
-	}
 
 	/** ISO → значение для input type="datetime-local" в локальном времени. */
 	function toLocalInput(iso: string | null | undefined): string {
@@ -83,6 +58,8 @@
 	// SEO-ключ в БД без языка (как у проектов/услуг); в UI показываем публичный URL с /{lang}.
 	const seoPath = $derived(seoSlug ? `/articles/${seoSlug}` : '');
 	const seoPathDisplay = $derived(seoPath ? `/{lang}${seoPath}` : '');
+	// Папка в файловом архиве для картинок этой страницы (создаётся при первой загрузке).
+	const uploadPath = $derived(entityFolder('pages', seoSlug));
 
 	const defaultLang = $derived(languages.find((l) => l.is_default)?.code ?? languages[0]?.code ?? 'en');
 	const stackOptions = $derived(stack.map((item) => ({ value: item.label, label: item.label })));
@@ -160,34 +137,7 @@
 				</FormField>
 			</div>
 			<FormField label="Превью (картинка)" id="page-image">
-				<div class="image-field">
-					<div class="image-controls">
-						<Input id="page-image" name="image" bind:value={image} placeholder="/uploads/… или https://…" />
-						<div class="image-buttons">
-							<Button variant="secondary" loading={uploadingImage} onclick={() => imageInput?.click()}>
-								Загрузить
-							</Button>
-							<Button variant="secondary" onclick={() => (imagePickerOpen = true)}>
-								Из архива
-							</Button>
-							{#if image}
-								<Button variant="ghost" onclick={() => (image = '')}>Убрать</Button>
-							{/if}
-						</div>
-					</div>
-					{#if image}
-						<a class="image-thumb" href={image} target="_blank" rel="noreferrer" title="Открыть в новой вкладке">
-							<img src={image} alt="Превью статьи" />
-						</a>
-					{/if}
-				</div>
-				<input
-					type="file"
-					accept="image/*"
-					bind:this={imageInput}
-					onchange={onImageFileChange}
-					hidden
-				/>
+				<ImageField id="page-image" name="image" bind:value={image} {uploadPath} alt="Превью статьи" />
 			</FormField>
 			<FormField label="Стек" id="page-tags">
 				<TagSelect
@@ -237,7 +187,7 @@
 			</div>
 
 			{#if activeTab === 'content'}
-				<TranslationsEditor {languages} fields={translationFields} bind:translations idPrefix="page" />
+				<TranslationsEditor {languages} fields={translationFields} bind:translations idPrefix="page" {uploadPath} />
 			{:else if seoPath}
 				<FormField label="Путь страницы" id="page-seo-path">
 					<p class="seo-path">{seoPathDisplay}</p>
@@ -249,6 +199,7 @@
 						fields={seoFields}
 						bind:translations={seoTranslations}
 						idPrefix="page-seo"
+						{uploadPath}
 					/>
 				</div>
 			{:else}
@@ -261,12 +212,6 @@
 		<Button type="submit" loading={submitting}>{submitLabel}</Button>
 	</div>
 </form>
-
-<FilePickerDrawer
-	bind:open={imagePickerOpen}
-	title="Выбор картинки из архива"
-	onselect={(file) => (image = file.url)}
-/>
 
 <style>
 	.content-form {
@@ -288,43 +233,6 @@
 	@media (max-width: 640px) {
 		.grid-2 {
 			grid-template-columns: 1fr;
-		}
-	}
-	.image-field {
-		display: flex;
-		gap: 1rem;
-		align-items: flex-start;
-	}
-	.image-controls {
-		flex: 1;
-		min-width: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-	.image-buttons {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-	.image-thumb {
-		flex-shrink: 0;
-		display: block;
-		width: 10rem;
-		height: 6.25rem;
-		border: 1px solid #e5e7eb;
-		border-radius: 8px;
-		overflow: hidden;
-		background: #f4f4f5;
-	}
-	.image-thumb img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-	@media (max-width: 640px) {
-		.image-field {
-			flex-direction: column;
 		}
 	}
 	.page-hint {

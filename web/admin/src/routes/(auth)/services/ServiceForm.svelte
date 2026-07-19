@@ -10,6 +10,7 @@
 	import SlugInput from '$lib/components/SlugInput.svelte';
 	import TagSelect from '$lib/components/TagSelect.svelte';
 	import TranslationsEditor from '$lib/components/TranslationsEditor.svelte';
+	import { entityFolder } from '$lib/files';
 	import { DEFAULT_SERVICE_ICON, SERVICE_ICON_OPTIONS } from '$lib/service-icons';
 	import type { Language, SEOPage, Service, StackItem, Translations } from '$lib/types';
 
@@ -40,6 +41,8 @@
 	const seoSlug = $derived(slug.trim() || initial.slug || '');
 	const seoPath = $derived(isEdit && seoSlug ? `/services/${seoSlug}` : '');
 	const seoPathDisplay = $derived(seoPath ? `/{lang}${seoPath}` : '');
+	// Папка в файловом архиве для картинок услуги (создаётся при первой загрузке).
+	const uploadPath = $derived(entityFolder('services', seoSlug));
 
 	const defaultLang = $derived(languages.find((l) => l.is_default)?.code ?? languages[0]?.code ?? 'en');
 	const slugSource = $derived.by(() => {
@@ -172,7 +175,7 @@
 					Краткое описание — для карточек и шапки страницы. Подробное описание — Markdown с
 					картинками для отдельной страницы услуги на сайте.
 				</p>
-				<TranslationsEditor {languages} fields={translationFields} bind:translations idPrefix="svc" />
+				<TranslationsEditor {languages} fields={translationFields} bind:translations idPrefix="svc" {uploadPath} />
 			{:else}
 				<FormField label="Путь страницы" id="svc-seo-path">
 					<p class="seo-path">{seoPathDisplay}</p>
@@ -184,6 +187,7 @@
 						fields={seoFields}
 						bind:translations={seoTranslations}
 						idPrefix="svc-seo"
+						{uploadPath}
 					/>
 				</div>
 			{/if}

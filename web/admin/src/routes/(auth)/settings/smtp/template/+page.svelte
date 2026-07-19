@@ -96,6 +96,8 @@
 					id="tpl-body"
 					bind:value={body}
 					rows={14}
+					embeds={false}
+					uploadPath="emails"
 					placeholder={'## {{name}}\n{{email}} · {{phone}}\n...\n\n[Открыть в админке →]({{lead_url}})'}
 				/>
 			</FormField>

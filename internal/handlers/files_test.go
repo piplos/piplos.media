@@ -42,6 +42,21 @@ func TestValidEntryName(t *testing.T) {
 	}
 }
 
+func TestValidFolderPath(t *testing.T) {
+	valid := []string{"", "folder", "folder/sub", "проекты/site-dev"}
+	for _, p := range valid {
+		if !validFolderPath(p) {
+			t.Errorf("validFolderPath(%q) = false, want true", p)
+		}
+	}
+	invalid := []string{".hidden", "folder/.hidden", "a:b/c", "ok/a*b"}
+	for _, p := range invalid {
+		if validFolderPath(p) {
+			t.Errorf("validFolderPath(%q) = true, want false", p)
+		}
+	}
+}
+
 func TestUploadsFileURL(t *testing.T) {
 	if got := uploadsFileURL("", "folder/img.png"); got != "/uploads/folder/img.png" {
 		t.Errorf("uploadsFileURL empty base = %q", got)

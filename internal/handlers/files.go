@@ -51,6 +51,20 @@ func validEntryName(name string) bool {
 	return !invalidNameChars.MatchString(name)
 }
 
+// validFolderPath reports whether every segment of a relative path is a valid
+// entry name ("" = upload root, always valid).
+func validFolderPath(rel string) bool {
+	if rel == "" {
+		return true
+	}
+	for _, seg := range strings.Split(rel, "/") {
+		if !validEntryName(seg) {
+			return false
+		}
+	}
+	return true
+}
+
 // uploadsFileURL builds a public URL for a file relative to the upload dir.
 func uploadsFileURL(publicURL, rel string) string {
 	segs := strings.Split(rel, "/")

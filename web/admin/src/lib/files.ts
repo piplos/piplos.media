@@ -19,9 +19,18 @@ export interface FileListing {
 	files: FileInfo[];
 }
 
+/** Ошибка файлового API с HTTP-статусом (404 — папки нет). */
+export class FilesApiError extends Error {
+	status: number;
+	constructor(message: string, status: number) {
+		super(message);
+		this.status = status;
+	}
+}
+
 async function parseOrThrow<T>(res: Response): Promise<T> {
 	const data = (await res.json().catch(() => ({}))) as T & { message?: string };
-	if (!res.ok) throw new Error(data.message ?? 'Ошибка запроса к файловому архиву');
+	if (!res.ok) throw new FilesApiError(data.message ?? 'Ошибка запроса к файловому архиву', res.status);
 	return data;
 }
 
@@ -81,4 +90,18 @@ export function pathCrumbs(path: string): { name: string; path: string }[] {
 	if (!path) return [];
 	const parts = path.split('/');
 	return parts.map((name, i) => ({ name, path: parts.slice(0, i + 1).join('/') }));
+}
+
+/** Папка сущности в архиве: entityFolder('projects', 'site-dev') → 'projects/site-dev'.
+ *  Slug чистится от запрещённых символов; пустой slug → корневая папка раздела. */
+export function entityFolder(
+	section: 'projects' | 'services' | 'pages' | 'legal',
+	slug: string
+): string {
+	const clean = slug
+		.trim()
+		.replace(/[/\\:*?"<>|]/g, '-')
+		.replace(/^\.+/, '')
+		.slice(0, 128);
+	return clean ? `${section}/${clean}` : section;
 }

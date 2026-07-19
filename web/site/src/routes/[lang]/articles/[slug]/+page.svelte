@@ -4,7 +4,7 @@
 	import { resolveUploadUrl } from '$lib/api';
 	import { articleDate, formatArticleDate, getArticleLocale } from '$lib/articles-api';
 	import { getCategoryColor, getProjectLocale } from '$lib/portfolio';
-	import SafeHtml from '$lib/components/SafeHtml.svelte';
+	import RichBody from '$lib/components/RichBody.svelte';
 	import { SITE } from '$lib/site';
 	import type { PageData } from './$types';
 
@@ -86,7 +86,12 @@
 				<div class="article-main">
 					{#if loc.body?.trim()}
 						<div class="article-block" itemprop="articleBody">
-							<SafeHtml html={loc.body} class="rich-text" />
+							<RichBody
+								html={loc.body}
+								projects={data.projects}
+								services={data.services}
+								class="rich-text"
+							/>
 						</div>
 					{/if}
 				</div>
