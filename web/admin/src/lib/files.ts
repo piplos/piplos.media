@@ -79,11 +79,7 @@ export function isImageFile(name: string): boolean {
 	return IMAGE_EXT.test(name);
 }
 
-export function formatSize(bytes: number): string {
-	if (bytes < 1024) return `${bytes} Б`;
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
-	return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
-}
+export { formatBytes as formatSize } from './format';
 
 /** Хлебные крошки для относительного пути: [{name, path}], без корня. */
 export function pathCrumbs(path: string): { name: string; path: string }[] {

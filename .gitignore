@@ -33,5 +33,6 @@ web/*/build/
 /bin/
 *.out
 /data/uploads/
+/data/backups/
 graphify-out/
 __debug_*

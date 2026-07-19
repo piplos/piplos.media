@@ -31,6 +31,9 @@ type Config struct {
 	UploadDir    string
 	PublicAPIURL string
 
+	// Каталог локальных резервных копий.
+	BackupDir string
+
 	// Публичный URL админ-панели (ссылка на заявку в письме админам).
 	AdminURL string
 }
@@ -64,6 +67,7 @@ func Load() Config {
 		AdminEmail:              env("ADMIN_EMAIL", ""),
 		AdminPassword:           env("ADMIN_PASSWORD", ""),
 		UploadDir:               env("UPLOAD_DIR", "data/uploads"),
+		BackupDir:               env("BACKUP_DIR", "data/backups"),
 		PublicAPIURL:            env("PUBLIC_API_URL", ""),
 		AdminURL:                env("ADMIN_URL", "http://localhost:5174"),
 	}

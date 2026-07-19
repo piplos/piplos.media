@@ -22,6 +22,7 @@ import (
 	"github.com/piplos/piplos.media/internal/repository"
 	"github.com/piplos/piplos.media/internal/server"
 	authsvc "github.com/piplos/piplos.media/internal/services/auth"
+	"github.com/piplos/piplos.media/internal/services/backup"
 	"github.com/piplos/piplos.media/internal/services/mailer"
 	"github.com/piplos/piplos.media/internal/services/translate"
 	"github.com/piplos/piplos.media/internal/utils"
@@ -68,6 +69,14 @@ func main() {
 		log.Fatal().Err(err).Str("dir", uploadDir).Msg("create upload dir")
 	}
 
+	backupDir, err := filepath.Abs(cfg.BackupDir)
+	if err != nil {
+		log.Fatal().Err(err).Msg("resolve backup dir")
+	}
+	backupSvc := backup.New(db.Pool, repo, uploadDir, backupDir, log)
+	schedulerCtx, stopScheduler := context.WithCancel(ctx)
+	backupSvc.StartScheduler(schedulerCtx)
+
 	publicAPIURL := cfg.PublicAPIURL
 	if publicAPIURL == "" {
 		publicAPIURL = "http://localhost:" + cfg.Port
@@ -99,6 +108,7 @@ func main() {
 		Uploads:  handlers.NewUploadsHandler(uploadDir, publicAPIURL),
 		Files:    handlers.NewFilesHandler(uploadDir, publicAPIURL),
 		AIModels: handlers.NewAIModelsHandler(repo),
+		Backups:  handlers.NewBackupsHandler(backupSvc),
 	}
 	server.Register(app, h, authMw)
 
@@ -118,6 +128,7 @@ func main() {
 	<-quit
 
 	log.Info().Msg("shutting down")
+	stopScheduler()
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if err := app.ShutdownWithContext(shutdownCtx); err != nil {

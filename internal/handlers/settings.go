@@ -16,6 +16,7 @@ import (
 	"github.com/piplos/piplos.media/internal/services/ai"
 	"github.com/piplos/piplos.media/internal/services/mailer"
 	"github.com/piplos/piplos.media/internal/services/translate"
+	"github.com/piplos/piplos.media/internal/storage"
 	"github.com/piplos/piplos.media/internal/utils"
 )
 
@@ -141,13 +142,48 @@ func (h *SettingsHandler) testAIProviderKey(ctx context.Context, provider, apiKe
 	return client.TestAPIKey(ctx)
 }
 
-// TestSetting checks a setting without saving it. Supported: SMTP, AI providers.
+// testS3 verifies S3 credentials and bucket access. Masked secrets are
+// substituted with stored values, so the saved config can be re-tested.
+func (h *SettingsHandler) testS3(ctx context.Context, rawValue string) error {
+	var cfg storage.S3Config
+	if err := json.Unmarshal([]byte(rawValue), &cfg); err != nil {
+		return fmt.Errorf("value must be a JSON object")
+	}
+	if cfg.AccessKeyID == maskedValue || cfg.SecretAccessKey == maskedValue {
+		stored, err := h.repo.GetDecryptedValue(ctx, config.KeyS3)
+		if err != nil {
+			return fmt.Errorf("failed to load stored S3 settings")
+		}
+		var storedCfg storage.S3Config
+		_ = json.Unmarshal([]byte(stored), &storedCfg)
+		if cfg.AccessKeyID == maskedValue {
+			cfg.AccessKeyID = storedCfg.AccessKeyID
+		}
+		if cfg.SecretAccessKey == maskedValue {
+			cfg.SecretAccessKey = storedCfg.SecretAccessKey
+		}
+	}
+	client, err := storage.NewS3(cfg)
+	if err != nil {
+		return err
+	}
+	return client.TestConnection(ctx)
+}
+
+// TestSetting checks a setting without saving it. Supported: SMTP, AI providers, S3.
 func (h *SettingsHandler) TestSetting(c fiber.Ctx) error {
 	var req testSettingRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return apperrors.ErrInvalidRequest("invalid request body")
 	}
 	key := strings.ToUpper(req.Key)
+
+	if key == config.KeyS3 {
+		if err := h.testS3(c.Context(), strings.TrimSpace(req.Value)); err != nil {
+			return apperrors.ErrInvalidRequest(err.Error())
+		}
+		return c.JSON(fiber.Map{"ok": true})
+	}
 
 	if provider, ok := config.ProviderByKey[key]; ok {
 		apiKey := extractAPIKeyFromProviderJSON(strings.TrimSpace(req.Value))

@@ -20,6 +20,7 @@ type Handlers struct {
 	Uploads  *handlers.UploadsHandler
 	Files    *handlers.FilesHandler
 	AIModels *handlers.AIModelsHandler
+	Backups  *handlers.BackupsHandler
 }
 
 // APIPrefix is the versioned path on the API host (api.piplos.media/v1/...).
@@ -130,4 +131,12 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	adm.Post("/ai-models", h.AIModels.CreateAIModel)
 	adm.Put("/ai-models/:id", h.AIModels.UpdateAIModel)
 	adm.Delete("/ai-models/:id", h.AIModels.DeleteAIModel)
+
+	// Backups (создание, восстановление, скачивание, удаление).
+	adm.Get("/backups", h.Backups.List)
+	adm.Get("/backups/status", h.Backups.Status)
+	adm.Get("/backups/download", h.Backups.Download)
+	adm.Post("/backups", h.Backups.Run)
+	adm.Post("/backups/restore", h.Backups.Restore)
+	adm.Post("/backups/delete", h.Backups.Delete)
 }
