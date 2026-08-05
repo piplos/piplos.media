@@ -10,7 +10,7 @@
 		<script>
 			(function() {
 				var saved = localStorage.getItem('piplos-theme');
-				var preferred = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+				var preferred = (saved === 'light' || saved === 'dark') ? saved : 'dark';
 				document.documentElement.setAttribute('data-theme', preferred);
 				var meta = document.getElementById('theme-color-meta');
 				if (meta) meta.content = preferred === 'light' ? '#ffffff' : '#24252a';

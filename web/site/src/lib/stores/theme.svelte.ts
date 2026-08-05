@@ -23,10 +23,7 @@ function createThemeStore() {
 	function init() {
 		if (!browser) return;
 		const saved = localStorage.getItem(STORAGE_KEY);
-		const preferred = window.matchMedia('(prefers-color-scheme: light)').matches
-			? 'light'
-			: 'dark';
-		set(isTheme(saved) ? saved : preferred);
+		set(isTheme(saved) ? saved : 'dark');
 	}
 
 	function toggle() {
