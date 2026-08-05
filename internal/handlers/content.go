@@ -24,17 +24,18 @@ func NewContentHandler(repo *repository.Repository) *ContentHandler {
 // ---------- Projects ----------
 
 type projectRequest struct {
-	Slug            string              `json:"slug"`
-	Category        string              `json:"category"`
-	Categories      []string            `json:"categories"`
-	Tags            []string            `json:"tags"`
-	Year            int                 `json:"year"`
-	Featured        bool                `json:"featured"`
-	Published       bool                `json:"published"`
-	SortOrder       int                 `json:"sort_order"`
-	GlobalSortOrder int                 `json:"global_sort_order"`
-	Image           string              `json:"image"`
-	Translations    models.Translations `json:"translations"`
+	Slug            string               `json:"slug"`
+	Category        string               `json:"category"`
+	Categories      []string             `json:"categories"`
+	Tags            []string             `json:"tags"`
+	Year            int                  `json:"year"`
+	Featured        bool                 `json:"featured"`
+	Published       bool                 `json:"published"`
+	SortOrder       int                  `json:"sort_order"`
+	GlobalSortOrder int                  `json:"global_sort_order"`
+	Image           string               `json:"image"`
+	Links           []models.ProjectLink `json:"links"`
+	Translations    models.Translations  `json:"translations"`
 }
 
 func (req *projectRequest) toModel(id string) (*models.Project, error) {
@@ -55,7 +56,8 @@ func (req *projectRequest) toModel(id string) (*models.Project, error) {
 		ID: id, Slug: req.Slug, Category: req.Category, Categories: req.Categories,
 		Tags: req.Tags, Year: req.Year, Featured: req.Featured, Published: req.Published,
 		SortOrder: req.SortOrder, GlobalSortOrder: req.GlobalSortOrder,
-		Image: strings.TrimSpace(req.Image), Translations: req.Translations,
+		Image: strings.TrimSpace(req.Image), Links: models.NormalizeProjectLinks(req.Links),
+		Translations: req.Translations,
 	}, nil
 }
 

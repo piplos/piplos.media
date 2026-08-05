@@ -20,6 +20,14 @@ export interface Language {
 
 export type Translations = Record<string, Record<string, string>>;
 
+export type ProjectLinkKind = 'website' | 'google_play' | 'app_store';
+
+export interface ProjectLink {
+	url: string;
+	label: string;
+	kind: ProjectLinkKind;
+}
+
 export interface Project {
 	id: string;
 	slug: string;
@@ -34,6 +42,7 @@ export interface Project {
 	/** Сквозной порядок в разделе «все проекты» на сайте. */
 	global_sort_order: number;
 	image: string;
+	links: ProjectLink[];
 	translations: Translations;
 	created_at: string;
 	updated_at: string;

@@ -4,7 +4,7 @@
 	import { SITE } from '$lib/site';
 	import { resolveUploadUrl } from '$lib/api';
 	import { getProjectLocale, getProjectStackItems, type PortfolioProject } from '$lib/portfolio';
-	import { extractAndStripProjectLinks } from '$lib/project-links';
+	import { prepareProjectSolution } from '$lib/project-links';
 	import ProjectLinkIcon from '$lib/components/ProjectLinkIcon.svelte';
 	import RichBody from '$lib/components/RichBody.svelte';
 	import type { PageData } from './$types';
@@ -13,8 +13,7 @@
 	let project = $derived(data.project as PortfolioProject);
 	let loc = $derived(getProjectLocale(project, langStore.value));
 	let stackItems = $derived(getProjectStackItems(project, langStore.value));
-	let solutionParts = $derived(extractAndStripProjectLinks(loc.solution));
-	let projectLinks = $derived(solutionParts.links);
+	let solution = $derived(prepareProjectSolution(loc.solution, project.links ?? []));
 
 	let seoLoc = $derived(data.seo?.[langStore.value]);
 	let seoTitle = $derived(seoLoc?.title || `${loc.title} — Case Study | ${SITE.displayName}`);
@@ -88,9 +87,9 @@
 
 					<article class="cs-block">
 						<h2 class="cs-heading">{langStore.t('case_study.solution')}</h2>
-						{#if solutionParts.html.trim()}
+						{#if solution.html.trim()}
 							<RichBody
-								html={solutionParts.html}
+								html={solution.html}
 								projects={data.projects}
 								services={data.services}
 								class="rich-text"
@@ -108,11 +107,11 @@
 
 				<aside class="cs-sidebar">
 
-					{#if projectLinks.length}
+					{#if solution.links.length}
 						<div class="cs-card">
 							<p class="cs-label">{langStore.t('case_study.links')}</p>
 							<div class="cs-links">
-								{#each projectLinks as link (link.url)}
+								{#each solution.links as link (link.url)}
 									<a
 										href={link.url}
 										class="cs-link"

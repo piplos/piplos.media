@@ -1,4 +1,7 @@
 import type { Lang } from '$lib/stores/lang.svelte';
+import type { ProjectLink } from '$lib/project-links';
+
+export type { ProjectLink, ProjectLinkKind } from '$lib/project-links';
 
 export type ProjectLocale = {
 	title: string;
@@ -20,6 +23,7 @@ export type PortfolioProject = {
 	/** Порядок внутри группы (услуги); сквозной порядок «всех проектов» — порядок массива. */
 	sort_order: number;
 	image: string;
+	links: ProjectLink[];
 	en: ProjectLocale;
 	ru: ProjectLocale;
 };

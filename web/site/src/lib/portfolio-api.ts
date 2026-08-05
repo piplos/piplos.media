@@ -5,7 +5,7 @@ import {
 	type ApiRequestContext
 } from '$lib/api';
 import { DEFAULT_LANG } from '$lib/i18n/routing';
-import type { PortfolioProject, ProjectLocale } from '$lib/portfolio';
+import type { PortfolioProject, ProjectLocale, ProjectLink } from '$lib/portfolio';
 
 export interface ApiProject {
 	id: string;
@@ -21,6 +21,7 @@ export interface ApiProject {
 	/** Сквозной порядок раздела «все проекты» (задаётся в админке). */
 	global_sort_order: number;
 	image: string;
+	links?: ProjectLink[];
 	translations: Record<string, Record<string, string>>;
 }
 
@@ -60,6 +61,7 @@ export function toPortfolioProject(project: ApiProject, ctx?: ApiRequestContext)
 		featured: project.featured,
 		sort_order: project.sort_order,
 		image: resolveUploadUrl(project.image ?? '', ctx),
+		links: Array.isArray(project.links) ? project.links : [],
 		en: toProjectLocale(project.translations.en ?? fallback, ctx),
 		ru: toProjectLocale(project.translations.ru ?? fallback, ctx)
 	};

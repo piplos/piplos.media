@@ -85,3 +85,18 @@ export function extractAndStripProjectLinks(html: string): { links: ProjectLink[
 
 	return { links: sortLinks(links), html: out };
 }
+
+/**
+ * Готовит solution для страницы кейса: всегда вырезает markup ссылок из HTML,
+ * для сайдбара берёт structured links, иначе — извлечённые (legacy).
+ */
+export function prepareProjectSolution(
+	solutionHtml: string,
+	structuredLinks: ProjectLink[] = []
+): { html: string; links: ProjectLink[] } {
+	const extracted = extractAndStripProjectLinks(solutionHtml);
+	return {
+		html: extracted.html,
+		links: structuredLinks.length > 0 ? structuredLinks : extracted.links
+	};
+}

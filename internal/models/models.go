@@ -3,6 +3,7 @@ package models
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -50,24 +51,112 @@ func (t Translations) JSON() ([]byte, error) {
 	return json.Marshal(t)
 }
 
+// ProjectLinkKind identifies where a project link points.
+type ProjectLinkKind string
+
+const (
+	ProjectLinkWebsite    ProjectLinkKind = "website"
+	ProjectLinkGooglePlay ProjectLinkKind = "google_play"
+	ProjectLinkAppStore   ProjectLinkKind = "app_store"
+)
+
+// ProjectLink is an external URL shown on a case study page.
+type ProjectLink struct {
+	URL   string          `json:"url"`
+	Label string          `json:"label"`
+	Kind  ProjectLinkKind `json:"kind"`
+}
+
+// Valid reports whether k is a known ProjectLinkKind.
+func (k ProjectLinkKind) Valid() bool {
+	switch k {
+	case ProjectLinkWebsite, ProjectLinkGooglePlay, ProjectLinkAppStore:
+		return true
+	default:
+		return false
+	}
+}
+
+// NonNilProjectLinks returns links, or an empty non-nil slice when links is nil.
+func NonNilProjectLinks(links []ProjectLink) []ProjectLink {
+	if links == nil {
+		return []ProjectLink{}
+	}
+	return links
+}
+
+// InferProjectLinkKind derives kind from a URL host when kind is missing/unknown.
+func InferProjectLinkKind(url string) ProjectLinkKind {
+	switch {
+	case strings.Contains(url, "play.google.com"):
+		return ProjectLinkGooglePlay
+	case strings.Contains(url, "apps.apple.com"):
+		return ProjectLinkAppStore
+	default:
+		return ProjectLinkWebsite
+	}
+}
+
+// DefaultProjectLinkLabel returns a store name or the raw URL when label is empty.
+func DefaultProjectLinkLabel(url string, kind ProjectLinkKind) string {
+	switch kind {
+	case ProjectLinkGooglePlay:
+		return "Google Play"
+	case ProjectLinkAppStore:
+		return "App Store"
+	default:
+		return url
+	}
+}
+
+// NormalizeProjectLinks trims, dedupes by URL, and fills missing kind/label.
+// Always returns a non-nil slice.
+func NormalizeProjectLinks(links []ProjectLink) []ProjectLink {
+	links = NonNilProjectLinks(links)
+	out := make([]ProjectLink, 0, len(links))
+	seen := make(map[string]struct{}, len(links))
+	for _, link := range links {
+		url := strings.TrimSpace(link.URL)
+		if url == "" {
+			continue
+		}
+		if _, ok := seen[url]; ok {
+			continue
+		}
+		seen[url] = struct{}{}
+
+		kind := link.Kind
+		if !kind.Valid() {
+			kind = InferProjectLinkKind(url)
+		}
+		label := strings.TrimSpace(link.Label)
+		if label == "" {
+			label = DefaultProjectLinkLabel(url, kind)
+		}
+		out = append(out, ProjectLink{URL: url, Label: label, Kind: kind})
+	}
+	return out
+}
+
 // Project is a portfolio case study.
 // SortOrder is the position inside its service group; GlobalSortOrder is the
 // cross-group position used by the public "all projects" listing.
 type Project struct {
-	ID              string       `json:"id"`
-	Slug            string       `json:"slug"`
-	Category        string       `json:"category"`
-	Categories      []string     `json:"categories"`
-	Tags            []string     `json:"tags"`
-	Year            int          `json:"year"`
-	Featured        bool         `json:"featured"`
-	Published       bool         `json:"published"`
-	SortOrder       int          `json:"sort_order"`
-	GlobalSortOrder int          `json:"global_sort_order"`
-	Image           string       `json:"image"`
-	Translations    Translations `json:"translations"`
-	CreatedAt       time.Time    `json:"created_at"`
-	UpdatedAt       time.Time    `json:"updated_at"`
+	ID              string        `json:"id"`
+	Slug            string        `json:"slug"`
+	Category        string        `json:"category"`
+	Categories      []string      `json:"categories"`
+	Tags            []string      `json:"tags"`
+	Year            int           `json:"year"`
+	Featured        bool          `json:"featured"`
+	Published       bool          `json:"published"`
+	SortOrder       int           `json:"sort_order"`
+	GlobalSortOrder int           `json:"global_sort_order"`
+	Image           string        `json:"image"`
+	Links           []ProjectLink `json:"links"`
+	Translations    Translations  `json:"translations"`
+	CreatedAt       time.Time     `json:"created_at"`
+	UpdatedAt       time.Time     `json:"updated_at"`
 }
 
 // Service is an offered service (web, mobile, backend, ...).

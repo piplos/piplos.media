@@ -11,7 +11,9 @@
 	import TagSelect from '$lib/components/TagSelect.svelte';
 	import TranslationsEditor from '$lib/components/TranslationsEditor.svelte';
 	import { entityFolder } from '$lib/files';
+	import { initialProjectLinks, normalizeProjectLinks } from '$lib/project-links';
 	import type { Language, Project, SEOPage, Service, StackItem, Translations } from '$lib/types';
+	import ProjectLinksEditor from './ProjectLinksEditor.svelte';
 
 	interface Props {
 		project?: Partial<Project>;
@@ -45,6 +47,8 @@
 	let image = $state(initial.image ?? '');
 	let translations = $state<Translations>((initial.translations ?? {}) as Translations);
 	let seoTranslations = $state<Translations>((initialSeo?.translations ?? {}) as Translations);
+	// svelte-ignore state_referenced_locally
+	let links = $state(initialProjectLinks(initial.links, initial.translations as Translations));
 
 	// При очистке поля slug используем исходный slug, чтобы табы «Контент/SEO» не пропадали.
 	const seoSlug = $derived(slug.trim() || initial.slug || '');
@@ -123,6 +127,7 @@
 	}}
 >
 	<input type="hidden" name="translations" value={JSON.stringify(translations)} />
+	<input type="hidden" name="links" value={JSON.stringify(normalizeProjectLinks(links))} />
 	{#if seoPath}
 		<input type="hidden" name="seo_id" value={initialSeo?.id ?? ''} />
 		<input type="hidden" name="seo_path" value={seoPath} />
@@ -178,6 +183,10 @@
 				</label>
 			</div>
 		</div>
+	</Card>
+
+	<Card padding="sm">
+		<ProjectLinksEditor bind:links />
 	</Card>
 
 	<Card padding="sm">

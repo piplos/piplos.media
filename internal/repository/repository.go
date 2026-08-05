@@ -33,3 +33,17 @@ func translationsFromJSON(raw []byte) models.Translations {
 	}
 	return t
 }
+
+// projectLinksFromJSON decodes a links JSONB column value.
+func projectLinksFromJSON(raw []byte) []models.ProjectLink {
+	var links []models.ProjectLink
+	if len(raw) > 0 {
+		_ = json.Unmarshal(raw, &links)
+	}
+	return models.NonNilProjectLinks(links)
+}
+
+// projectLinksJSON encodes project links for storage.
+func projectLinksJSON(links []models.ProjectLink) ([]byte, error) {
+	return json.Marshal(models.NonNilProjectLinks(links))
+}

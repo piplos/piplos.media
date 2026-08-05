@@ -1,5 +1,6 @@
 /** Общие парсеры форм контента (сервер). */
-import type { LegalTranslations, Project, Service, Translations } from '$lib/types';
+import { isProjectLinkKind, kindFromUrl, normalizeProjectLinks } from '$lib/project-links';
+import type { LegalTranslations, Project, ProjectLink, Service, Translations } from '$lib/types';
 
 export function parseTranslations(fd: FormData, field = 'translations'): Translations {
 	try {
@@ -8,6 +9,28 @@ export function parseTranslations(fd: FormData, field = 'translations'): Transla
 		return typeof parsed === 'object' && parsed !== null ? parsed : {};
 	} catch {
 		return {};
+	}
+}
+
+export function parseProjectLinks(fd: FormData, field = 'links'): ProjectLink[] {
+	try {
+		const raw = fd.get(field)?.toString() ?? '[]';
+		const parsed = JSON.parse(raw) as unknown;
+		if (!Array.isArray(parsed)) return [];
+		return normalizeProjectLinks(
+			parsed.map((item) => {
+				const link = item as Partial<ProjectLink>;
+				const url = typeof link.url === 'string' ? link.url : '';
+				const rawKind = String(link.kind ?? '');
+				return {
+					url,
+					label: typeof link.label === 'string' ? link.label : '',
+					kind: isProjectLinkKind(rawKind) ? rawKind : kindFromUrl(url)
+				};
+			})
+		);
+	} catch {
+		return [];
 	}
 }
 
@@ -40,6 +63,7 @@ export function projectPayload(fd: FormData) {
 		featured: fd.get('featured') === 'on',
 		published: fd.get('published') === 'on',
 		image: fd.get('image')?.toString().trim() ?? '',
+		links: parseProjectLinks(fd),
 		translations: parseTranslations(fd)
 	};
 }
