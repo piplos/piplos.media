@@ -1,8 +1,11 @@
 import { error, redirect } from '@sveltejs/kit';
 import { resolveUploadUrlsInHtml } from '$lib/api';
-import { loadPortfolioProjects, sortProjectsByGroupOrder } from '$lib/portfolio-api';
+import {
+	loadProjectsForEmbedHtml,
+	loadRelatedProjectsForCategory
+} from '$lib/portfolio-api';
 import { fetchSEOPage } from '$lib/seo-api';
-import { fetchServices, loadServicePageItem } from '$lib/services-api';
+import { loadServicePageItem, loadServicesForEmbedHtml } from '$lib/services-api';
 import type { PageServerLoad } from './$types';
 
 /** Слаги услуг старого сайта → новые (301 для сохранения SEO-веса). */
@@ -20,23 +23,19 @@ export const load: PageServerLoad = async ({ params, fetch, platform }) => {
 	if (legacy) throw redirect(301, `/${params.lang}/services/${legacy}`);
 
 	const ctx = { platform };
-	const [service, projects, services, seo] = await Promise.all([
+	const [service, seo] = await Promise.all([
 		loadServicePageItem(params.slug, fetch, params.lang, ctx),
-		loadPortfolioProjects(fetch, { lang: params.lang }, ctx),
-		fetchServices(fetch, params.lang, ctx),
 		fetchSEOPage(`/services/${params.slug}`, fetch, ctx)
 	]);
 	if (!service) throw error(404, 'Service not found');
 
 	service.body = resolveUploadUrlsInHtml(service.body, ctx);
 
-	// Порядок внутри группы, как в админке (sort_order).
-	const related = sortProjectsByGroupOrder(
-		projects.filter(
-			(project) =>
-				project.category === service.slug || project.categories.includes(service.slug)
-		)
-	).slice(0, 3);
+	const [related, projects, services] = await Promise.all([
+		loadRelatedProjectsForCategory(service.slug, fetch, { lang: params.lang, limit: 3 }, ctx),
+		loadProjectsForEmbedHtml(service.body, fetch, { lang: params.lang }, ctx),
+		loadServicesForEmbedHtml(service.body, fetch, { lang: params.lang }, ctx)
+	]);
 
 	return { service, related, projects, services, seo };
 };

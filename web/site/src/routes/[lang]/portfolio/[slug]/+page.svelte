@@ -14,6 +14,10 @@
 	let loc = $derived(getProjectLocale(project, langStore.value));
 	let stackItems = $derived(getProjectStackItems(project, langStore.value));
 	let solution = $derived(prepareProjectSolution(loc.solution, project.links ?? []));
+	let hasChallenge = $derived(Boolean(loc.challenge?.trim()));
+	let hasSolution = $derived(Boolean(solution.html.trim()));
+	let hasResult = $derived(Boolean(loc.result?.trim()));
+	let hasStack = $derived(stackItems.length > 0);
 
 	let seoLoc = $derived(data.seo?.[langStore.value]);
 	let seoTitle = $derived(seoLoc?.title || `${loc.title} — Case Study | ${SITE.displayName}`);
@@ -80,29 +84,31 @@
 
 				<div class="cs-main">
 
-					<article class="cs-block">
-						<h2 class="cs-heading">{langStore.t('case_study.challenge')}</h2>
-						<p class="cs-text">{loc.challenge}</p>
-					</article>
+					{#if hasChallenge}
+						<article class="cs-block">
+							<h2 class="cs-heading">{langStore.t('case_study.challenge')}</h2>
+							<p class="cs-text">{loc.challenge}</p>
+						</article>
+					{/if}
 
-					<article class="cs-block">
-						<h2 class="cs-heading">{langStore.t('case_study.solution')}</h2>
-						{#if solution.html.trim()}
+					{#if hasSolution}
+						<article class="cs-block">
+							<h2 class="cs-heading">{langStore.t('case_study.solution')}</h2>
 							<RichBody
 								html={solution.html}
 								projects={data.projects}
 								services={data.services}
 								class="rich-text"
 							/>
-						{:else}
-							<p class="cs-text"></p>
-						{/if}
-					</article>
+						</article>
+					{/if}
 
-					<article class="cs-block">
-						<h2 class="cs-heading">{langStore.t('case_study.result')}</h2>
-						<p class="cs-text">{loc.result}</p>
-					</article>
+					{#if hasResult}
+						<article class="cs-block">
+							<h2 class="cs-heading">{langStore.t('case_study.result')}</h2>
+							<p class="cs-text">{loc.result}</p>
+						</article>
+					{/if}
 				</div>
 
 				<aside class="cs-sidebar">
@@ -131,30 +137,36 @@
 						</div>
 					{/if}
 
-					<div class="cs-card">
-						<p class="cs-label">{langStore.t('case_study.stack')}</p>
-						<div class="cs-stack-tags">
-							{#each stackItems as item (item)}
-								<span class="cs-stack-tag">{item}</span>
-							{/each}
+					{#if hasStack}
+						<div class="cs-card">
+							<p class="cs-label">{langStore.t('case_study.stack')}</p>
+							<div class="cs-stack-tags">
+								{#each stackItems as item (item)}
+									<span class="cs-stack-tag">{item}</span>
+								{/each}
+							</div>
 						</div>
-					</div>
+					{/if}
 
 					<div class="cs-card">
-						<p class="cs-label">Project Info</p>
+						<p class="cs-label">{langStore.t('case_study.info')}</p>
 						<dl class="cs-info">
 							<div>
-								<dt>Year</dt>
+								<dt>{langStore.t('case_study.year')}</dt>
 								<dd>{project.year}</dd>
 							</div>
 							<div>
-								<dt>Category</dt>
+								<dt>{langStore.t('case_study.category')}</dt>
 								<dd class="capitalize">{project.category}</dd>
 							</div>
 						</dl>
 					</div>
 
-					<a href="{l('/order')}?from={project.id}" class="cs-cta">
+					<a
+						href="{l('/order')}?from={project.id}"
+						class="cs-cta"
+						aria-label="{langStore.t('case_study.start_project')}: {loc.title}"
+					>
 						{langStore.t('case_study.start_project')}
 						<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
 							<path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>

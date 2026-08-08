@@ -43,33 +43,24 @@ func filteredLegalTranslations(t models.LegalTranslations, lang string) models.L
 	return t
 }
 
-// publishedProjects filters projects by published status and, optionally, featured flag.
-func publishedProjects(items []models.Project, featuredOnly bool) []models.Project {
-	out := []models.Project{}
-	for _, p := range items {
-		if !p.Published {
-			continue
-		}
-		if featuredOnly && !p.Featured {
-			continue
-		}
-		out = append(out, p)
-	}
-	return out
-}
-
 // Projects returns published projects.
-// Query: lang — return only this translation; featured=true — featured only.
+// Query:
+//   - lang — return only this translation
+//   - featured=true — featured only
+//   - category — primary category or categories[]
+//   - tags — comma-separated, any match
+//   - slugs — comma-separated; order preserved; overrides featured/category/tags
+//   - limit — max items (capped)
+//   - mode=summary — omit solution/result HTML (lists/embeds)
 func (h *PublicHandler) Projects(c fiber.Ctx) error {
 	items, err := h.repo.ListProjects(c.Context())
 	if err != nil {
 		return apperrors.ErrInternal("failed to load projects")
 	}
-	published := publishedProjects(items, c.Query("featured") == "true")
-	lang := c.Query("lang")
+	q := parseProjectListQuery(c)
+	published := filterPublishedProjects(items, q)
 	for i := range published {
-		published[i].Translations = renderMarkdownFields(
-			filteredTranslations(published[i].Translations, lang), "solution")
+		published[i].Translations = prepareProjectTranslations(published[i].Translations, q.lang, q.mode)
 	}
 	return c.JSON(fiber.Map{"projects": published})
 }
@@ -90,20 +81,21 @@ func (h *PublicHandler) Project(c fiber.Ctx) error {
 }
 
 // Services returns published services.
-// Query: lang — return only this translation.
+// Query:
+//   - lang — return only this translation
+//   - tags — comma-separated, any match
+//   - slugs — comma-separated; order preserved; overrides tags
+//   - limit — max items (capped)
+//   - mode=summary — omit body HTML (embeds/cards)
 func (h *PublicHandler) Services(c fiber.Ctx) error {
 	items, err := h.repo.ListServices(c.Context())
 	if err != nil {
 		return apperrors.ErrInternal("failed to load services")
 	}
-	lang := c.Query("lang")
-	published := []models.Service{}
-	for _, s := range items {
-		if !s.Published {
-			continue
-		}
-		s.Translations = renderMarkdownFields(filteredTranslations(s.Translations, lang), "body")
-		published = append(published, s)
+	q := parseServiceListQuery(c)
+	published := filterPublishedServices(items, q)
+	for i := range published {
+		published[i].Translations = prepareServiceTranslations(published[i].Translations, q.lang, q.mode)
 	}
 	return c.JSON(fiber.Map{"services": published})
 }

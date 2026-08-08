@@ -2,9 +2,6 @@
  *  Токен вставляется в админке, API рендерит Markdown → HTML как обычный текст,
  *  сайт разворачивает токены в блоки с выборкой, количеством и дизайном. */
 
-import type { PortfolioProject } from '$lib/portfolio';
-import type { ServiceItem } from '$lib/services-api';
-
 export type EmbedLayout = 'cards' | 'list' | 'compact';
 
 export interface EmbedParams {
@@ -20,6 +17,44 @@ export interface EmbedParams {
 export type BodySegment =
 	| { type: 'html'; html: string }
 	| { type: 'embed'; params: EmbedParams };
+
+/** Минимальные поля проекта для клиентской выборки по токену. */
+export interface EmbedProjectLike {
+	id: string;
+	featured: boolean;
+	category: string;
+	categories: string[];
+	tags: string[];
+	sort_order: number;
+	year: number;
+}
+
+/** Минимальные поля услуги для клиентской выборки по токену. */
+export interface EmbedServiceLike {
+	slug: string;
+	tags?: string[];
+	sort_order: number;
+}
+
+/** Query shape для дозированного GET /public/projects (совместим с ProjectsQuery). */
+export type EmbedProjectsQuery = {
+	lang?: string;
+	featured?: boolean;
+	category?: string;
+	tags?: string[];
+	slugs?: string[];
+	limit: number;
+	mode: 'summary';
+};
+
+/** Query shape для дозированного GET /public/services (совместим с ServicesQuery). */
+export type EmbedServicesQuery = {
+	lang?: string;
+	tags?: string[];
+	slugs?: string[];
+	limit: number;
+	mode: 'summary';
+};
 
 /** Токен, при необходимости обёрнутый в свой <p> (goldmark ставит его вокруг строки). */
 const TOKEN_RE = /(?:<p>\s*)?\{\{\s*(projects|services)\b([^{}]*)\}\}(?:\s*<\/p>)?/gi;
@@ -80,9 +115,8 @@ export function splitBodySegments(html: string): BodySegment[] {
 	return segments;
 }
 
-/** Выборка проектов по параметрам токена. Вход — опубликованные проекты
- *  в сквозном порядке портфолио (loadPortfolioProjects). */
-export function selectProjects(all: PortfolioProject[], p: EmbedParams): PortfolioProject[] {
+/** Выборка проектов по параметрам токена. Вход — batch с API (уже дозированный). */
+export function selectProjects<T extends EmbedProjectLike>(all: T[], p: EmbedParams): T[] {
 	let items = all;
 	if (p.slugs.length) {
 		const byId = new Map(items.map((item) => [item.id, item]));
@@ -104,8 +138,8 @@ export function selectProjects(all: PortfolioProject[], p: EmbedParams): Portfol
 	return items.slice(0, p.limit);
 }
 
-/** Выборка услуг по параметрам токена. Вход — опубликованные услуги (fetchServices). */
-export function selectServices(all: ServiceItem[], p: EmbedParams): ServiceItem[] {
+/** Выборка услуг по параметрам токена. */
+export function selectServices<T extends EmbedServiceLike>(all: T[], p: EmbedParams): T[] {
 	let items = [...all].sort((a, b) => a.sort_order - b.sort_order);
 	if (p.slugs.length) {
 		const bySlug = new Map(items.map((item) => [item.slug, item]));
@@ -115,4 +149,84 @@ export function selectServices(all: ServiceItem[], p: EmbedParams): ServiceItem[
 		items = items.filter((item) => (item.tags ?? []).some((tag) => wanted.has(tag.toLowerCase())));
 	}
 	return items.slice(0, p.limit);
+}
+
+/** Параметры одного `{{projects …}}` → query public API (дозированная выборка). */
+export function embedParamsToProjectsQuery(
+	p: EmbedParams,
+	base: { lang?: string } = {}
+): EmbedProjectsQuery {
+	const query: EmbedProjectsQuery = { lang: base.lang, limit: p.limit, mode: 'summary' };
+	if (p.slugs.length) {
+		query.slugs = p.slugs;
+		return query;
+	}
+	if (p.featured) query.featured = true;
+	if (p.category) query.category = p.category;
+	if (p.tags.length) query.tags = p.tags;
+	return query;
+}
+
+/** Параметры одного `{{services …}}` → query public API. */
+export function embedParamsToServicesQuery(
+	p: EmbedParams,
+	base: { lang?: string } = {}
+): EmbedServicesQuery {
+	const query: EmbedServicesQuery = { lang: base.lang, limit: p.limit, mode: 'summary' };
+	if (p.slugs.length) {
+		query.slugs = p.slugs;
+		return query;
+	}
+	if (p.tags.length) query.tags = p.tags;
+	return query;
+}
+
+/** Все `{{projects …}}` / `{{services …}}` сегменты из HTML. */
+export function listEmbedParams(html: string, kind: 'projects' | 'services'): EmbedParams[] {
+	if (!html?.trim()) return [];
+	const out: EmbedParams[] = [];
+	for (const segment of splitBodySegments(html)) {
+		if (segment.type === 'embed' && segment.params.kind === kind) {
+			out.push(segment.params);
+		}
+	}
+	return out;
+}
+
+/** Ключ выборки токена (без layout — на состав карточек не влияет). */
+export function embedSelectionKey(p: EmbedParams): string {
+	return [
+		p.kind,
+		p.featured ? '1' : '0',
+		p.category,
+		p.tags.join(','),
+		p.slugs.join(','),
+		String(p.limit)
+	].join('|');
+}
+
+/** Выборки по ключу токена: один API-batch на уникальные params (без UNION-pollution). */
+export async function collectEmbedItems<T>(
+	html: string,
+	kind: 'projects' | 'services',
+	loadBatch: (params: EmbedParams) => Promise<T[]>,
+	select: (batch: T[], params: EmbedParams) => T[]
+): Promise<Record<string, T[]>> {
+	const embeds = listEmbedParams(html, kind);
+	if (embeds.length === 0) return {};
+
+	// Одинаковые токены (в т.ч. дубли en/ru) — один запрос.
+	const unique = new Map<string, EmbedParams>();
+	for (const params of embeds) {
+		unique.set(embedSelectionKey(params), params);
+	}
+
+	const entries = [...unique.entries()];
+	const batches = await Promise.all(entries.map(([, params]) => loadBatch(params)));
+	const byKey: Record<string, T[]> = {};
+	for (let i = 0; i < entries.length; i++) {
+		const [key, params] = entries[i];
+		byKey[key] = select(batches[i] ?? [], params);
+	}
+	return byKey;
 }

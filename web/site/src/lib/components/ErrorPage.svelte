@@ -27,6 +27,14 @@
 <svelte:head>
 	<title>{status} — {langStore.t(`error.${kind}.title`)} | {SITE.displayName}</title>
 	<meta name="robots" content="noindex" />
+	<link
+		rel="preload"
+		as="image"
+		type="image/webp"
+		href="/illustrations/cat-{kind}-480.webp"
+		imagesrcset="/illustrations/cat-{kind}-480.webp 480w, /illustrations/cat-{kind}.webp 800w"
+		imagesizes="(max-width: 1024px) 360px, 560px"
+	/>
 </svelte:head>
 
 <main id="main" class="error-page">
@@ -47,13 +55,22 @@
 				</div>
 			</div>
 			<div class="error-illustration">
-				<img
-					src="/illustrations/cat-{kind}.png"
-					alt={langStore.t(`error.${kind}.alt`)}
-					width="560"
-					height="560"
-					loading="eager"
-				/>
+				<picture>
+					<source
+						type="image/webp"
+						srcset="/illustrations/cat-{kind}-480.webp 480w, /illustrations/cat-{kind}.webp 800w"
+						sizes="(max-width: 1024px) 360px, 560px"
+					/>
+					<img
+						src="/illustrations/cat-{kind}.webp"
+						alt={langStore.t(`error.${kind}.alt`)}
+						width="560"
+						height="560"
+						decoding="async"
+						fetchpriority="high"
+						loading="eager"
+					/>
+				</picture>
 			</div>
 		</div>
 	</div>
@@ -122,9 +139,10 @@
 		align-items: center;
 		justify-content: center;
 	}
-	.error-illustration img {
+	.error-illustration :global(img) {
 		width: 100%;
 		max-width: 560px;
+		height: auto;
 	}
 
 	@media (max-width: 1024px) {
@@ -136,7 +154,7 @@
 		.error-illustration {
 			order: -1;
 		}
-		.error-illustration img {
+		.error-illustration :global(img) {
 			max-width: 360px;
 		}
 	}

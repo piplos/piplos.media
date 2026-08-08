@@ -144,8 +144,8 @@
 		const fromId = page.url.searchParams.get('from');
 		if (!fromId) return;
 
-		const project = data.projects.find((item) => item.id === fromId);
-		if (!project) return;
+		const project = data.prefillProject;
+		if (!project || project.id !== fromId) return;
 
 		const untouched =
 			!appliedPrefill ||

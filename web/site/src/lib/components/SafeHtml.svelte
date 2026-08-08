@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { enrichRichImages } from '$lib/enrich-rich-images';
 
 	interface Props {
 		html: string;
@@ -8,7 +9,7 @@
 
 	let { html, class: className = '' }: Props = $props();
 
-	const ssrHtml = $derived(html.trim());
+	const ssrHtml = $derived(enrichRichImages(html.trim()));
 	let clientHtml = $state<string | null>(null);
 
 	$effect(() => {
@@ -23,7 +24,7 @@
 		let cancelled = false;
 
 		import('$lib/sanitize-html').then(async ({ sanitizeCaseHtmlAsync }) => {
-			const sanitized = await sanitizeCaseHtmlAsync(trimmed);
+			const sanitized = enrichRichImages(await sanitizeCaseHtmlAsync(trimmed));
 			if (!cancelled) clientHtml = sanitized;
 		});
 

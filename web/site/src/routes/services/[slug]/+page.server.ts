@@ -3,4 +3,4 @@ import { servicePageEntries, loadServicePageItems } from '$lib/services-api';
 import type { EntryGenerator } from './$types';
 
 export const entries: EntryGenerator = async () =>
-	servicePageEntries(await loadServicePageItems(fetch, DEFAULT_LANG));
+	servicePageEntries(await loadServicePageItems(fetch, DEFAULT_LANG, undefined, { mode: 'summary' }));

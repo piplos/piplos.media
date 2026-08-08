@@ -11,7 +11,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const featuredProjects = $derived(data.projects.filter((p) => p.featured).slice(0, 3));
+	const featuredProjects = $derived(data.projects);
 	const stackItems = $derived(data.stackItems);
 
 	type ProcessStep = { title: string; description: string };
@@ -80,6 +80,15 @@
 	<meta property="og:url" content={SITE.url} />
 	<meta property="og:type" content="website" />
 	<link rel="canonical" href="{SITE.url}{l('/')}" />
+	<link
+		rel="preload"
+		as="image"
+		href="/hero-cat-isometric.webp"
+		type="image/webp"
+		media="(min-width: 1025px)"
+		imagesrcset="/hero-cat-isometric.webp 640w, /hero-cat-isometric-960.webp 960w"
+		imagesizes="(min-width: 1025px) 640px, 0px"
+	/>
 </svelte:head>
 
 <main id="main">
@@ -107,13 +116,25 @@
 					</div>
 				</div>
 				<div class="hero-illustration">
-					<img
-						src="/hero-cat-isometric.png"
-						alt="Piplos Media — cat mascot on a stack of software interfaces"
-						width="640"
-						height="660"
-						loading="eager"
-					/>
+					<!-- Hidden below 1025px via CSS; picture media avoids downloading on mobile Lighthouse. -->
+					<picture>
+						<source media="(max-width: 1024px)" srcset="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="1" height="1" />
+						<source
+							media="(min-width: 1025px)"
+							type="image/webp"
+							srcset="/hero-cat-isometric.webp 640w, /hero-cat-isometric-960.webp 960w"
+							sizes="640px"
+						/>
+						<img
+							src="/hero-cat-isometric.webp"
+							alt="Piplos Media — cat mascot on a stack of software interfaces"
+							width="640"
+							height="661"
+							decoding="async"
+							fetchpriority="high"
+							loading="eager"
+						/>
+					</picture>
 				</div>
 			</div>
 		</div>
@@ -158,7 +179,7 @@
 					<p class="section-label">{langStore.t('services.section_label')}</p>
 					<h2 class="section-title" id="services-heading">{langStore.t('services.title')}</h2>
 				</div>
-				<a href={l('/order')} class="section-link" aria-label="Start a project">
+				<a href={l('/order')} class="section-link" aria-label="Start a project with {SITE.name}">
 					{langStore.t('services.cta')}
 					<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 				</a>
@@ -180,7 +201,9 @@
 					</div>
 				{/each}
 				{#each Array(servicesPlaceholderCount) as _, i (`placeholder-${i}`)}
-					<GridPlaceholder label={langStore.t('services.coming_soon')} variant="service" />
+					<div role="listitem">
+						<GridPlaceholder label={langStore.t('services.coming_soon')} variant="service" />
+					</div>
 				{/each}
 			</div>
 		</div>
@@ -202,25 +225,39 @@
 			<div class="work-grid" role="list">
 				{#each featuredProjects as project (project.id)}
 					{@const loc = getProjectLocale(project, langStore.value)}
-					<article class="work-card" role="listitem" itemscope itemtype="https://schema.org/CreativeWork">
-						{#if project.image}
-							<div class="pc-bg" aria-hidden="true">
-								<img src={project.image} alt="" loading="lazy" />
+					<div role="listitem">
+						<a
+							href={l(`/portfolio/${project.id}`)}
+							class="work-card work-card--link"
+							itemscope
+							itemtype="https://schema.org/CreativeWork"
+							itemprop="url"
+						>
+							{#if project.image}
+								<div class="pc-bg" aria-hidden="true">
+									<img
+										src={project.image}
+										alt=""
+										width="640"
+										height="400"
+										loading="lazy"
+										decoding="async"
+									/>
+								</div>
+							{/if}
+							<div class="work-type">
+								<span class="work-type-dot" style="background:{getCategoryColor(project.category)}" aria-hidden="true"></span>
+								{loc.subtitle}
 							</div>
-						{/if}
-						<div class="work-type">
-							<span class="work-type-dot" style="background:{getCategoryColor(project.category)}" aria-hidden="true"></span>
-							{loc.subtitle}
-						</div>
-						<h3 class="work-title" itemprop="name">
-							<a href={l(`/portfolio/${project.id}`)} class="work-title-link" aria-label="View {loc.title} case study">{loc.title}</a>
-						</h3>
-						<p class="work-desc" itemprop="description">{loc.description}</p>
-						<a href={l(`/portfolio/${project.id}`)} class="work-link" itemprop="url" aria-label="View {loc.title} case study">
+							<h3 class="work-title" itemprop="name">{loc.title}</h3>
+							<p class="work-desc" itemprop="description">{loc.description}</p>
+							<span class="work-link">
 								{langStore.t('work.case_study')}
-							<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+								<span class="sr-only">: {loc.title}</span>
+								<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+							</span>
 						</a>
-					</article>
+					</div>
 				{/each}
 			</div>
 		</div>
@@ -248,11 +285,12 @@
 					</div>
 				{/each}
 				{#if stackPlaceholderCount > 0}
-					<GridPlaceholder
-						label={langStore.t('services.coming_soon')}
-						variant="stack"
-						span={stackPlaceholderCount}
-					/>
+					<div role="listitem" style:grid-column={`span ${stackPlaceholderCount}`}>
+						<GridPlaceholder
+							label={langStore.t('services.coming_soon')}
+							variant="stack"
+						/>
+					</div>
 				{/if}
 			</div>
 		</div>

@@ -11,7 +11,6 @@
 <article
 	class="grid-placeholder grid-placeholder--{variant}"
 	style:grid-column={span > 1 ? `span ${span}` : undefined}
-	role="listitem"
 	aria-label={label}
 >
 	<div class="grid-placeholder-icon" aria-hidden="true">

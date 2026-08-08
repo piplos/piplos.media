@@ -8,6 +8,9 @@
 	let { data }: { data: PageData } = $props();
 
 	const articles = $derived(data.articles);
+	/** Индекс первой карточки с обложкой — кандидат в LCP на mobile. */
+	const lcpImageIndex = $derived(articles.findIndex((article) => Boolean(article.image)));
+	const lcpImageUrl = $derived(lcpImageIndex >= 0 ? articles[lcpImageIndex]?.image : '');
 
 	const pageTitle = $derived(`${langStore.t('articles.title')} — ${SITE.displayName}`);
 	const pageDescription = $derived(langStore.t('articles.description'));
@@ -27,6 +30,9 @@
 	<meta property="og:title" content={pageTitle} />
 	<meta property="og:description" content={pageDescription} />
 	<meta property="og:url" content={canonicalUrl} />
+	{#if lcpImageUrl}
+		<link rel="preload" as="image" href={lcpImageUrl} fetchpriority="high" />
+	{/if}
 </svelte:head>
 
 <nav class="breadcrumb-bar" aria-label="Breadcrumb">
@@ -53,12 +59,21 @@
 				<p class="articles-empty">{langStore.t('articles.empty')}</p>
 			{:else}
 				<div class="articles-grid" role="list">
-					{#each articles as article (article.id)}
+					{#each articles as article, i (article.id)}
 						{@const loc = getArticleLocale(article, langStore.value)}
-						<article class="article-card" role="listitem" itemscope itemtype="https://schema.org/Article">
+						{@const isLcpImage = i === lcpImageIndex}
+						<div class="article-card" role="listitem" itemscope itemtype="https://schema.org/Article">
 							{#if article.image}
 								<div class="article-bg" aria-hidden="true">
-									<img src={article.image} alt="" loading="lazy" />
+									<img
+										src={article.image}
+										alt=""
+										width="640"
+										height="400"
+										decoding="async"
+										loading={isLcpImage ? 'eager' : 'lazy'}
+										fetchpriority={isLcpImage ? 'high' : 'auto'}
+									/>
 								</div>
 							{/if}
 							<time class="article-date" datetime={articleDate(article)} itemprop="datePublished">
@@ -72,11 +87,12 @@
 							{#if loc.description}
 								<p class="article-desc" itemprop="description">{loc.description}</p>
 							{/if}
-							<a href={l(`/articles/${article.slug}`)} class="article-link" aria-label="{langStore.t('articles.read')}: {loc.title || article.slug}">
+							<a href={l(`/articles/${article.slug}`)} class="article-link">
 								{langStore.t('articles.read')}
+								<span class="sr-only">: {loc.title || article.slug}</span>
 								<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 							</a>
-						</article>
+						</div>
 					{/each}
 				</div>
 			{/if}

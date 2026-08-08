@@ -134,27 +134,34 @@
 				<div class="work-grid" role="list">
 					{#each related as project (project.id)}
 						{@const loc = getProjectLocale(project, langStore.value)}
-						<article class="work-card" role="listitem" itemscope itemtype="https://schema.org/CreativeWork">
-							{#if project.image}
-								<div class="pc-bg" aria-hidden="true">
-									<img src={project.image} alt="" loading="lazy" />
+						<div role="listitem">
+							<a
+								href={l(`/portfolio/${project.id}`)}
+								class="work-card work-card--link"
+								itemscope
+								itemtype="https://schema.org/CreativeWork"
+								itemprop="url"
+							>
+								{#if project.image}
+									<div class="pc-bg" aria-hidden="true">
+										<img src={project.image} alt="" loading="lazy" />
+									</div>
+								{/if}
+								<div class="work-type">
+									<span class="work-type-dot" style="background:{getCategoryColor(project.category)}" aria-hidden="true"></span>
+									{loc.subtitle}
 								</div>
-							{/if}
-							<div class="work-type">
-								<span class="work-type-dot" style="background:{getCategoryColor(project.category)}" aria-hidden="true"></span>
-								{loc.subtitle}
-							</div>
-							<h3 class="work-title" itemprop="name">
-								<a href={l(`/portfolio/${project.id}`)} class="work-title-link" aria-label="View {loc.title} case study">{loc.title}</a>
-							</h3>
-							<p class="work-desc" itemprop="description">{loc.description}</p>
-							<a href={l(`/portfolio/${project.id}`)} class="work-link" itemprop="url" aria-label="View {loc.title} case study">
-								{langStore.t('work.case_study')}
-								<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-									<path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
+								<h3 class="work-title" itemprop="name">{loc.title}</h3>
+								<p class="work-desc" itemprop="description">{loc.description}</p>
+								<span class="work-link">
+									{langStore.t('work.case_study')}
+									<span class="sr-only">: {loc.title}</span>
+									<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+										<path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+								</span>
 							</a>
-						</article>
+						</div>
 					{/each}
 				</div>
 			</div>

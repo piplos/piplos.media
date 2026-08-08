@@ -6,18 +6,20 @@
 
 | Файл | Тема |
 |------|------|
-| `web/site/static/hero-cat-isometric.png` | Hero главной — кот на стеке интерфейсов |
-| `web/site/static/illustrations/cat-web.png` | Веб-разработка — кот печатает на клавиатуре |
-| `web/site/static/illustrations/cat-mobile.png` | Мобильная разработка — кот тапает лапой по экрану |
-| `web/site/static/illustrations/cat-backend.png` | Backend/API — кот выглядывает из-за серверной стойки |
-| `web/site/static/illustrations/cat-devops.png` | DevOps — кот толкает контейнер к CI/CD pipeline |
-| `web/site/static/illustrations/cat-launch.png` | Запуск проекта — кот прыгает от радости у ракеты |
-| `web/site/static/illustrations/cat-analytics.png` | Аналитика — кот в очках показывает на график |
-| `web/site/static/illustrations/cat-contact.png` | Контакты — кот в гарнитуре лежит и слушает |
-| `web/site/static/illustrations/cat-404.png` | Страница 404 — кот озадаченно смотрит на сломанную страницу |
-| `web/site/static/illustrations/cat-500.png` | Страница 500 — испуганный кот у серверной стойки с кабелями |
+| `web/site/static/hero-cat-isometric.webp` (+ `-960.webp`) | Hero главной — кот на стеке интерфейсов |
+| `web/site/static/illustrations/cat-web.webp` | Веб-разработка — кот печатает на клавиатуре |
+| `web/site/static/illustrations/cat-mobile.webp` | Мобильная разработка — кот тапает лапой по экрану |
+| `web/site/static/illustrations/cat-backend.webp` | Backend/API — кот выглядывает из-за серверной стойки |
+| `web/site/static/illustrations/cat-devops.webp` | DevOps — кот толкает контейнер к CI/CD pipeline |
+| `web/site/static/illustrations/cat-launch.webp` | Запуск проекта — кот прыгает от радости у ракеты |
+| `web/site/static/illustrations/cat-analytics.webp` | Аналитика — кот в очках показывает на график |
+| `web/site/static/illustrations/cat-contact.webp` | Контакты — кот в гарнитуре лежит и слушает |
+| `web/site/static/illustrations/cat-404.webp` | Страница 404 — кот озадаченно смотрит на сломанную страницу |
+| `web/site/static/illustrations/cat-500.webp` | Страница 500 — испуганный кот у серверной стойки с кабелями |
 
-Иллюстрации услуг (`data/uploads/services/{slug}.png`) — уменьшенные до 800px
+Для каждой иллюстрации в `illustrations/` также есть `-480.webp` (mobile).
+
+Иллюстрации услуг (`data/uploads/services/{slug}.webp` / `.png`) — уменьшенные до 800px
 копии: web ← cat-web, backend ← cat-backend, mobile ← cat-mobile,
 data ← cat-analytics, devops ← cat-devops.
 
@@ -29,7 +31,7 @@ data ← cat-analytics, devops ← cat-devops.
 
 ### Шаг 1 — промпт
 
-Всегда прикладывайте референс `web/site/static/hero-cat-isometric.png`
+Всегда прикладывайте референс `web/site/static/hero-cat-isometric.webp`
 для консистентности стиля. Шаблон промпта (замените только блок `{SCENE}`):
 
 ```text
@@ -93,10 +95,13 @@ contain no magenta.
   связей, мелкие плавающие точки-сферы
 - **Aspect ratio**: 1:1
 
-### Шаг 2 — удаление фона
+### Шаг 2 — удаление фона и WebP
 
 ```bash
-python3 scripts/chroma_key.py input-chroma.png web/site/static/illustrations/cat-<name>.png
+python3 scripts/chroma_key.py input-chroma.png /tmp/cat-<name>.png
+cwebp -q 82 -resize 800 0 /tmp/cat-<name>.png -o web/site/static/illustrations/cat-<name>.webp
+cwebp -q 82 -resize 480 0 /tmp/cat-<name>.png -o web/site/static/illustrations/cat-<name>-480.webp
+rm /tmp/cat-<name>.png
 ```
 
 Скрипт (`scripts/chroma_key.py`, требуется `pillow` и `numpy`):
@@ -105,16 +110,14 @@ python3 scripts/chroma_key.py input-chroma.png web/site/static/illustrations/cat
 2. строит альфа-канал (< 60 — прозрачно, > 180 — непрозрачно, между — плавно)
 3. убирает пурпурный каст везде (в палитре нет magenta, поэтому
    `min(R,B) > G` — всегда артефакт хромакея, включая «тени» на панелях)
-4. обрезает по содержимому с отступом 8px и сохраняет RGBA PNG
+4. обрезает по содержимому с отступом 8px и сохраняет RGBA PNG (временный файл)
 
 ### Шаг 3 — проверка
 
-- Откройте PNG на тёмном и светлом фоне — не должно быть пурпурной каймы
-- Убедитесь, что режим файла RGBA:
-  `python3 -c "from PIL import Image; print(Image.open('file.png').mode)"`
+- Откройте WebP на тёмном и светлом фоне — не должно быть пурпурной каймы
+- В репозитории и на сайте храним только `.webp` (PNG после chroma key не коммитим)
 
 ## Использование на сайте
 
 Файлы кладутся в `web/site/static/illustrations/` и подключаются как
-`/illustrations/cat-<name>.png`. Фон прозрачный — картинки работают в обеих
-темах без рамок и `border-radius`.
+`/illustrations/cat-<name>.webp` (с `-480.webp` для mobile).

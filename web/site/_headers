@@ -2,6 +2,10 @@
   Cache-Control: public, max-age=31536000, immutable
 
 /fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Unhashed static images (same URL after replace) — not immutable.
+/hero-cat-isometric*
   Cache-Control: public, max-age=2592000
 
 /illustrations/*

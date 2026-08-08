@@ -95,39 +95,49 @@
 			<div class="portfolio-grid" role="list">
 				{#each filtered as project, i (project.id)}
 					{@const loc = getProjectLocale(project, langStore.value)}
-					<article
-						class="portfolio-card"
-						class:featured={i === 0 && activeFilter === 'all'}
-						role="listitem"
-						itemscope
-						itemtype="https://schema.org/CreativeWork"
-					>
-						{#if project.image}
-							<div class="pc-bg" aria-hidden="true">
-								<img src={project.image} alt="" loading="lazy" />
+					<div role="listitem">
+						<a
+							href={l(`/portfolio/${project.id}`)}
+							class="portfolio-card portfolio-card--link"
+							class:featured={i === 0 && activeFilter === 'all'}
+							itemscope
+							itemtype="https://schema.org/CreativeWork"
+							itemprop="url"
+						>
+							{#if project.image}
+								<div class="pc-bg" aria-hidden="true">
+									<img
+										src={project.image}
+										alt=""
+										width="640"
+										height="400"
+										loading={i < 6 ? 'eager' : 'lazy'}
+										fetchpriority={i === 0 ? 'high' : 'auto'}
+										decoding="async"
+									/>
+								</div>
+							{/if}
+							<div class="pc-top">
+								<span class="pc-type">
+									<span class="pc-dot" style="background:{getCategoryColor(project.category)}" aria-hidden="true"></span>
+									{loc.subtitle}
+								</span>
+								<span class="pc-year">{project.year}</span>
 							</div>
-						{/if}
-						<div class="pc-top">
-							<span class="pc-type">
-								<span class="pc-dot" style="background:{getCategoryColor(project.category)}" aria-hidden="true"></span>
-								{loc.subtitle}
+							<h3 class="pc-title" itemprop="name">{loc.title}</h3>
+							<p class="pc-desc" itemprop="description">{loc.description}</p>
+							<div class="pc-tags">
+								{#each project.tags as tag (tag)}
+									<span class="pc-tag">{tag}</span>
+								{/each}
+							</div>
+							<span class="pc-link">
+								{langStore.t('portfolio.case_study')}
+								<span class="sr-only">: {loc.title}</span>
+								<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 							</span>
-							<span class="pc-year">{project.year}</span>
-						</div>
-						<h3 class="pc-title" itemprop="name">
-							<a href={l(`/portfolio/${project.id}`)} class="pc-title-link" aria-label="View {loc.title} case study">{loc.title}</a>
-						</h3>
-						<p class="pc-desc" itemprop="description">{loc.description}</p>
-						<div class="pc-tags">
-							{#each project.tags as tag (tag)}
-								<span class="pc-tag">{tag}</span>
-							{/each}
-						</div>
-						<a href={l(`/portfolio/${project.id}`)} class="pc-link" itemprop="url" aria-label="View {loc.title} case study">
-							{langStore.t('portfolio.case_study')}
-							<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 						</a>
-					</article>
+					</div>
 				{/each}
 			</div>
 		</div>

@@ -1,5 +1,11 @@
 import { getApiV1, type ApiRequestContext } from '$lib/api';
 import { SERVICE_ICONS } from '$lib/constants/sections';
+import {
+	collectEmbedItems,
+	embedParamsToServicesQuery,
+	selectServices,
+	type EmbedServicesQuery
+} from '$lib/embeds';
 import { DEFAULT_LANG } from '$lib/i18n/routing';
 
 export interface ServiceTranslation {
@@ -63,14 +69,30 @@ export function toServicePageItem(item: ServiceItem, lang: string): ServicePageI
 
 /** Опубликованные услуги для секции на главной.
  *  lang — вернуть только этот перевод (фильтрация на сервере). */
+export interface ServicesQuery extends Omit<EmbedServicesQuery, 'limit' | 'mode'> {
+	limit?: number;
+	/** Без body HTML — для эмбедов/карточек. */
+	mode?: 'full' | 'summary';
+}
+
+function servicesQueryString(query: ServicesQuery = {}): string {
+	const params = new URLSearchParams();
+	if (query.lang) params.set('lang', query.lang);
+	if (query.tags?.length) params.set('tags', query.tags.join(','));
+	if (query.slugs?.length) params.set('slugs', query.slugs.join(','));
+	if (query.limit && query.limit > 0) params.set('limit', String(query.limit));
+	if (query.mode === 'summary') params.set('mode', 'summary');
+	const qs = params.toString();
+	return qs ? `?${qs}` : '';
+}
+
 export async function fetchServices(
 	fetchFn: FetchFn = fetch,
-	lang?: string,
+	query: ServicesQuery = {},
 	ctx?: ApiRequestContext
 ): Promise<ServiceItem[]> {
 	try {
-		const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
-		const res = await fetchFn(`${getApiV1(ctx)}/public/services${qs}`);
+		const res = await fetchFn(`${getApiV1(ctx)}/public/services${servicesQueryString(query)}`);
 		if (!res.ok) return [];
 		const data = (await res.json()) as { services: ServiceItem[] };
 		return (data.services ?? []).filter((item) => item.published);
@@ -99,6 +121,21 @@ export async function fetchService(
 	}
 }
 
+/** Услуги только под `{{services …}}` в HTML — дозированные запросы к API. */
+export async function loadServicesForEmbedHtml(
+	html: string,
+	fetchFn: FetchFn = fetch,
+	opts: { lang?: string } = {},
+	ctx?: ApiRequestContext
+): Promise<Record<string, ServiceItem[]>> {
+	return collectEmbedItems(
+		html,
+		'services',
+		(params) => fetchServices(fetchFn, embedParamsToServicesQuery(params, opts), ctx),
+		selectServices
+	);
+}
+
 /** Преобразует API-записи в формат для UI с учётом языка.
  *  Fallback: запрошенный язык → язык по умолчанию → любой доступный перевод. */
 export function toServiceDisplayItems(
@@ -123,9 +160,10 @@ export function toServiceDisplayItems(
 export async function loadServicePageItems(
 	fetchFn: FetchFn = fetch,
 	lang: string,
-	ctx?: ApiRequestContext
+	ctx?: ApiRequestContext,
+	query: Omit<ServicesQuery, 'lang'> = {}
 ): Promise<ServicePageItem[]> {
-	const fromApi = await fetchServices(fetchFn, lang, ctx);
+	const fromApi = await fetchServices(fetchFn, { lang, ...query }, ctx);
 	return [...fromApi]
 		.sort((a, b) => a.sort_order - b.sort_order)
 		.map((item) => toServicePageItem(item, lang));

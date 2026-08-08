@@ -103,6 +103,9 @@
     "result": "The Result",
     "stack": "Tech Stack",
     "links": "Links",
+    "info": "Project Info",
+    "year": "Year",
+    "category": "Category",
     "start_project": "Start a Similar Project"
   },
   "service_page": {

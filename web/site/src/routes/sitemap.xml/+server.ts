@@ -10,8 +10,8 @@ const STATIC_PATHS = ['', '/portfolio', '/articles', '/order', '/legal/privacy',
 /** Динамическая карта сайта: все страницы в обеих локалях с hreflang-альтернативами. */
 export const GET: RequestHandler = async ({ fetch, platform }) => {
 	const [projects, services, articles] = await Promise.all([
-		fetchPortfolioProjects(fetch, {}, { platform }),
-		fetchServices(fetch, undefined, { platform }),
+		fetchPortfolioProjects(fetch, { mode: 'summary' }, { platform }),
+		fetchServices(fetch, { mode: 'summary' }, { platform }),
 		fetchArticles(fetch, undefined, { platform })
 	]);
 

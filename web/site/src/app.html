@@ -4,9 +4,20 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="theme-color" content="#24252a" id="theme-color-meta" />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" />
+		<link
+			rel="preload"
+			href="/fonts/TermitoHeavyCaps/termito_heavy-webfont.woff2"
+			as="font"
+			type="font/woff2"
+			crossorigin="anonymous"
+		/>
+		<link
+			rel="preload"
+			href="/fonts/inter/inter-latin-wght-normal.woff2"
+			as="font"
+			type="font/woff2"
+			crossorigin="anonymous"
+		/>
 		<script>
 			(function() {
 				var saved = localStorage.getItem('piplos-theme');
@@ -16,14 +27,31 @@
 				if (meta) meta.content = preferred === 'light' ? '#ffffff' : '#24252a';
 			})();
 		</script>
-		<!-- Google tag (gtag.js) -->
-		<script async src="https://www.googletagmanager.com/gtag/js?id=G-VDNME4G2S7"></script>
+		<!-- Google Analytics: load after page is idle to keep LCP/TBT clean -->
 		<script>
 			window.dataLayer = window.dataLayer || [];
 			function gtag(){dataLayer.push(arguments);}
-			gtag('js', new Date());
-
-			gtag('config', 'G-VDNME4G2S7');
+			(function() {
+				function loadGtag() {
+					if (window.__gtagLoaded) return;
+					window.__gtagLoaded = true;
+					var s = document.createElement('script');
+					s.src = 'https://www.googletagmanager.com/gtag/js?id=G-VDNME4G2S7';
+					s.async = true;
+					s.onload = function() {
+						gtag('js', new Date());
+						gtag('config', 'G-VDNME4G2S7');
+					};
+					document.head.appendChild(s);
+				}
+				if ('requestIdleCallback' in window) {
+					requestIdleCallback(loadGtag, { timeout: 4000 });
+				} else {
+					window.addEventListener('load', function() {
+						setTimeout(loadGtag, 1);
+					});
+				}
+			})();
 		</script>
 		%sveltekit.head%
 	</head>

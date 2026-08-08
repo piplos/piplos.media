@@ -1,29 +1,18 @@
 import { error } from '@sveltejs/kit';
 import { resolveUploadUrlsInHtml } from '$lib/api';
 import { fetchArticle } from '$lib/articles-api';
-import { loadPortfolioProjects } from '$lib/portfolio-api';
-import type { PortfolioProject } from '$lib/portfolio';
+import {
+	loadProjectsForEmbedHtml,
+	loadRelatedProjectsForTags
+} from '$lib/portfolio-api';
 import { fetchSEOPage } from '$lib/seo-api';
-import { fetchServices } from '$lib/services-api';
+import { loadServicesForEmbedHtml } from '$lib/services-api';
 import type { PageServerLoad } from './$types';
-
-/** До 3 связанных проектов: пересечение по стеку статьи, иначе — сквозной порядок портфолио. */
-function relatedProjects(projects: PortfolioProject[], articleTags: string[]): PortfolioProject[] {
-	const tags = new Set(articleTags.filter(Boolean));
-	const matched =
-		tags.size > 0
-			? projects.filter((project) => project.tags.some((tag) => tags.has(tag)))
-			: [];
-	const pool = matched.length > 0 ? matched : projects;
-	return pool.slice(0, 3);
-}
 
 export const load: PageServerLoad = async ({ params, fetch, platform }) => {
 	const ctx = { platform };
-	const [article, projects, services, seo] = await Promise.all([
+	const [article, seo] = await Promise.all([
 		fetchArticle(params.slug, fetch, params.lang, ctx),
-		loadPortfolioProjects(fetch, { lang: params.lang }, ctx),
-		fetchServices(fetch, params.lang, ctx),
 		fetchSEOPage(`/articles/${params.slug}`, fetch, ctx)
 	]);
 	if (!article) throw error(404, 'Article not found');
@@ -32,7 +21,16 @@ export const load: PageServerLoad = async ({ params, fetch, platform }) => {
 		if (locale.body) locale.body = resolveUploadUrlsInHtml(locale.body, ctx);
 	}
 
-	const related = relatedProjects(projects, article.tags ?? []);
+	// Токены могут быть только в одном языке; collectEmbedItems дедупит одинаковые params.
+	const bodyHtml = Object.values(article.translations)
+		.map((locale) => locale.body ?? '')
+		.join('\n');
+
+	const [related, projects, services] = await Promise.all([
+		loadRelatedProjectsForTags(article.tags ?? [], fetch, { lang: params.lang, limit: 3 }, ctx),
+		loadProjectsForEmbedHtml(bodyHtml, fetch, { lang: params.lang }, ctx),
+		loadServicesForEmbedHtml(bodyHtml, fetch, { lang: params.lang }, ctx)
+	]);
 
 	return { article, related, projects, services, seo };
 };

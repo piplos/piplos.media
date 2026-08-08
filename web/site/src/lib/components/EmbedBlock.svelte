@@ -1,24 +1,24 @@
 <script lang="ts">
 	import { l } from '$lib/i18n/link';
 	import { langStore } from '$lib/stores/lang.svelte';
-	import { selectProjects, selectServices, type EmbedParams } from '$lib/embeds';
+	import type { EmbedParams } from '$lib/embeds';
 	import { getCategoryColor, getProjectLocale, type PortfolioProject } from '$lib/portfolio';
 	import { getServiceLocale, type ServiceItem } from '$lib/services-api';
 	import { SERVICE_ICONS } from '$lib/constants/sections';
 
 	interface Props {
 		params: EmbedParams;
-		projects: PortfolioProject[];
-		services: ServiceItem[];
+		/** Уже отобранные под этот токен проекты (не весь каталог / не UNION). */
+		projects?: PortfolioProject[];
+		/** Уже отобранные под этот токен услуги. */
+		services?: ServiceItem[];
 	}
-	let { params, projects, services }: Props = $props();
+	let { params, projects = [], services = [] }: Props = $props();
 
-	const projectItems = $derived(
-		params.kind === 'projects' ? selectProjects(projects, params) : []
-	);
+	const projectItems = $derived(params.kind === 'projects' ? projects : []);
 	const serviceItems = $derived(
 		params.kind === 'services'
-			? selectServices(services, params).map((item) => {
+			? services.map((item) => {
 					const loc = getServiceLocale(item, langStore.value);
 					return {
 						slug: item.slug,
