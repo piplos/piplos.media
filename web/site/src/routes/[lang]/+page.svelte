@@ -31,11 +31,32 @@
 		}));
 	});
 
-	const SERVICES_COLUMNS = 2;
 	const STACK_MIN_COL_WIDTH = 120;
 
+	let servicesGrid = $state<HTMLDivElement | null>(null);
+	let servicesColumns = $state(3);
+
+	$effect(() => {
+		const el = servicesGrid;
+		if (!el) return;
+
+		const update = () => {
+			const cols = getComputedStyle(el)
+				.gridTemplateColumns.split(' ')
+				.filter(Boolean).length;
+			servicesColumns = Math.max(1, cols);
+		};
+
+		update();
+		const observer = new ResizeObserver(update);
+		observer.observe(el);
+		return () => observer.disconnect();
+	});
+
 	const servicesPlaceholderCount = $derived(
-		(SERVICES_COLUMNS - (services.length % SERVICES_COLUMNS)) % SERVICES_COLUMNS
+		services.length === 0
+			? 0
+			: (servicesColumns - (services.length % servicesColumns)) % servicesColumns
 	);
 
 	let stackGrid = $state<HTMLDivElement | null>(null);
@@ -185,7 +206,7 @@
 					<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 				</a>
 			</div>
-			<div class="services-grid" role="list">
+			<div class="services-grid" role="list" bind:this={servicesGrid}>
 				{#each services as svc (svc.id)}
 					<div role="listitem">
 						<a href={l(`/services/${svc.id}`)} class="service-card service-card--link" itemscope itemtype="https://schema.org/Service">

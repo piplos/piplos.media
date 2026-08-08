@@ -4,6 +4,7 @@
 	import { SITE } from '$lib/site';
 	import { articleDate, formatArticleDate, getArticleLocale } from '$lib/articles-api';
 	import { uploadCardImage } from '$lib/upload-image';
+	import GridPlaceholder from '$lib/components/GridPlaceholder.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -13,6 +14,33 @@
 	const lcpImageIndex = $derived(articles.findIndex((article) => Boolean(article.image)));
 	const lcpImage = $derived(
 		lcpImageIndex >= 0 ? uploadCardImage(articles[lcpImageIndex]?.image ?? '') : null
+	);
+
+	/** Совпадает с фактическим числом колонок CSS-сетки. */
+	let articlesGrid = $state<HTMLDivElement | null>(null);
+	let articlesColumns = $state(3);
+
+	$effect(() => {
+		const el = articlesGrid;
+		if (!el) return;
+
+		const update = () => {
+			const cols = getComputedStyle(el)
+				.gridTemplateColumns.split(' ')
+				.filter(Boolean).length;
+			articlesColumns = Math.max(1, cols);
+		};
+
+		update();
+		const observer = new ResizeObserver(update);
+		observer.observe(el);
+		return () => observer.disconnect();
+	});
+
+	const articlesPlaceholderCount = $derived(
+		articles.length === 0
+			? 0
+			: (articlesColumns - (articles.length % articlesColumns)) % articlesColumns
 	);
 
 	const pageTitle = $derived(`${langStore.t('articles.title')} — ${SITE.displayName}`);
@@ -69,45 +97,57 @@
 			{#if !articles.length}
 				<p class="articles-empty">{langStore.t('articles.empty')}</p>
 			{:else}
-				<div class="articles-grid" role="list">
+				<div class="articles-grid" role="list" bind:this={articlesGrid}>
 					{#each articles as article, i (article.id)}
 						{@const loc = getArticleLocale(article, langStore.value)}
 						{@const isLcpImage = i === lcpImageIndex}
 						{@const cardImg = uploadCardImage(article.image)}
-						<div class="article-card" role="listitem" itemscope itemtype="https://schema.org/Article">
-							{#if cardImg}
-								<div class="article-bg" aria-hidden="true">
-									<img
-										src={cardImg.src}
-										srcset={cardImg.srcset || undefined}
-										sizes={cardImg.sizes}
-										alt=""
-										width="640"
-										height="400"
-										decoding="async"
-										loading={isLcpImage ? 'eager' : 'lazy'}
-										fetchpriority={isLcpImage ? 'high' : 'auto'}
-									/>
-								</div>
-							{/if}
-							<time class="article-date" datetime={articleDate(article)} itemprop="datePublished">
-								{formatArticleDate(articleDate(article), langStore.value)}
-							</time>
-							<h3 class="article-title" itemprop="headline">
-								<a href={l(`/articles/${article.slug}`)} class="article-title-link" itemprop="url">
-									{loc.title || article.slug}
-								</a>
-							</h3>
-							{#if loc.description}
-								<p class="article-desc" itemprop="description">{loc.description}</p>
-							{/if}
-							<a href={l(`/articles/${article.slug}`)} class="article-link">
-								{langStore.t('articles.read')}
-								<span class="sr-only">: {loc.title || article.slug}</span>
-								<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+						<div role="listitem">
+							<a
+								href={l(`/articles/${article.slug}`)}
+								class="article-card"
+								itemscope
+								itemtype="https://schema.org/Article"
+								itemprop="url"
+							>
+								{#if cardImg}
+									<div class="article-bg" aria-hidden="true">
+										<img
+											src={cardImg.src}
+											srcset={cardImg.srcset || undefined}
+											sizes={cardImg.sizes}
+											alt=""
+											width="640"
+											height="400"
+											decoding="async"
+											loading={isLcpImage ? 'eager' : 'lazy'}
+											fetchpriority={isLcpImage ? 'high' : 'auto'}
+										/>
+									</div>
+								{/if}
+								<time class="article-date" datetime={articleDate(article)} itemprop="datePublished">
+									{formatArticleDate(articleDate(article), langStore.value)}
+								</time>
+								<h3 class="article-title" itemprop="headline">{loc.title || article.slug}</h3>
+								{#if loc.description}
+									<p class="article-desc" itemprop="description">{loc.description}</p>
+								{/if}
+								<span class="article-link">
+									{langStore.t('articles.read')}
+									<span class="sr-only">: {loc.title || article.slug}</span>
+									<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+								</span>
 							</a>
 						</div>
 					{/each}
+					{#if articlesPlaceholderCount > 0}
+						<div role="listitem" style:grid-column={`span ${articlesPlaceholderCount}`}>
+							<GridPlaceholder
+								label={langStore.t('services.coming_soon')}
+								variant="work"
+							/>
+						</div>
+					{/if}
 				</div>
 			{/if}
 		</div>
@@ -128,8 +168,24 @@
 
 	.articles-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-		gap: 24px;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 1px;
+		background: var(--c-border);
+		border: 1px solid var(--c-border);
+		border-radius: var(--radius);
+		overflow: hidden;
+	}
+
+	.articles-grid > [role='listitem'] {
+		display: flex;
+		min-width: 0;
+		min-height: 0;
+	}
+
+	.articles-grid > [role='listitem'] > :global(.grid-placeholder) {
+		flex: 1;
+		width: 100%;
+		box-sizing: border-box;
 	}
 
 	.article-card {
@@ -137,17 +193,21 @@
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
-		padding: 28px 24px;
+		gap: 14px;
+		padding: 36px 32px;
 		background: var(--c-surface);
-		border: 1px solid var(--c-border2);
-		border-radius: var(--radius);
-		transition: border-color 0.2s, transform 0.2s, background 0.2s;
+		text-decoration: none;
+		color: inherit;
+		flex: 1;
+		width: 100%;
+		min-width: 0;
+		transition: background 0.2s;
+		content-visibility: auto;
+		contain-intrinsic-size: auto 320px;
 	}
 
 	.article-card:hover {
-		border-color: var(--c-accent);
-		transform: translateY(-2px);
+		background: var(--c-surface2);
 	}
 
 	.article-card > :not(.article-bg) {
@@ -164,19 +224,20 @@
 
 	.article-bg img {
 		position: absolute;
-		right: -4%;
-		bottom: -8%;
-		height: 82%;
-		width: auto;
-		opacity: 0.09;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: center;
+		opacity: 0.12;
 		filter: grayscale(60%);
 		transition: opacity 0.35s ease, transform 0.35s ease, filter 0.35s ease;
 	}
 
 	.article-card:hover .article-bg img {
-		opacity: 0.28;
+		opacity: 0.32;
 		filter: grayscale(0);
-		transform: scale(1.05);
+		transform: scale(1.04);
 	}
 
 	.article-date {
@@ -190,48 +251,56 @@
 
 	.article-title {
 		font-family: var(--f-display);
-		font-size: 22px;
-		font-weight: 700;
-		line-height: 1.25;
+		font-size: 24px;
+		font-weight: 600;
+		line-height: 1.2;
 		letter-spacing: -0.01em;
-	}
-
-	.article-title-link {
 		color: var(--c-white);
+		overflow-wrap: anywhere;
 		transition: color 0.2s;
 	}
 
-	.article-title-link:hover {
+	.article-card:hover .article-title {
 		color: var(--c-accent);
 	}
 
 	.article-desc {
 		flex: 1;
-		font-size: 15px;
+		font-size: 14px;
 		color: var(--c-muted);
 		line-height: 1.65;
 	}
 
 	.article-link {
-		display: inline-flex;
+		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: 6px;
+		margin-top: 8px;
 		font-family: var(--f-mono);
 		font-size: 12px;
-		font-weight: 600;
-		letter-spacing: 0.1em;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: var(--c-accent);
-		transition: gap 0.2s;
+		color: var(--c-muted);
+		transition: color 0.2s;
 	}
 
-	.article-link:hover {
-		gap: 12px;
+	.article-card:hover .article-link {
+		color: var(--c-accent);
+	}
+
+	@media (max-width: 1024px) {
+		.articles-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
 	}
 
 	@media (max-width: 768px) {
 		.articles-section {
 			padding: 48px 0 80px;
+		}
+
+		.articles-grid {
+			grid-template-columns: 1fr;
 		}
 	}
 </style>
