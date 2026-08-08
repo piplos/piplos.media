@@ -535,6 +535,11 @@ ul, ol { list-style: none; }
   display: flex;
   min-height: 0;
 }
+.services-grid > [role='listitem'] > .grid-placeholder {
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+}
 .service-card {
   background: var(--c-surface);
   padding: 40px 40px 36px;
@@ -623,7 +628,7 @@ ul, ol { list-style: none; }
 /* ─── WORK ──────────────────────────────────────── */
 .work-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
   background: var(--c-border);
   border: 1px solid var(--c-border);
@@ -632,6 +637,7 @@ ul, ol { list-style: none; }
 }
 .work-grid > [role='listitem'] {
   display: flex;
+  min-width: 0;
   min-height: 0;
 }
 .work-card {
@@ -896,7 +902,7 @@ ul, ol { list-style: none; }
 
 .portfolio-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
   background: var(--c-border);
   border: 1px solid var(--c-border);
@@ -905,6 +911,7 @@ ul, ol { list-style: none; }
 }
 .portfolio-grid > [role='listitem'] {
   display: flex;
+  min-width: 0;
   min-height: 0;
 }
 .portfolio-grid > [role='listitem']:has(.portfolio-card.featured) {
@@ -919,6 +926,8 @@ ul, ol { list-style: none; }
   transition: background 0.2s;
   content-visibility: auto;
   contain-intrinsic-size: auto 380px;
+  min-width: 0;
+  width: 100%;
 }
 .portfolio-card--link {
   text-decoration: none;
@@ -950,6 +959,7 @@ ul, ol { list-style: none; }
 .pc-title {
   font-family: var(--f-display); font-size: 24px; font-weight: 600; color: var(--c-white);
   letter-spacing: -0.01em; line-height: 1.2; transition: color 0.2s;
+  overflow-wrap: anywhere;
 }
 .portfolio-card.featured .pc-title { font-size: 32px; }
 .portfolio-card:hover .pc-title { color: var(--c-accent); }
@@ -1208,7 +1218,7 @@ ul, ol { list-style: none; }
   .hero-illustration { display: none; }
   .services-grid { grid-template-columns: 1fr; }
   .services-grid .grid-placeholder { display: none; }
-  .work-grid { grid-template-columns: repeat(2, 1fr); }
+  .work-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .process-grid { grid-template-columns: repeat(2, 1fr); }
   .stats .container { grid-template-columns: repeat(2, 1fr); }
   .stat:nth-child(2) { border-right: none; }
@@ -1219,7 +1229,7 @@ ul, ol { list-style: none; }
   .cta-contact-item { text-align: left; }
   .footer-main { grid-template-columns: 1fr 1fr 1fr; gap: 40px; }
   .footer-brand { grid-column: 1 / -1; }
-  .portfolio-grid { grid-template-columns: repeat(2, 1fr); }
+  .portfolio-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .portfolio-grid > [role='listitem']:has(.portfolio-card.featured) { grid-column: span 2; }
   .order-layout { grid-template-columns: 1fr; }
   .form-side { border-right: none; border-bottom: 1px solid var(--c-border); padding-right: 0; }

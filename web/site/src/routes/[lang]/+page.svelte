@@ -201,11 +201,14 @@
 						</a>
 					</div>
 				{/each}
-				{#each Array(servicesPlaceholderCount) as _, i (`placeholder-${i}`)}
-					<div role="listitem">
-						<GridPlaceholder label={langStore.t('services.coming_soon')} variant="service" />
+				{#if servicesPlaceholderCount > 0}
+					<div role="listitem" style:grid-column={`span ${servicesPlaceholderCount}`}>
+						<GridPlaceholder
+							label={langStore.t('services.coming_soon')}
+							variant="service"
+						/>
 					</div>
-				{/each}
+				{/if}
 			</div>
 		</div>
 	</section>

@@ -96,9 +96,7 @@
 			<thead>
 				<tr>
 					<th class="admin-table-cell-drag" aria-label="Порядок"></th>
-					<th>Название</th>
-					<th>Slug</th>
-					<th>Стек</th>
+					<th>Услуга</th>
 					<th>Языки</th>
 					<th>Статус</th>
 					<th class="admin-table-cell-actions"></th>
@@ -144,14 +142,22 @@
 							</button>
 						</td>
 						<td class="chart-cell-main">
-							{#if service.icon}<span class="svc-icon" aria-hidden="true">{service.icon}</span>{/if}
-							<a href="/services/{service.slug}" class="admin-text-link">{serviceTitle(service)}</a>
-						</td>
-						<td class="chart-cell-muted">{service.slug}</td>
-						<td>
-							{#each service.tags as t (t)}
-								<Badge variant="neutral" class="cat-badge">{t}</Badge>
-							{/each}
+							<div class="svc-cell">
+								<div class="svc-cell__title-row">
+									{#if service.icon}<span class="svc-icon" aria-hidden="true">{service.icon}</span>{/if}
+									<a href="/services/{service.slug}" class="admin-text-link svc-cell__title">
+										{serviceTitle(service)}
+									</a>
+								</div>
+								<code class="svc-cell__slug" title={service.slug}>{service.slug}</code>
+								{#if service.tags?.length}
+									<div class="svc-cell__tags">
+										{#each service.tags as t (t)}
+											<Badge variant="neutral" class="cat-badge">{t}</Badge>
+										{/each}
+									</div>
+								{/if}
+							</div>
 						</td>
 						<td>
 							{#each Object.keys(service.translations) as lang (lang)}
@@ -204,10 +210,57 @@
 {/if}
 
 <style>
+	.svc-cell {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.2rem;
+		min-width: 0;
+		width: 100%;
+	}
+	.svc-cell__title-row {
+		display: flex;
+		align-items: baseline;
+		gap: 0.25rem;
+		min-width: 0;
+		max-width: 100%;
+	}
 	.svc-icon {
-		margin-right: 0.375rem;
+		flex-shrink: 0;
+	}
+	.svc-cell__title {
+		font-weight: 500;
+		line-height: 1.3;
+		overflow-wrap: anywhere;
+	}
+	.svc-cell__slug {
+		display: block;
+		box-sizing: border-box;
+		width: 100%;
+		max-width: 100%;
+		padding: 0;
+		border: none;
+		border-radius: 0;
+		background: none;
+		color: #71717a;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		font-size: 0.75rem;
+		line-height: 1.35;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.svc-cell__tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.2rem;
+		margin-top: 0.15rem;
 	}
 	:global(.cat-badge) {
 		margin-right: 0.25rem;
+	}
+	:global(.chart-table td.chart-cell-main) {
+		max-width: 22rem;
+		width: 42%;
 	}
 </style>
