@@ -1,6 +1,15 @@
 package handlers
 
-import "testing"
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/gofiber/fiber/v3"
+)
 
 func TestResolveUploadPath(t *testing.T) {
 	dir := t.TempDir()
@@ -66,5 +75,44 @@ func TestUploadsFileURL(t *testing.T) {
 	}
 	if got := uploadsFileURL("", "папка/с пробелом.png"); got != "/uploads/%D0%BF%D0%B0%D0%BF%D0%BA%D0%B0/%D1%81%20%D0%BF%D1%80%D0%BE%D0%B1%D0%B5%D0%BB%D0%BE%D0%BC.png" {
 		t.Errorf("uploadsFileURL escaping = %q", got)
+	}
+}
+
+func TestFilesListHidesSizedWebPVariants(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"cover.webp", "cover-480.webp", "cover-960.webp", "icon.svg"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	h := NewFilesHandler(dir, "https://api.test")
+	app := fiber.New()
+	app.Get("/files", h.List)
+
+	resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/files", nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d", resp.StatusCode)
+	}
+	var body struct {
+		Files []struct {
+			Name string `json:"name"`
+		} `json:"files"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	names := map[string]bool{}
+	for _, f := range body.Files {
+		names[f.Name] = true
+	}
+	if !names["cover.webp"] || !names["icon.svg"] {
+		t.Fatalf("expected masters listed, got %#v", names)
+	}
+	if names["cover-480.webp"] || names["cover-960.webp"] {
+		t.Fatalf("sized variants must be hidden, got %#v", names)
 	}
 }

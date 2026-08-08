@@ -119,6 +119,10 @@ func (h *FilesHandler) List(c fiber.Ctx) error {
 			folders = append(folders, folderInfo{Name: name, Path: entryRel})
 			continue
 		}
+		// Hide auto-generated sized WebP (stem-480/960.webp); editors pick the master only.
+		if media.IsVariantFilename(name) {
+			continue
+		}
 		info, err := e.Info()
 		if err != nil {
 			continue
