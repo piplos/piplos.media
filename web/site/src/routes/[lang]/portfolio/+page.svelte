@@ -6,6 +6,7 @@
 	import { PORTFOLIO_FILTER_KEYS } from '$lib/constants/sections';
 	import { getCategoryColor, getProjectLocale } from '$lib/portfolio';
 	import { sortProjectsByGroupOrder } from '$lib/portfolio-api';
+	import { uploadCardImage } from '$lib/upload-image';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -41,12 +42,27 @@
 	}
 
 	const companyYears = getCompanyYears();
+	const lcpImageIndex = $derived(filtered.findIndex((project) => Boolean(project.image)));
+	const lcpImage = $derived(
+		lcpImageIndex >= 0 ? uploadCardImage(filtered[lcpImageIndex]?.image ?? '') : null
+	);
 </script>
 
 <svelte:head>
 	<title>Portfolio — {SITE.displayName}</title>
 	<meta name="description" content="Browse {SITE.displayName} portfolio of 240+ projects: web apps, mobile apps, SaaS platforms, fintech and enterprise systems." />
 	<link rel="canonical" href="{SITE.url}{l('/portfolio')}" />
+	{#if lcpImage}
+		<link
+			rel="preload"
+			as="image"
+			type="image/webp"
+			href={lcpImage.src}
+			imagesrcset={lcpImage.srcset || undefined}
+			imagesizes={lcpImage.sizes}
+			fetchpriority="high"
+		/>
+	{/if}
 </svelte:head>
 
 <!-- Breadcrumb -->
@@ -95,6 +111,8 @@
 			<div class="portfolio-grid" role="list">
 				{#each filtered as project, i (project.id)}
 					{@const loc = getProjectLocale(project, langStore.value)}
+					{@const cardImg = uploadCardImage(project.image)}
+					{@const isLcpImage = i === lcpImageIndex}
 					<div role="listitem">
 						<a
 							href={l(`/portfolio/${project.id}`)}
@@ -104,15 +122,17 @@
 							itemtype="https://schema.org/CreativeWork"
 							itemprop="url"
 						>
-							{#if project.image}
+							{#if cardImg}
 								<div class="pc-bg" aria-hidden="true">
 									<img
-										src={project.image}
+										src={cardImg.src}
+										srcset={cardImg.srcset || undefined}
+										sizes={cardImg.sizes}
 										alt=""
 										width="640"
 										height="400"
-										loading={i < 6 ? 'eager' : 'lazy'}
-										fetchpriority={i === 0 ? 'high' : 'auto'}
+										loading={isLcpImage || i < 6 ? 'eager' : 'lazy'}
+										fetchpriority={isLcpImage ? 'high' : 'auto'}
 										decoding="async"
 									/>
 								</div>

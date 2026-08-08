@@ -198,7 +198,10 @@
 				toast.error(data.message ?? 'Не удалось загрузить изображение');
 				return;
 			}
-			insertImage(data.url, file.name.replace(/\.[^.]+$/, ''));
+			insertImage(
+				data.url.replace(/\.(png|jpe?g)(?=$|[?#])/i, '.webp'),
+				file.name.replace(/\.[^.]+$/, '')
+			);
 		} catch {
 			toast.error('Сервис загрузки недоступен');
 		} finally {

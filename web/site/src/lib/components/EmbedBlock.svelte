@@ -5,6 +5,7 @@
 	import { getCategoryColor, getProjectLocale, type PortfolioProject } from '$lib/portfolio';
 	import { getServiceLocale, type ServiceItem } from '$lib/services-api';
 	import { SERVICE_ICONS } from '$lib/constants/sections';
+	import { uploadCardImage } from '$lib/upload-image';
 
 	interface Props {
 		params: EmbedParams;
@@ -42,10 +43,17 @@
 				<div class="embed-grid">
 					{#each projectItems as project (project.id)}
 						{@const loc = getProjectLocale(project, langStore.value)}
+						{@const cardImg = uploadCardImage(project.image)}
 						<a href={l(`/portfolio/${project.id}`)} class="embed-card">
-							{#if project.image}
+							{#if cardImg}
 								<span class="embed-card-bg" aria-hidden="true">
-									<img src={project.image} alt="" loading="lazy" />
+									<img
+										src={cardImg.src}
+										srcset={cardImg.srcset || undefined}
+										sizes={cardImg.sizes}
+										alt=""
+										loading="lazy"
+									/>
 								</span>
 							{/if}
 							<span class="embed-type">

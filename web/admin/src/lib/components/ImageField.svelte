@@ -5,6 +5,12 @@
 	import Input from './Input.svelte';
 	import { uploadFile } from '$lib/files';
 
+	/** Legacy PNG/JPEG upload paths → WebP master after API conversion. */
+	function preferUploadWebp(url: string): string {
+		if (!url || !url.includes('/uploads/')) return url;
+		return url.replace(/\.(png|jpe?g)(?=$|[?#])/i, '.webp');
+	}
+
 	interface Props {
 		id: string;
 		name?: string;
@@ -30,11 +36,13 @@
 	let pickerOpen = $state(false);
 	let dragDepth = $state(0);
 
+	const previewUrl = $derived(preferUploadWebp(value));
+
 	async function upload(file: File) {
 		uploading = true;
 		try {
 			const data = await uploadFile(file, uploadPath);
-			value = data.url;
+			value = preferUploadWebp(data.url);
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : 'Не удалось загрузить изображение');
 		} finally {
@@ -115,9 +123,9 @@
 			Можно перетащить картинку прямо на этот блок{uploadPath ? ` — она попадёт в папку «${uploadPath}»` : ''}.
 		</p>
 	</div>
-	{#if value}
-		<a class="image-thumb" href={value} target="_blank" rel="noreferrer" title="Открыть в новой вкладке">
-			<img src={value} {alt} />
+	{#if previewUrl}
+		<a class="image-thumb" href={previewUrl} target="_blank" rel="noreferrer" title="Открыть в новой вкладке">
+			<img src={previewUrl} {alt} />
 		</a>
 	{/if}
 </div>
@@ -127,7 +135,7 @@
 	bind:open={pickerOpen}
 	title={pickerTitle}
 	initialPath={uploadPath}
-	onselect={(file) => (value = file.url)}
+	onselect={(file) => (value = preferUploadWebp(file.url))}
 />
 
 <style>

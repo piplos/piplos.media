@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	apperrors "github.com/piplos/piplos.media/internal/errors"
+	"github.com/piplos/piplos.media/internal/media"
 	"github.com/piplos/piplos.media/internal/models"
 	"github.com/piplos/piplos.media/internal/repository"
 )
@@ -61,6 +62,8 @@ func (h *PublicHandler) Projects(c fiber.Ctx) error {
 	published := filterPublishedProjects(items, q)
 	for i := range published {
 		published[i].Translations = prepareProjectTranslations(published[i].Translations, q.lang, q.mode)
+		published[i].Translations = preferWebPInTranslations(published[i].Translations)
+		published[i].Image = media.PreferWebPURL(published[i].Image)
 	}
 	return c.JSON(fiber.Map{"projects": published})
 }
@@ -77,6 +80,8 @@ func (h *PublicHandler) Project(c fiber.Ctx) error {
 	}
 	p.Translations = renderMarkdownFields(
 		filteredTranslations(p.Translations, c.Query("lang")), "solution")
+	p.Image = media.PreferWebPURL(p.Image)
+	p.Translations = preferWebPInTranslations(p.Translations)
 	return c.JSON(fiber.Map{"project": p})
 }
 
@@ -96,6 +101,7 @@ func (h *PublicHandler) Services(c fiber.Ctx) error {
 	published := filterPublishedServices(items, q)
 	for i := range published {
 		published[i].Translations = prepareServiceTranslations(published[i].Translations, q.lang, q.mode)
+		published[i].Translations = preferWebPInTranslations(published[i].Translations)
 	}
 	return c.JSON(fiber.Map{"services": published})
 }
@@ -112,6 +118,7 @@ func (h *PublicHandler) Service(c fiber.Ctx) error {
 	}
 	s.Translations = renderMarkdownFields(
 		filteredTranslations(s.Translations, c.Query("lang")), "body")
+	s.Translations = preferWebPInTranslations(s.Translations)
 	return c.JSON(fiber.Map{"service": s})
 }
 
@@ -124,6 +131,8 @@ func (h *PublicHandler) Stack(c fiber.Ctx) error {
 	published := []models.StackItem{}
 	for _, s := range items {
 		if s.Published {
+			s.Icon = media.PreferWebPURL(s.Icon)
+			s.IconAlt = media.PreferWebPURL(s.IconAlt)
 			published = append(published, s)
 		}
 	}
@@ -163,6 +172,8 @@ func (h *PublicHandler) Pages(c fiber.Ctx) error {
 			continue
 		}
 		p.Translations = renderMarkdownFields(filteredTranslations(p.Translations, lang), "body")
+		p.Translations = preferWebPInTranslations(p.Translations)
+		p.Image = media.PreferWebPURL(p.Image)
 		live = append(live, p)
 	}
 	return c.JSON(fiber.Map{"pages": live})
@@ -180,6 +191,8 @@ func (h *PublicHandler) Page(c fiber.Ctx) error {
 	}
 	p.Translations = renderMarkdownFields(
 		filteredTranslations(p.Translations, c.Query("lang")), "body")
+	p.Translations = preferWebPInTranslations(p.Translations)
+	p.Image = media.PreferWebPURL(p.Image)
 	return c.JSON(fiber.Map{"page": p})
 }
 

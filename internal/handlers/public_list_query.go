@@ -8,6 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/piplos/piplos.media/internal/media"
 	"github.com/piplos/piplos.media/internal/models"
 )
 
@@ -207,6 +208,22 @@ func prepareServiceTranslations(t models.Translations, lang, mode string) models
 		return omitTranslationFields(t, "body")
 	}
 	return renderMarkdownFields(t, "body")
+}
+
+// preferWebPInTranslations rewrites /uploads/*.png|jpg in translation HTML/text to .webp.
+func preferWebPInTranslations(t models.Translations) models.Translations {
+	if t == nil {
+		return nil
+	}
+	out := make(models.Translations, len(t))
+	for lang, values := range t {
+		copied := make(map[string]string, len(values))
+		for key, value := range values {
+			copied[key] = media.PreferWebPInText(value)
+		}
+		out[lang] = copied
+	}
+	return out
 }
 
 func publishedServices(items []models.Service) []models.Service {

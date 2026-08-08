@@ -3,6 +3,7 @@
 	import { langStore } from '$lib/stores/lang.svelte';
 	import { SITE } from '$lib/site';
 	import { articleDate, formatArticleDate, getArticleLocale } from '$lib/articles-api';
+	import { uploadCardImage } from '$lib/upload-image';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -10,7 +11,9 @@
 	const articles = $derived(data.articles);
 	/** Индекс первой карточки с обложкой — кандидат в LCP на mobile. */
 	const lcpImageIndex = $derived(articles.findIndex((article) => Boolean(article.image)));
-	const lcpImageUrl = $derived(lcpImageIndex >= 0 ? articles[lcpImageIndex]?.image : '');
+	const lcpImage = $derived(
+		lcpImageIndex >= 0 ? uploadCardImage(articles[lcpImageIndex]?.image ?? '') : null
+	);
 
 	const pageTitle = $derived(`${langStore.t('articles.title')} — ${SITE.displayName}`);
 	const pageDescription = $derived(langStore.t('articles.description'));
@@ -30,8 +33,16 @@
 	<meta property="og:title" content={pageTitle} />
 	<meta property="og:description" content={pageDescription} />
 	<meta property="og:url" content={canonicalUrl} />
-	{#if lcpImageUrl}
-		<link rel="preload" as="image" href={lcpImageUrl} fetchpriority="high" />
+	{#if lcpImage}
+		<link
+			rel="preload"
+			as="image"
+			type="image/webp"
+			href={lcpImage.src}
+			imagesrcset={lcpImage.srcset || undefined}
+			imagesizes={lcpImage.sizes}
+			fetchpriority="high"
+		/>
 	{/if}
 </svelte:head>
 
@@ -62,11 +73,14 @@
 					{#each articles as article, i (article.id)}
 						{@const loc = getArticleLocale(article, langStore.value)}
 						{@const isLcpImage = i === lcpImageIndex}
+						{@const cardImg = uploadCardImage(article.image)}
 						<div class="article-card" role="listitem" itemscope itemtype="https://schema.org/Article">
-							{#if article.image}
+							{#if cardImg}
 								<div class="article-bg" aria-hidden="true">
 									<img
-										src={article.image}
+										src={cardImg.src}
+										srcset={cardImg.srcset || undefined}
+										sizes={cardImg.sizes}
 										alt=""
 										width="640"
 										height="400"

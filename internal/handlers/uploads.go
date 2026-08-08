@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 
 	apperrors "github.com/piplos/piplos.media/internal/errors"
+	"github.com/piplos/piplos.media/internal/media"
 )
 
 const maxUploadBytes = 5 << 20 // 5 MiB
@@ -37,13 +38,13 @@ func NewUploadsHandler(dir, publicURL string) *UploadsHandler {
 	return &UploadsHandler{dir: dir, publicURL: strings.TrimRight(publicURL, "/")}
 }
 
-// uniqueName returns name, or name with a numeric suffix if it is taken in dir.
+// uniqueName returns name, or name with a numeric suffix if it (or its WebP family) is taken.
 func uniqueName(dir, name string) string {
 	ext := filepath.Ext(name)
 	base := strings.TrimSuffix(name, ext)
 	candidate := name
 	for i := 1; ; i++ {
-		if _, err := os.Stat(filepath.Join(dir, candidate)); os.IsNotExist(err) {
+		if !media.NameConflicts(dir, candidate) {
 			return candidate
 		}
 		candidate = fmt.Sprintf("%s-%d%s", base, i, ext)
@@ -135,10 +136,47 @@ func (h *UploadsHandler) Upload(c fiber.Ctx) error {
 	}
 
 	fileRel := path.Join(folderRel, name)
-	return c.JSON(fiber.Map{
+	resp := fiber.Map{
 		"url":      uploadsFileURL(h.publicURL, fileRel),
 		"path":     "/uploads/" + fileRel,
 		"filename": name,
 		"mime":     mimeType,
-	})
+	}
+
+	// Raster uploads get WebP siblings (full + 480/960) for the public site.
+	if media.IsRasterExt(ext) {
+		variants, err := media.GenerateVariants(destPath)
+		if err != nil {
+			// Original kept on failure; partial WebP outputs are rolled back.
+			resp["variants_error"] = err.Error()
+		} else if variants.Full != "" {
+			fullRel := path.Join(folderRel, variants.Full)
+			webpURL := uploadsFileURL(h.publicURL, fullRel)
+			resp["webp"] = webpURL
+			resp["webp_path"] = "/uploads/" + fullRel
+			sized := fiber.Map{}
+			for _, w := range media.VariantWidths {
+				sizedName := media.SizedWebPName(variants.Full, w)
+				sizedRel := path.Join(folderRel, sizedName)
+				sized[fmt.Sprintf("%d", w)] = uploadsFileURL(h.publicURL, sizedRel)
+			}
+			resp["webp_sizes"] = sized
+			resp["url"] = webpURL
+			resp["path"] = resp["webp_path"]
+			resp["filename"] = variants.Full
+			resp["mime"] = "image/webp"
+		}
+	}
+
+	return c.JSON(resp)
+}
+
+// RebuildVariants walks the upload directory and regenerates WebP sidecars
+// for every raster original (staff; used after deploy / for legacy PNG).
+func (h *UploadsHandler) RebuildVariants(c fiber.Ctx) error {
+	ok, failed, err := media.RebuildDir(h.dir)
+	if err != nil {
+		return apperrors.ErrInternal("failed to rebuild variants")
+	}
+	return c.JSON(fiber.Map{"ok": ok, "failed": failed})
 }

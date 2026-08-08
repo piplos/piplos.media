@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"bytes"
+	"image"
+	"image/png"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -85,3 +87,52 @@ func TestUploadsHandlerAcceptsSVG(t *testing.T) {
 		t.Fatalf("saved file missing: %v", err)
 	}
 }
+
+func TestUploadsHandlerGeneratesWebPVariants(t *testing.T) {
+	dir := t.TempDir()
+	h := NewUploadsHandler(dir, "https://api.test")
+	app := fiber.New()
+	app.Post("/upload", h.Upload)
+
+	var pngBuf bytes.Buffer
+	img := image.NewRGBA(image.Rect(0, 0, 32, 24))
+	if err := png.Encode(&pngBuf, img); err != nil {
+		t.Fatal(err)
+	}
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", "cover.png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := part.Write(pngBuf.Bytes()); err != nil {
+		t.Fatal(err)
+	}
+	_ = writer.WriteField("path", "projects/demo")
+	_ = writer.WriteField("name", "cover.png")
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/upload", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("upload status = %d, want 200", resp.StatusCode)
+	}
+
+	dest := filepath.Join(dir, "projects", "demo")
+	for _, name := range []string{"cover.webp", "cover-480.webp", "cover-960.webp"} {
+		if _, err := os.Stat(filepath.Join(dest, name)); err != nil {
+			t.Fatalf("expected %s: %v", name, err)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(dest, "cover.png")); !os.IsNotExist(err) {
+		t.Fatalf("expected original PNG removed, got err=%v", err)
+	}
+}
+

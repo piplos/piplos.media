@@ -33,14 +33,41 @@ export function getApiV1(ctx?: ApiRequestContext): string {
 
 /** Файлы архива хранятся относительными путями (/uploads/...) — разворачивает их в URL API. */
 export function resolveUploadUrl(path: string, ctx?: ApiRequestContext): string {
-	return path.startsWith('/uploads/') ? getApiBaseUrl(ctx) + path : path;
+	const raw = path.startsWith('/uploads/') ? getApiBaseUrl(ctx) + path : path;
+	return preferUploadWebp(raw);
 }
 
-/** Переписывает src/href на /uploads/... внутри готового HTML на абсолютные URL API. */
+/** PNG/JPEG → sibling .webp for /uploads/ assets (generated on API upload). */
+export function preferUploadWebp(url: string): string {
+	if (!url || !url.includes('/uploads/')) return url;
+	return url.replace(/\.(png|jpe?g)(?=$|[?#])/i, '.webp');
+}
+
+/** Prefer WebP inside a single attribute value (supports srcset candidate lists). */
+function preferUploadWebpInAttr(value: string): string {
+	if (!value.includes('/uploads/')) return value;
+	if (!value.includes(',')) return preferUploadWebp(value);
+	return value
+		.split(',')
+		.map((part) => {
+			const trimmed = part.trim();
+			const space = trimmed.search(/\s/);
+			if (space < 0) return preferUploadWebp(trimmed);
+			return preferUploadWebp(trimmed.slice(0, space)) + trimmed.slice(space);
+		})
+		.join(', ');
+}
+
+/** Переписывает src/href/srcset на /uploads/... внутри готового HTML на абсолютные URL API. */
 export function resolveUploadUrlsInHtml(html: string, ctx?: ApiRequestContext): string {
 	if (!html.includes('/uploads/')) return html;
 	const base = getApiBaseUrl(ctx);
 	return html
 		.replaceAll('src="/uploads/', `src="${base}/uploads/`)
-		.replaceAll('href="/uploads/', `href="${base}/uploads/`);
+		.replaceAll('href="/uploads/', `href="${base}/uploads/`)
+		.replaceAll('srcset="/uploads/', `srcset="${base}/uploads/`)
+		.replace(
+			/(src|href|srcset)="([^"]*\/uploads\/[^"]+)"/gi,
+			(_m, attr: string, value: string) => `${attr}="${preferUploadWebpInAttr(value)}"`
+		);
 }

@@ -7,6 +7,7 @@
 	import StackIcon from '$lib/components/StackIcon.svelte';
 	import GridPlaceholder from '$lib/components/GridPlaceholder.svelte';
 	import { getCategoryColor, getProjectLocale } from '$lib/portfolio';
+	import { uploadCardImage } from '$lib/upload-image';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -225,6 +226,7 @@
 			<div class="work-grid" role="list">
 				{#each featuredProjects as project (project.id)}
 					{@const loc = getProjectLocale(project, langStore.value)}
+					{@const cardImg = uploadCardImage(project.image)}
 					<div role="listitem">
 						<a
 							href={l(`/portfolio/${project.id}`)}
@@ -233,10 +235,12 @@
 							itemtype="https://schema.org/CreativeWork"
 							itemprop="url"
 						>
-							{#if project.image}
+							{#if cardImg}
 								<div class="pc-bg" aria-hidden="true">
 									<img
-										src={project.image}
+										src={cardImg.src}
+										srcset={cardImg.srcset || undefined}
+										sizes={cardImg.sizes}
 										alt=""
 										width="640"
 										height="400"

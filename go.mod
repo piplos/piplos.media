@@ -6,14 +6,17 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.43.4
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.34
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.107.0
+	github.com/disintegration/imaging v1.6.2
 	github.com/gofiber/fiber/v3 v3.4.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0
+	github.com/mayahiro/go-webp v0.3.0
 	github.com/rs/zerolog v1.35.1
 	github.com/wneessen/go-mail v0.8.1
 	github.com/yuin/goldmark v1.8.5
 	golang.org/x/crypto v0.54.0
+	golang.org/x/image v0.44.0
 )
 
 require (

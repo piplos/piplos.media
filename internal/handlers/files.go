@@ -13,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	apperrors "github.com/piplos/piplos.media/internal/errors"
+	"github.com/piplos/piplos.media/internal/media"
 )
 
 // FilesHandler manages the media library (folders and files) inside the upload dir.
@@ -177,6 +178,7 @@ func (h *FilesHandler) Rename(c fiber.Ctx) error {
 	if err := os.Rename(fromAbs, toAbs); err != nil {
 		return apperrors.ErrInternal("failed to rename")
 	}
+	media.RenameVariants(fromAbs, toAbs)
 	return c.JSON(fiber.Map{"path": toRel, "url": uploadsFileURL(h.publicURL, toRel)})
 }
 
@@ -218,6 +220,7 @@ func (h *FilesHandler) Move(c fiber.Ctx) error {
 		if err := os.Rename(srcAbs, targetAbs); err != nil {
 			return apperrors.ErrInternal("failed to move " + name)
 		}
+		media.RenameVariants(srcAbs, targetAbs)
 		moved = append(moved, targetRel)
 	}
 	return c.JSON(fiber.Map{"moved": moved})
@@ -236,8 +239,14 @@ func (h *FilesHandler) Delete(c fiber.Ctx) error {
 		if !ok || rel == "" {
 			return apperrors.ErrInvalidRequest("invalid path: " + p)
 		}
+		_, statErr := os.Stat(abs)
+		existed := statErr == nil
 		if err := os.RemoveAll(abs); err != nil {
 			return apperrors.ErrInternal("failed to delete " + rel)
+		}
+		// Only clean sized sidecars when a real WebP master was deleted.
+		if existed {
+			media.RemoveVariants(abs)
 		}
 	}
 	return c.JSON(fiber.Map{"deleted": len(req.Paths)})

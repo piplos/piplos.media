@@ -96,6 +96,7 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	staff.Put("/legal/:id", h.Content.UpdateLegal)
 
 	staff.Post("/uploads", h.Uploads.Upload)
+	staff.Post("/uploads/rebuild-variants", h.Uploads.RebuildVariants)
 
 	staff.Get("/files", h.Files.List)
 	staff.Post("/files/folders", h.Files.CreateFolder)

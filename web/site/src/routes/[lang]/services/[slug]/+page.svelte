@@ -3,6 +3,7 @@
 	import { langStore } from '$lib/stores/lang.svelte';
 	import { resolveUploadUrl } from '$lib/api';
 	import { getCategoryColor, getProjectLocale } from '$lib/portfolio';
+	import { uploadCardImage } from '$lib/upload-image';
 	import RichBody from '$lib/components/RichBody.svelte';
 	import { SITE } from '$lib/site';
 	import type { PageData } from './$types';
@@ -134,6 +135,7 @@
 				<div class="work-grid" role="list">
 					{#each related as project (project.id)}
 						{@const loc = getProjectLocale(project, langStore.value)}
+						{@const cardImg = uploadCardImage(project.image)}
 						<div role="listitem">
 							<a
 								href={l(`/portfolio/${project.id}`)}
@@ -142,9 +144,15 @@
 								itemtype="https://schema.org/CreativeWork"
 								itemprop="url"
 							>
-								{#if project.image}
+								{#if cardImg}
 									<div class="pc-bg" aria-hidden="true">
-										<img src={project.image} alt="" loading="lazy" />
+										<img
+											src={cardImg.src}
+											srcset={cardImg.srcset || undefined}
+											sizes={cardImg.sizes}
+											alt=""
+											loading="lazy"
+										/>
 									</div>
 								{/if}
 								<div class="work-type">
