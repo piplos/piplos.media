@@ -1,4 +1,5 @@
 import type { Lang } from '$lib/stores/lang.svelte';
+import { localizePath } from '$lib/i18n/routing';
 import { getProjectLocale, getProjectStackItems, type PortfolioProject } from '$lib/portfolio';
 import { SITE } from '$lib/site';
 
@@ -43,6 +44,6 @@ export function getOrderPrefillFromProject(project: PortfolioProject, lang: Lang
 		projectName,
 		description,
 		stack: getProjectStackItems(project, lang).join(', '),
-		references: `${SITE.url}/portfolio/${project.id}`
+		references: `${SITE.url}${localizePath(`/portfolio/${project.id}`, lang)}`
 	};
 }
