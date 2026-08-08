@@ -31,7 +31,7 @@
 		}));
 	});
 
-	const STACK_MIN_COL_WIDTH = 120;
+	const STACK_MIN_COL_WIDTH = 96;
 
 	let servicesGrid = $state<HTMLDivElement | null>(null);
 	let servicesColumns = $state(3);
