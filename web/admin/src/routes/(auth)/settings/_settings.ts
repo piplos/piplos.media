@@ -53,5 +53,9 @@ export function settingsBreadcrumbs(pathname: string): SettingsBreadcrumb[] {
 		return [{ label: 'Настройки', href: '/settings' }, { label: 'Пользователи' }];
 	}
 
+	if (pathname === '/settings/media' || pathname.startsWith('/settings/media/')) {
+		return [{ label: 'Настройки', href: '/settings' }, { label: 'Медиа' }];
+	}
+
 	return [{ label: 'Настройки' }];
 }
