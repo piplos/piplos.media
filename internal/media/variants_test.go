@@ -166,3 +166,21 @@ func TestNameConflicts(t *testing.T) {
 		t.Fatal("other.png should be free")
 	}
 }
+
+func TestRebuildDirSkipsCompleteFamily(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "done.png")
+	writeTestPNG(t, src, 40, 30)
+	if _, err := media.GenerateVariants(src); err != nil {
+		t.Fatal(err)
+	}
+	// Leftover PNG after a partial old deploy.
+	writeTestPNG(t, src, 40, 30)
+	ok, failed, err := media.RebuildDir(dir)
+	if err != nil || failed != 0 || ok < 1 {
+		t.Fatalf("RebuildDir ok=%d failed=%d err=%v", ok, failed, err)
+	}
+	if _, err := os.Stat(src); !os.IsNotExist(err) {
+		t.Fatal("complete family should drop leftover PNG without re-encode path failing")
+	}
+}

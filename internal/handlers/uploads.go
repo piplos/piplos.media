@@ -9,6 +9,8 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -31,6 +33,19 @@ var allowedImageMIMEs = map[string]string{
 type UploadsHandler struct {
 	dir       string
 	publicURL string
+
+	rebuildMu sync.Mutex
+	rebuild   rebuildJobStatus
+}
+
+// rebuildJobStatus is the async WebP rebuild progress (staff).
+type rebuildJobStatus struct {
+	Running    bool      `json:"running"`
+	OK         int       `json:"ok"`
+	Failed     int       `json:"failed"`
+	Error      string    `json:"error,omitempty"`
+	StartedAt  time.Time `json:"started_at,omitempty"`
+	FinishedAt time.Time `json:"finished_at,omitempty"`
 }
 
 // NewUploadsHandler creates an UploadsHandler.
@@ -171,12 +186,43 @@ func (h *UploadsHandler) Upload(c fiber.Ctx) error {
 	return c.JSON(resp)
 }
 
-// RebuildVariants walks the upload directory and regenerates WebP sidecars
+// RebuildVariants starts a background walk that regenerates WebP sidecars
 // for every raster original (staff; used after deploy / for legacy PNG).
+// Returns 202 immediately so reverse proxies do not 504 on long jobs.
 func (h *UploadsHandler) RebuildVariants(c fiber.Ctx) error {
-	ok, failed, err := media.RebuildDir(h.dir)
-	if err != nil {
-		return apperrors.ErrInternal("failed to rebuild variants")
+	h.rebuildMu.Lock()
+	if h.rebuild.Running {
+		h.rebuildMu.Unlock()
+		return apperrors.ErrConflict("rebuild already running")
 	}
-	return c.JSON(fiber.Map{"ok": ok, "failed": failed})
+	h.rebuild = rebuildJobStatus{Running: true, StartedAt: time.Now().UTC()}
+	st := h.rebuild
+	h.rebuildMu.Unlock()
+
+	go h.runRebuild()
+
+	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{"status": st})
+}
+
+// RebuildVariantsStatus returns the last/current rebuild job state.
+func (h *UploadsHandler) RebuildVariantsStatus(c fiber.Ctx) error {
+	h.rebuildMu.Lock()
+	st := h.rebuild
+	h.rebuildMu.Unlock()
+	return c.JSON(fiber.Map{"status": st})
+}
+
+func (h *UploadsHandler) runRebuild() {
+	ok, failed, err := media.RebuildDir(h.dir)
+	h.rebuildMu.Lock()
+	defer h.rebuildMu.Unlock()
+	h.rebuild.Running = false
+	h.rebuild.OK = ok
+	h.rebuild.Failed = failed
+	h.rebuild.FinishedAt = time.Now().UTC()
+	if err != nil {
+		h.rebuild.Error = err.Error()
+	} else {
+		h.rebuild.Error = ""
+	}
 }

@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -133,6 +134,52 @@ func TestUploadsHandlerGeneratesWebPVariants(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dest, "cover.png")); !os.IsNotExist(err) {
 		t.Fatalf("expected original PNG removed, got err=%v", err)
+	}
+}
+
+func TestRebuildVariantsReturnsAccepted(t *testing.T) {
+	dir := t.TempDir()
+	writePNG := func(name string) {
+		t.Helper()
+		var buf bytes.Buffer
+		if err := png.Encode(&buf, image.NewRGBA(image.Rect(0, 0, 16, 12))); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), buf.Bytes(), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writePNG("a.png")
+
+	h := NewUploadsHandler(dir, "")
+	app := fiber.New()
+	app.Post("/rebuild", h.RebuildVariants)
+	app.Get("/rebuild", h.RebuildVariantsStatus)
+
+	resp, err := app.Test(httptest.NewRequest(http.MethodPost, "/rebuild", nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != fiber.StatusAccepted {
+		t.Fatalf("status = %d, want 202", resp.StatusCode)
+	}
+
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		h.rebuildMu.Lock()
+		running := h.rebuild.Running
+		ok := h.rebuild.OK
+		h.rebuildMu.Unlock()
+		if !running {
+			if ok < 1 {
+				t.Fatalf("expected ok>=1, got %d", ok)
+			}
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("rebuild did not finish")
+		}
+		time.Sleep(20 * time.Millisecond)
 	}
 }
 

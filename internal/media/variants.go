@@ -266,6 +266,7 @@ func RenameVariants(fromAbs, toAbs string) {
 // RebuildDir walks root and regenerates variants for every raster master.
 // Skips .webp when a disposable PNG/JPEG sibling with the same stem still exists
 // (that sibling will produce the family and then be removed).
+// Already-complete WebP families are skipped (leftover PNG/JPEG still removed).
 func RebuildDir(root string) (ok, failed int, err error) {
 	err = filepath.WalkDir(root, func(path string, d os.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -282,6 +283,15 @@ func RebuildDir(root string) (ok, failed int, err error) {
 		if strings.EqualFold(ext, ".webp") && hasDisposableSibling(path) {
 			return nil
 		}
+		dir := filepath.Dir(path)
+		stem := Stem(name)
+		if familyComplete(dir, stem) {
+			if isDisposableOriginal(ext) {
+				_ = os.Remove(path)
+			}
+			ok++
+			return nil
+		}
 		if _, genErr := GenerateVariants(path); genErr != nil {
 			failed++
 			return nil
@@ -290,6 +300,18 @@ func RebuildDir(root string) (ok, failed int, err error) {
 		return nil
 	})
 	return ok, failed, err
+}
+
+func familyComplete(dir, stem string) bool {
+	if !fileExists(filepath.Join(dir, stem+".webp")) {
+		return false
+	}
+	for _, w := range VariantWidths {
+		if !fileExists(filepath.Join(dir, fmt.Sprintf("%s-%d.webp", stem, w))) {
+			return false
+		}
+	}
+	return true
 }
 
 func hasDisposableSibling(webpAbs string) bool {
