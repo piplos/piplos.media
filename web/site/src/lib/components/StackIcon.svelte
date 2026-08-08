@@ -16,14 +16,14 @@
 </script>
 
 {#if src}
-	<img class="stack-logo" {src} alt="" width="24" height="24" loading="lazy" decoding="async" />
+	<img class="stack-logo" {src} alt="" width="32" height="32" loading="lazy" decoding="async" />
 {/if}
 
 <style>
 	.stack-logo {
 		display: block;
-		width: 24px;
-		height: 24px;
+		width: 32px;
+		height: 32px;
 		object-fit: contain;
 		flex-shrink: 0;
 	}
