@@ -1,17 +1,17 @@
-# Production stack — images from ghcr.io/piplos/piplos-{api,migrate}:latest
-# Site and admin (web/site, web/admin) deploy to Cloudflare Workers — not in this compose.
+# API-only stack — images from ghcr.io/piplos/piplos-{api,migrate}:latest
 #
-#   cp .env.example .env   # set secrets for production
-#   docker compose pull && docker compose up -d
+#   cp .env.example .env   # set secrets
+#   ./deploy.sh
 #
-# Migrations run automatically on `up` (one-shot `migrate` → api/admin start after success).
+# Migrations run automatically on `up` (one-shot `migrate` → api starts after success).
 # Manual goose: docker compose run --rm migrate status|down
 #
-# Requires Traefik on external network `webproxy` (entrypoint `websecure`,
-# cert resolver `cloudflare`). Tunables: repo-root `.env`.
+# Requires Safeline on external network `safeline-ce`. Only `api` is attached
+# (static IPv4, tunable via SAFELINE_IPV4 in `.env`). Point Safeline upstream to that IP:3001.
+name: piplos
 
 networks:
-  webproxy:
+  safeline-ce:
     external: true
   internal:
 
@@ -56,8 +56,6 @@ services:
       retries: 5
       start_period: 30s
     stop_grace_period: 30s
-    labels:
-      - traefik.enable=false
     networks:
       - internal
     logging: *default-logging
@@ -71,8 +69,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    labels:
-      - traefik.enable=false
     networks:
       - internal
     logging: *default-logging
@@ -89,31 +85,39 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
       JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-15}
       JWT_REFRESH_EXPIRATION_HOURS: ${JWT_REFRESH_EXPIRATION_HOURS:-168}
-      CORS_ORIGINS: ${CORS_ORIGINS:-https://piplos.media,https://admin.piplos.media}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://piplos.media}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       UPLOAD_DIR: /app/data/uploads
       BACKUP_DIR: /app/data/backups
       PUBLIC_API_URL: https://api.${BASE_DOMAIN}
-      ADMIN_URL: https://admin.${BASE_DOMAIN}
     volumes:
-      - uploads:/app/data/uploads
+      # - uploads:/app/data/uploads
+      - ./data:/app/data
       - backups:/app/data/backups
     depends_on:
       db:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=webproxy
-      - traefik.http.routers.piplos-api.rule=Host(`api.${BASE_DOMAIN}`)
-      - traefik.http.routers.piplos-api.entrypoints=websecure
-      - traefik.http.routers.piplos-api.tls=true
-      - traefik.http.routers.piplos-api.tls.certresolver=cloudflare
-      - traefik.http.routers.piplos-api.service=piplos-api
-      - traefik.http.services.piplos-api.loadbalancer.server.port=3001
     networks:
       - internal
-      - webproxy
+    logging: *default-logging
+
+  # Rewrites /api/v1/* → /v1/* for admin on Cloudflare (expects /api/v1 prefix).
+  api-gateway:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    <<: *hardening
+    depends_on:
+      api:
+        condition: service_started
+    volumes:
+      - ./docker/api-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "3001:3001"
+    networks:
+      internal: {}
+      safeline-ce:
+        ipv4_address: ${SAFELINE_IPV4:-172.22.222.104}
     logging: *default-logging

@@ -8,9 +8,6 @@
     },
     "svelte": {
       "enabled": true
-    },
-    "orchestrate": {
-      "enabled": true
     }
   }
 }
