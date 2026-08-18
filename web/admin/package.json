@@ -27,6 +27,7 @@
 		"vitest": "^3.2.4"
 	},
 	"dependencies": {
+		"@internationalized/date": "^3.12.3",
 		"bits-ui": "^2.18.1",
 		"isomorphic-dompurify": "^3.18.0",
 		"marked": "^18.0.6",
