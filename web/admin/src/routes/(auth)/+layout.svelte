@@ -5,6 +5,7 @@
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import Logo from '$lib/components/Logo.svelte';
 	import NameDialog from '$lib/components/NameDialog.svelte';
+	import { isAdminRole } from '$lib/permissions';
 	import type { LayoutData } from './$types';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
@@ -12,7 +13,7 @@
 
 	const email = $derived(data.user?.email ?? '');
 	const initial = $derived(email ? email[0].toUpperCase() : '?');
-	const isAdmin = $derived(data.user?.role === 'admin');
+	const isAdmin = $derived(isAdminRole(data.user?.role));
 
 	const navLinks = [
 		{ href: '/leads', label: 'Заявки' },

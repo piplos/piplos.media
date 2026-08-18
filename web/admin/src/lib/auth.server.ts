@@ -1,21 +1,15 @@
 /**
  * Константы и утилиты авторизации (только сервер).
- * Единое место для имён cookie и ролей.
+ * Единое место для имён cookie и TTL.
  */
 export const COOKIE_ACCESS_TOKEN = 'admin_access_token';
 export const COOKIE_REFRESH_TOKEN = 'admin_refresh_token';
-export const COOKIE_USER = 'admin_user';
 
-export const ROLE_ADMIN = 'admin';
-export const ROLE_MANAGER = 'manager';
-export const ALLOWED_ROLES = [ROLE_ADMIN, ROLE_MANAGER];
+/** Совпадает с JWT_EXPIRATION_MINUTES (15 min). */
+export const ACCESS_TOKEN_MAX_AGE = 60 * 15;
 
-/** Разделы только для админа: manager не видит настройки (включая пользователей). */
-export const ADMIN_ONLY_PATHS = ['/settings'];
-
-export function isAdminOnlyPath(pathname: string): boolean {
-	return ADMIN_ONLY_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
-}
+/** Совпадает с JWT_REFRESH_EXPIRATION_HOURS (7 d). */
+export const REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24 * 7;
 
 /** Проверяет, истёк ли access token (JWT) по полю exp. */
 export function isAccessTokenExpired(token: string, leewaySeconds = 60): boolean {
@@ -32,12 +26,22 @@ export function isAccessTokenExpired(token: string, leewaySeconds = 60): boolean
 	}
 }
 
-export function cookieOptions(secure: boolean) {
+export function accessCookieOptions(secure: boolean) {
 	return {
 		path: '/' as const,
 		httpOnly: true,
 		secure,
 		sameSite: 'lax' as const,
-		maxAge: 60 * 60 * 24 * 7
+		maxAge: ACCESS_TOKEN_MAX_AGE
+	};
+}
+
+export function refreshCookieOptions(secure: boolean) {
+	return {
+		path: '/' as const,
+		httpOnly: true,
+		secure,
+		sameSite: 'lax' as const,
+		maxAge: REFRESH_TOKEN_MAX_AGE
 	};
 }

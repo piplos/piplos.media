@@ -1,44 +1,71 @@
 /**
- * Запросы к API с Bearer-токеном. При 401 — refresh и повтор; при неудаче — редирект на /login.
+ * BFF-сессия и запросы к API. Единственная точка refresh — ensureValidSession.
  */
-import { redirect, isRedirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import {
 	COOKIE_ACCESS_TOKEN,
 	COOKIE_REFRESH_TOKEN,
-	COOKIE_USER,
-	cookieOptions
+	accessCookieOptions,
+	isAccessTokenExpired,
+	refreshCookieOptions
 } from '$lib/auth.server';
 import { getApiBaseUrl } from '$lib/env.server';
+import type { AdminUser } from '$lib/types';
 
-interface RefreshResponse {
+interface AuthTokenResponse {
 	access_token: string;
 	refresh_token: string;
+	user?: AdminUser;
 }
 
-export async function refreshTokens(
-	event: RequestEvent
-): Promise<{ accessToken: string; refreshToken: string } | null> {
-	const refreshToken = event.locals.refreshToken;
-	if (refreshToken === null || refreshToken === '') return null;
+/** Единственная точка обновления access token (hooks вызывают до loaders). */
+export async function ensureValidSession(event: RequestEvent): Promise<boolean> {
+	const secure = event.url.protocol === 'https:';
+	const accessToken = event.cookies.get(COOKIE_ACCESS_TOKEN) ?? null;
+	const refreshToken = event.cookies.get(COOKIE_REFRESH_TOKEN) ?? null;
+
+	event.locals.accessToken = accessToken;
+	event.locals.refreshToken = refreshToken;
+
+	if (accessToken && !isAccessTokenExpired(accessToken)) {
+		return true;
+	}
+
+	if (!refreshToken) {
+		return false;
+	}
 
 	const res = await event.fetch(`${getApiBaseUrl(event)}/v1/auth/refresh`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ refresh_token: refreshToken })
 	});
-	if (!res.ok) return null;
+	if (!res.ok) return false;
 
-	const data = (await res.json().catch(() => null)) as RefreshResponse | null;
-	if (data?.access_token === undefined || data?.refresh_token === undefined) return null;
+	const data = (await res.json().catch(() => null)) as AuthTokenResponse | null;
+	if (data?.access_token === undefined || data?.refresh_token === undefined) return false;
 
-	const opts = cookieOptions(event.url.protocol === 'https:');
-	event.cookies.set(COOKIE_ACCESS_TOKEN, data.access_token, opts);
-	event.cookies.set(COOKIE_REFRESH_TOKEN, data.refresh_token, opts);
+	event.cookies.set(COOKIE_ACCESS_TOKEN, data.access_token, accessCookieOptions(secure));
+	event.cookies.set(COOKIE_REFRESH_TOKEN, data.refresh_token, refreshCookieOptions(secure));
 	event.locals.accessToken = data.access_token;
 	event.locals.refreshToken = data.refresh_token;
 
-	return { accessToken: data.access_token, refreshToken: data.refresh_token };
+	return true;
+}
+
+/** Загружает актуальный профиль из /v1/auth/me (источник правды для role, notify_leads). */
+export async function fetchCurrentUser(event: RequestEvent): Promise<AdminUser | null> {
+	const token = event.locals.accessToken;
+	if (!token) return null;
+
+	const res = await event.fetch(`${getApiBaseUrl(event)}/v1/auth/me`, {
+		headers: { Authorization: `Bearer ${token}` }
+	});
+	if (!res.ok) return null;
+
+	const data = (await res.json().catch(() => null)) as { user?: AdminUser } | null;
+	return data?.user ?? null;
 }
 
 /** Сообщение об ошибке для load-функций. */
@@ -56,7 +83,8 @@ function apiUnavailable(): Response {
 export function redirectToLogin(event: RequestEvent): never {
 	event.cookies.delete(COOKIE_ACCESS_TOKEN, { path: '/' });
 	event.cookies.delete(COOKIE_REFRESH_TOKEN, { path: '/' });
-	event.cookies.delete(COOKIE_USER, { path: '/' });
+	// Удаляем legacy-cookie после миграции с 3-cookie модели.
+	event.cookies.delete('admin_user', { path: '/' });
 	const pathAndSearch = event.url.pathname + event.url.search;
 	const redirectTo =
 		event.url.pathname !== '/login' && pathAndSearch.trim() !== ''
@@ -65,7 +93,7 @@ export function redirectToLogin(event: RequestEvent): never {
 	throw redirect(303, redirectTo);
 }
 
-/** Запрос к API с авторизацией; 401 → refresh + retry; при неудаче — на /login. */
+/** Запрос к API с Bearer из locals (refresh выполняется в hooks до loaders). */
 export async function fetchWithAuth(
 	event: RequestEvent,
 	path: string,
@@ -75,16 +103,9 @@ export async function fetchWithAuth(
 		? path
 		: `${getApiBaseUrl(event)}${path.startsWith('/') ? path : `/${path}`}`;
 
-	let token = event.locals.accessToken;
+	const token = event.locals.accessToken;
 	if (token === null || token === '') {
-		try {
-			const refreshed = await refreshTokens(event);
-			if (refreshed === null) redirectToLogin(event);
-			token = refreshed.accessToken;
-		} catch (e) {
-			if (isRedirect(e)) throw e;
-			return apiUnavailable();
-		}
+		redirectToLogin(event);
 	}
 
 	let res: Response;
@@ -93,23 +114,8 @@ export async function fetchWithAuth(
 			...init,
 			headers: { ...init?.headers, Authorization: `Bearer ${token}` }
 		});
-	} catch (e) {
-		if (isRedirect(e)) throw e;
+	} catch {
 		return apiUnavailable();
-	}
-
-	if (res.status === 401) {
-		try {
-			const refreshed = await refreshTokens(event);
-			if (refreshed === null) redirectToLogin(event);
-			res = await event.fetch(url, {
-				...init,
-				headers: { ...init?.headers, Authorization: `Bearer ${refreshed.accessToken}` }
-			});
-		} catch (e) {
-			if (isRedirect(e)) throw e;
-			return apiUnavailable();
-		}
 	}
 
 	if (res.status === 401) redirectToLogin(event);

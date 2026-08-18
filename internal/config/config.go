@@ -36,6 +36,9 @@ type Config struct {
 
 	// Публичный URL админ-панели (ссылка на заявку в письме админам).
 	AdminURL string
+
+	// AuthLegacyRefresh accepts old stateless JWT refresh tokens during rollout.
+	AuthLegacyRefresh bool
 }
 
 // JWTExpiration returns access token TTL.
@@ -70,6 +73,7 @@ func Load() Config {
 		BackupDir:               env("BACKUP_DIR", "data/backups"),
 		PublicAPIURL:            env("PUBLIC_API_URL", ""),
 		AdminURL:                env("ADMIN_URL", "http://localhost:5174"),
+		AuthLegacyRefresh:       envBool("AUTH_LEGACY_REFRESH", false),
 	}
 }
 
@@ -90,6 +94,18 @@ func (c *Config) Validate() error {
 func env(key, fallback string) string {
 	if v, ok := os.LookupEnv(key); ok && v != "" {
 		return v
+	}
+	return fallback
+}
+
+func envBool(key string, fallback bool) bool {
+	if v, ok := os.LookupEnv(key); ok {
+		switch strings.ToLower(strings.TrimSpace(v)) {
+		case "1", "true", "yes", "on":
+			return true
+		case "0", "false", "no", "off":
+			return false
+		}
 	}
 	return fallback
 }

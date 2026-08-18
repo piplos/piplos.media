@@ -9,6 +9,7 @@
 		"deploy": "wrangler deploy",
 		"preview": "wrangler dev .svelte-kit/cloudflare/_worker.js",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"test": "vitest run",
 		"prepare": "svelte-kit sync || true"
 	},
 	"devDependencies": {
@@ -22,9 +23,11 @@
 		"svelte-check": "^4.4.8",
 		"tailwindcss": "^4.3.0",
 		"typescript": "^6.0.3",
-		"vite": "^8.0.13"
+		"vite": "^8.0.13",
+		"vitest": "^3.2.4"
 	},
 	"dependencies": {
+		"@internationalized/date": "^3.12.3",
 		"bits-ui": "^2.18.1",
 		"isomorphic-dompurify": "^3.18.0",
 		"marked": "^18.0.6",
