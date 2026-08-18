@@ -1,18 +1,19 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import {
-	ALLOWED_ROLES,
 	COOKIE_ACCESS_TOKEN,
 	COOKIE_REFRESH_TOKEN,
-	COOKIE_USER,
-	cookieOptions
+	accessCookieOptions,
+	refreshCookieOptions
 } from '$lib/auth.server';
 import { API_V1_PREFIX, getApiBaseUrl } from '$lib/env.server';
+import { STAFF_ROLES } from '$lib/permissions';
+import type { AdminUser } from '$lib/types';
 
 interface LoginApiResponse {
 	access_token: string;
 	refresh_token: string;
-	user: { id: string; email: string; full_name: string; role: string };
+	user: AdminUser;
 }
 
 function getErrorMessage(data: unknown): string {
@@ -56,20 +57,14 @@ export const actions: Actions = {
 		}
 
 		const payload = data as LoginApiResponse;
-		if (!payload.user || !ALLOWED_ROLES.includes(payload.user.role)) {
+		if (!payload.user || !STAFF_ROLES.includes(payload.user.role)) {
 			return fail(403, { email, error: 'Недостаточно прав доступа' });
 		}
 
-		const userPayload = {
-			id: payload.user.id,
-			email: payload.user.email,
-			full_name: payload.user.full_name,
-			role: payload.user.role
-		};
-		const opts = cookieOptions(url.protocol === 'https:');
-		cookies.set(COOKIE_ACCESS_TOKEN, payload.access_token, opts);
-		cookies.set(COOKIE_REFRESH_TOKEN, payload.refresh_token, opts);
-		cookies.set(COOKIE_USER, JSON.stringify(userPayload), opts);
+		const secure = url.protocol === 'https:';
+		cookies.set(COOKIE_ACCESS_TOKEN, payload.access_token, accessCookieOptions(secure));
+		cookies.set(COOKIE_REFRESH_TOKEN, payload.refresh_token, refreshCookieOptions(secure));
+		cookies.delete('admin_user', { path: '/' });
 
 		const redirectTo = url.searchParams.get('redirectTo');
 		const safe =
