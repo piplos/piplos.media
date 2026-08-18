@@ -2,6 +2,9 @@ package auth_test
 
 import (
 	"testing"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/piplos/piplos.media/internal/config"
 	"github.com/piplos/piplos.media/internal/models"
@@ -108,5 +111,49 @@ func TestCheckPassword(t *testing.T) {
 	}
 	if svc.CheckPassword(hash, "wrong") {
 		t.Fatal("expected password mismatch")
+	}
+}
+
+func TestValidateTokenRejectsInvalid(t *testing.T) {
+	svc := testAuthService(t)
+	if _, err := svc.ValidateToken("not-a-jwt"); err == nil {
+		t.Fatal("expected error for invalid token")
+	}
+	if _, err := svc.ValidateToken(""); err == nil {
+		t.Fatal("expected error for empty token")
+	}
+}
+
+func TestRefreshExpiration(t *testing.T) {
+	svc := testAuthService(t)
+	if svc.RefreshExpiration() != 168*time.Hour {
+		t.Fatalf("refresh TTL: got %v, want 168h", svc.RefreshExpiration())
+	}
+}
+
+func TestValidateLegacyRefreshToken(t *testing.T) {
+	svc := testAuthService(t)
+	user := testUser()
+	// Build a legacy refresh JWT manually.
+	claims := authsvc.LegacyRefreshClaims{
+		UserID: user.ID, Email: user.Email, Role: user.Role, Type: "refresh",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte("test-jwt-secret-with-enough-length!!"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed, err := svc.ValidateLegacyRefreshToken(token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if parsed.UserID != user.ID || parsed.Type != "refresh" {
+		t.Fatalf("unexpected claims: %+v", parsed)
+	}
+	if _, err := svc.ValidateLegacyRefreshToken("bad-token"); err == nil {
+		t.Fatal("expected error for invalid legacy token")
 	}
 }

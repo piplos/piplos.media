@@ -203,6 +203,107 @@ func TestRefreshRotatesToken(t *testing.T) {
 	}
 }
 
+func TestLoginInactiveUser(t *testing.T) {
+	cfg := &config.Config{
+		JWTSecret:               "test-jwt-secret-with-enough-length!!",
+		JWTExpirationMinutes:    15,
+		JWTRefreshExpirationHrs: 168,
+	}
+	authSvc := authsvc.New(cfg)
+	hash, err := authSvc.HashPassword("password123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	inactive := &models.User{
+		ID: "user-2", Email: "inactive@test.com", PasswordHash: hash,
+		FullName: "Inactive", Role: models.RoleAdmin, IsActive: false,
+	}
+	inactiveHandler := handlers.NewAuthHandler(authSvc, &memUserStore{
+		byEmail: map[string]*models.User{"inactive@test.com": inactive},
+		byID:    map[string]*models.User{"user-2": inactive},
+	}, &memSessionStore{byHash: map[string]*models.RefreshSession{}, byID: map[string]*models.RefreshSession{}}, false)
+	app := fiber.New()
+	app.Use(middleware.ErrorHandler(zerolog.Nop()))
+	app.Post("/login", inactiveHandler.Login)
+
+	body := `{"email":"inactive@test.com","password":"password123"}`
+	req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("inactive login: got %d, want 403", resp.StatusCode)
+	}
+}
+
+func TestLoginMissingFields(t *testing.T) {
+	h, _, _ := newAuthTestHandler(t)
+	app := fiber.New()
+	app.Use(middleware.ErrorHandler(zerolog.Nop()))
+	app.Post("/login", h.Login)
+
+	for _, body := range []string{`{}`, `{"email":"a@test.com"}`, `{"password":"x"}`} {
+		req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp.StatusCode != http.StatusBadRequest {
+			t.Fatalf("body %s: got %d, want 400", body, resp.StatusCode)
+		}
+	}
+}
+
+func TestRefreshInactiveUser(t *testing.T) {
+	cfg := &config.Config{
+		JWTSecret:               "test-jwt-secret-with-enough-length!!",
+		JWTExpirationMinutes:    15,
+		JWTRefreshExpirationHrs: 168,
+	}
+	authSvc := authsvc.New(cfg)
+	hash, err := authSvc.HashPassword("password123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	inactive := &models.User{
+		ID: "user-2", Email: "inactive@test.com", PasswordHash: hash,
+		FullName: "Inactive", Role: models.RoleAdmin, IsActive: false,
+	}
+	sessions := &memSessionStore{byHash: map[string]*models.RefreshSession{}, byID: map[string]*models.RefreshSession{}}
+	h := handlers.NewAuthHandler(authSvc, &memUserStore{
+		byEmail: map[string]*models.User{"inactive@test.com": inactive},
+		byID:    map[string]*models.User{"user-2": inactive},
+	}, sessions, false)
+
+	refreshToken, err := authSvc.NewRefreshToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tokenHash := authSvc.HashRefreshToken(refreshToken)
+	sid, err := sessions.CreateRefreshSession(context.Background(), inactive.ID, tokenHash, time.Now().Add(time.Hour), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = sid
+
+	app := fiber.New()
+	app.Use(middleware.ErrorHandler(zerolog.Nop()))
+	app.Post("/refresh", h.Refresh)
+
+	req := httptest.NewRequest(http.MethodPost, "/refresh", strings.NewReader(`{"refresh_token":"`+refreshToken+`"}`))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("inactive refresh: got %d, want 401", resp.StatusCode)
+	}
+}
+
 func TestLogoutRevokesSession(t *testing.T) {
 	h, authSvc, sessions := newAuthTestHandler(t)
 	authMw := middleware.NewAuth(authSvc, sessions)
