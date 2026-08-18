@@ -4,9 +4,9 @@ package server
 import (
 	"github.com/gofiber/fiber/v3"
 
+	authperms "github.com/piplos/piplos.media/internal/auth"
 	"github.com/piplos/piplos.media/internal/handlers"
 	"github.com/piplos/piplos.media/internal/middleware"
-	"github.com/piplos/piplos.media/internal/models"
 )
 
 // Handlers groups all route handlers.
@@ -51,10 +51,13 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	// Auth.
 	api.Post("/auth/login", h.Auth.Login)
 	api.Post("/auth/refresh", h.Auth.Refresh)
-	api.Get("/auth/me", auth.RequireAuth(), h.Auth.Me)
+	authn := api.Group("", auth.RequireAuth())
+	authn.Get("/auth/me", h.Auth.Me)
+	authn.Post("/auth/logout", h.Auth.Logout)
+	authn.Get("/auth/permissions", h.Auth.Permissions)
 
 	// Content + leads: admin and manager.
-	staff := api.Group("", auth.RequireAuth(), auth.RequireRole(models.RoleAdmin, models.RoleManager))
+	staff := api.Group("", auth.RequireAuth(), auth.RequireRole(authperms.StaffRoles...))
 
 	staff.Get("/projects", h.Content.ListProjects)
 	staff.Post("/projects/reorder", h.Content.ReorderProjects)
@@ -115,7 +118,7 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	staff.Post("/translate", h.Settings.Translate)
 
 	// Admin-only: users, settings, languages management.
-	adm := api.Group("", auth.RequireAuth(), auth.RequireRole(models.RoleAdmin))
+	adm := api.Group("", auth.RequireAuth(), auth.RequireRole(authperms.AdminRoles...))
 	adm.Get("/users", h.Users.List)
 	adm.Post("/users", h.Users.Create)
 	adm.Put("/users/:id", h.Users.Update)

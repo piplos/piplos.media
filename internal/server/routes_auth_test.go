@@ -11,6 +11,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/rs/zerolog"
 
+	authperms "github.com/piplos/piplos.media/internal/auth"
 	"github.com/piplos/piplos.media/internal/config"
 	"github.com/piplos/piplos.media/internal/middleware"
 	"github.com/piplos/piplos.media/internal/models"
@@ -79,15 +80,15 @@ func routeSuffix(path string) string {
 	return strings.TrimPrefix(path, "/v1")
 }
 
-type fakeUserLookup struct {
-	users map[string]*models.User
+type fakeSessionChecker struct {
+	validSessions map[string]bool
 }
 
-func (f *fakeUserLookup) GetUserByID(_ context.Context, id string) (*models.User, error) {
-	return f.users[id], nil
+func (f *fakeSessionChecker) IsSessionValid(_ context.Context, sessionID string) (bool, error) {
+	return f.validSessions[sessionID], nil
 }
 
-func newAuthTestApp(t *testing.T) (*fiber.App, *authsvc.Service, *fakeUserLookup) {
+func newAuthTestApp(t *testing.T) (*fiber.App, *authsvc.Service, *fakeSessionChecker) {
 	t.Helper()
 
 	cfg := &config.Config{
@@ -96,15 +97,11 @@ func newAuthTestApp(t *testing.T) (*fiber.App, *authsvc.Service, *fakeUserLookup
 		JWTRefreshExpirationHrs: 168,
 	}
 	authService := authsvc.New(cfg)
-	users := &fakeUserLookup{users: map[string]*models.User{
-		"admin-id": {
-			ID: "admin-id", Email: "admin@test.com", Role: models.RoleAdmin, IsActive: true,
-		},
-		"manager-id": {
-			ID: "manager-id", Email: "manager@test.com", Role: models.RoleManager, IsActive: true,
-		},
+	sessions := &fakeSessionChecker{validSessions: map[string]bool{
+		"admin-session":   true,
+		"manager-session": true,
 	}}
-	authMw := middleware.NewAuth(authService, users)
+	authMw := middleware.NewAuth(authService, sessions)
 
 	app := fiber.New()
 	app.Use(middleware.ErrorHandler(zerolog.Nop()))
@@ -127,19 +124,20 @@ func newAuthTestApp(t *testing.T) (*fiber.App, *authsvc.Service, *fakeUserLookup
 
 	api.Post("/auth/login", ok)
 	api.Post("/auth/refresh", ok)
-	api.Get("/auth/me", authMw.RequireAuth(), ok)
+	authn := api.Group("", authMw.RequireAuth())
+	authn.Get("/auth/me", ok)
 
-	staff := api.Group("", authMw.RequireAuth(), authMw.RequireRole(models.RoleAdmin, models.RoleManager))
+	staff := api.Group("", authMw.RequireAuth(), authMw.RequireRole(authperms.StaffRoles...))
 	for _, r := range staffRoutes {
 		registerProbe(staff, routeSuffix(r.path), r.method, ok)
 	}
 
-	adm := api.Group("", authMw.RequireAuth(), authMw.RequireRole(models.RoleAdmin))
+	adm := api.Group("", authMw.RequireAuth(), authMw.RequireRole(authperms.AdminRoles...))
 	for _, r := range adminRoutes {
 		registerProbe(adm, routeSuffix(r.path), r.method, ok)
 	}
 
-	return app, authService, users
+	return app, authService, sessions
 }
 
 func registerProbe(router fiber.Router, path, method string, h fiber.Handler) {
@@ -177,9 +175,9 @@ func doRequest(t *testing.T, app *fiber.App, method, path, token string, body st
 	return resp
 }
 
-func tokenFor(t *testing.T, auth *authsvc.Service, user *models.User) string {
+func tokenFor(t *testing.T, auth *authsvc.Service, user *models.User, sessionID string) string {
 	t.Helper()
-	token, _, err := auth.GenerateTokens(user)
+	token, err := auth.GenerateAccessToken(user, sessionID)
 	if err != nil {
 		t.Fatalf("generate token: %v", err)
 	}
@@ -200,9 +198,9 @@ func TestStaffAndAdminRoutesRequireAuth(t *testing.T) {
 }
 
 func TestAdminRoutesRejectManager(t *testing.T) {
-	app, authService, users := newAuthTestApp(t)
-	manager := users.users["manager-id"]
-	token := tokenFor(t, authService, manager)
+	app, authService, _ := newAuthTestApp(t)
+	manager := &models.User{ID: "manager-id", Email: "manager@test.com", Role: models.RoleManager, IsActive: true}
+	token := tokenFor(t, authService, manager, "manager-session")
 
 	for _, r := range adminRoutes {
 		resp := doRequest(t, app, r.method, r.path, token, "")
@@ -213,9 +211,9 @@ func TestAdminRoutesRejectManager(t *testing.T) {
 }
 
 func TestStaffRoutesAllowManager(t *testing.T) {
-	app, authService, users := newAuthTestApp(t)
-	manager := users.users["manager-id"]
-	token := tokenFor(t, authService, manager)
+	app, authService, _ := newAuthTestApp(t)
+	manager := &models.User{ID: "manager-id", Email: "manager@test.com", Role: models.RoleManager, IsActive: true}
+	token := tokenFor(t, authService, manager, "manager-session")
 
 	for _, r := range staffRoutes {
 		resp := doRequest(t, app, r.method, r.path, token, "")
@@ -226,9 +224,9 @@ func TestStaffRoutesAllowManager(t *testing.T) {
 }
 
 func TestAdminRoutesAllowAdmin(t *testing.T) {
-	app, authService, users := newAuthTestApp(t)
-	admin := users.users["admin-id"]
-	token := tokenFor(t, authService, admin)
+	app, authService, _ := newAuthTestApp(t)
+	admin := &models.User{ID: "admin-id", Email: "admin@test.com", Role: models.RoleAdmin, IsActive: true}
+	token := tokenFor(t, authService, admin, "admin-session")
 
 	for _, r := range adminRoutes {
 		resp := doRequest(t, app, r.method, r.path, token, "")
@@ -254,20 +252,43 @@ func TestPublicRoutesDoNotRequireAuth(t *testing.T) {
 }
 
 func TestInvalidTokenRejected(t *testing.T) {
-	app, authService, users := newAuthTestApp(t)
-	admin := users.users["admin-id"]
-	_, refreshToken, err := authService.GenerateTokens(admin)
-	if err != nil {
-		t.Fatal(err)
-	}
+	app, authService, sessions := newAuthTestApp(t)
+	admin := &models.User{ID: "admin-id", Email: "admin@test.com", Role: models.RoleAdmin, IsActive: true}
+	token := tokenFor(t, authService, admin, "admin-session")
 
 	resp := doRequest(t, app, http.MethodGet, "/v1/users", "not-a-jwt", "")
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("invalid token: got %d, want 401", resp.StatusCode)
 	}
 
-	resp = doRequest(t, app, http.MethodGet, "/v1/users", refreshToken, "")
+	// Revoked session should reject valid JWT.
+	sessions.validSessions["admin-session"] = false
+	resp = doRequest(t, app, http.MethodGet, "/v1/users", token, "")
 	if resp.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("refresh token as access: got %d, want 401", resp.StatusCode)
+		t.Fatalf("revoked session: got %d, want 401", resp.StatusCode)
+	}
+}
+
+func TestTokenWithoutSessionIDRejected(t *testing.T) {
+	app, authService, _ := newAuthTestApp(t)
+	admin := &models.User{ID: "admin-id", Email: "admin@test.com", Role: models.RoleAdmin, IsActive: true}
+	// Empty sid — middleware must reject.
+	token, err := authService.GenerateAccessToken(admin, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp := doRequest(t, app, http.MethodGet, "/v1/users", token, "")
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("empty sid: got %d, want 401", resp.StatusCode)
+	}
+}
+
+func TestUnknownSessionRejected(t *testing.T) {
+	app, authService, _ := newAuthTestApp(t)
+	admin := &models.User{ID: "admin-id", Email: "admin@test.com", Role: models.RoleAdmin, IsActive: true}
+	token := tokenFor(t, authService, admin, "unknown-session")
+	resp := doRequest(t, app, http.MethodGet, "/v1/users", token, "")
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("unknown session: got %d, want 401", resp.StatusCode)
 	}
 }

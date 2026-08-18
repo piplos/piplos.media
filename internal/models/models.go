@@ -17,6 +17,17 @@ const (
 	RoleManager UserRole = "manager"
 )
 
+// RefreshSession is a server-side refresh token session.
+type RefreshSession struct {
+	ID          string     `json:"id"`
+	UserID      string     `json:"user_id"`
+	TokenHash   string     `json:"-"`
+	ExpiresAt   time.Time  `json:"expires_at"`
+	RevokedAt   *time.Time `json:"revoked_at,omitempty"`
+	RotatedFrom *string    `json:"rotated_from,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+}
+
 // User is an admin panel account.
 type User struct {
 	ID           string   `json:"id"`

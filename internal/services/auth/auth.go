@@ -2,10 +2,13 @@
 package auth
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/piplos/piplos.media/internal/config"
@@ -17,12 +20,13 @@ type Service struct {
 	cfg *config.Config
 }
 
-// Claims are JWT token claims.
+// Claims are JWT access token claims.
 type Claims struct {
-	UserID string          `json:"user_id"`
-	Email  string          `json:"email"`
-	Role   models.UserRole `json:"role"`
-	Type   string          `json:"type"`
+	UserID    string          `json:"user_id"`
+	Email     string          `json:"email"`
+	Role      models.UserRole `json:"role"`
+	Type      string          `json:"type"`
+	SessionID string          `json:"sid"`
 	jwt.RegisteredClaims
 }
 
@@ -31,34 +35,45 @@ func New(cfg *config.Config) *Service {
 	return &Service{cfg: cfg}
 }
 
-func (s *Service) sign(user *models.User, tokenType string, ttl time.Duration) (string, error) {
+// RefreshExpiration returns refresh token TTL.
+func (s *Service) RefreshExpiration() time.Duration {
+	return s.cfg.JWTRefreshExpiration()
+}
+
+// GenerateAccessToken returns a signed access JWT linked to sessionID.
+func (s *Service) GenerateAccessToken(user *models.User, sessionID string) (string, error) {
 	claims := Claims{
-		UserID: user.ID, Email: user.Email, Role: user.Role, Type: tokenType,
+		UserID: user.ID, Email: user.Email, Role: user.Role,
+		Type: "access", SessionID: sessionID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.cfg.JWTExpiration())),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
 	}
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(s.cfg.JWTSecret))
 	if err != nil {
-		return "", fmt.Errorf("sign %s token: %w", tokenType, err)
+		return "", fmt.Errorf("sign access token: %w", err)
 	}
 	return token, nil
 }
 
-// GenerateTokens returns access and refresh JWT tokens for a user.
-func (s *Service) GenerateTokens(user *models.User) (accessToken, refreshToken string, err error) {
-	if accessToken, err = s.sign(user, "access", s.cfg.JWTExpiration()); err != nil {
-		return "", "", err
+// NewRefreshToken returns a cryptographically random opaque refresh token.
+func (s *Service) NewRefreshToken() (string, error) {
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return "", fmt.Errorf("generate refresh token: %w", err)
 	}
-	if refreshToken, err = s.sign(user, "refresh", s.cfg.JWTRefreshExpiration()); err != nil {
-		return "", "", err
-	}
-	return accessToken, refreshToken, nil
+	return id.String(), nil
 }
 
-// ValidateToken parses and validates a JWT.
+// HashRefreshToken returns SHA-256 hex digest of an opaque refresh token.
+func (s *Service) HashRefreshToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
+
+// ValidateToken parses and validates an access JWT.
 func (s *Service) ValidateToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -72,6 +87,43 @@ func (s *Service) ValidateToken(tokenString string) (*Claims, error) {
 	claims, ok := token.Claims.(*Claims)
 	if !ok || !token.Valid {
 		return nil, fmt.Errorf("invalid token")
+	}
+	return claims, nil
+}
+
+// UserFromClaims builds a User from JWT claims (middleware hot path).
+func UserFromClaims(claims *Claims) *models.User {
+	return &models.User{
+		ID:       claims.UserID,
+		Email:    claims.Email,
+		Role:     claims.Role,
+		IsActive: true,
+	}
+}
+
+// LegacyRefreshClaims are JWT refresh token claims (deprecated stateless refresh).
+type LegacyRefreshClaims struct {
+	UserID string          `json:"user_id"`
+	Email  string          `json:"email"`
+	Role   models.UserRole `json:"role"`
+	Type   string          `json:"type"`
+	jwt.RegisteredClaims
+}
+
+// ValidateLegacyRefreshToken parses a stateless refresh JWT (AUTH_LEGACY_REFRESH grace period).
+func (s *Service) ValidateLegacyRefreshToken(tokenString string) (*LegacyRefreshClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &LegacyRefreshClaims{}, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(s.cfg.JWTSecret), nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("parse legacy refresh token: %w", err)
+	}
+	claims, ok := token.Claims.(*LegacyRefreshClaims)
+	if !ok || !token.Valid || claims.Type != "refresh" {
+		return nil, fmt.Errorf("invalid legacy refresh token")
 	}
 	return claims, nil
 }

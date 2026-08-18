@@ -124,6 +124,14 @@ func (h *UsersHandler) Update(c fiber.Ctx) error {
 		}
 	}
 
+	existing, err := h.repo.GetUserByID(c.Context(), id)
+	if err != nil {
+		return apperrors.ErrInternal("failed to update user")
+	}
+	if existing == nil {
+		return apperrors.ErrNotFound("user not found")
+	}
+
 	user, err := h.repo.UpdateUser(c.Context(), id, req.FullName, role, isActive, notifyLeads, hash)
 	if err != nil {
 		return apperrors.ErrInternal("failed to update user")
@@ -131,6 +139,14 @@ func (h *UsersHandler) Update(c fiber.Ctx) error {
 	if user == nil {
 		return apperrors.ErrNotFound("user not found")
 	}
+
+	needsRevoke := hash != "" || role != existing.Role || (existing.IsActive && !isActive)
+	if needsRevoke {
+		if err := h.repo.RevokeAllUserSessions(c.Context(), id); err != nil {
+			return apperrors.ErrInternal("failed to revoke sessions")
+		}
+	}
+
 	return c.JSON(fiber.Map{"user": user})
 }
 

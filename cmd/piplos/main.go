@@ -99,7 +99,7 @@ func main() {
 	authMw := middleware.NewAuth(authService, repo)
 	mailService := mailer.NewService(repo, repo, cfg.AdminURL, log)
 	h := &server.Handlers{
-		Auth:     handlers.NewAuthHandler(authService, repo),
+		Auth:     handlers.NewAuthHandler(authService, repo, repo, cfg.AuthLegacyRefresh),
 		Users:    handlers.NewUsersHandler(authService, repo),
 		Content:  handlers.NewContentHandler(repo),
 		Leads:    handlers.NewLeadsHandler(repo, mailService),

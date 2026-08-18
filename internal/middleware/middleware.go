@@ -49,12 +49,12 @@ func ErrorHandler(log zerolog.Logger) fiber.Handler {
 // Auth handles JWT authentication and role checks.
 type Auth struct {
 	authService *authsvc.Service
-	repo        UserLookup
+	sessions    SessionChecker
 }
 
 // NewAuth creates auth middleware.
-func NewAuth(authService *authsvc.Service, repo UserLookup) *Auth {
-	return &Auth{authService: authService, repo: repo}
+func NewAuth(authService *authsvc.Service, sessions SessionChecker) *Auth {
+	return &Auth{authService: authService, sessions: sessions}
 }
 
 // RequireAuth validates the Bearer token and stores the user in locals.
@@ -73,19 +73,20 @@ func (m *Auth) RequireAuth() fiber.Handler {
 		if err != nil || claims.Type != "access" {
 			return apperrors.ErrUnauthorized("invalid token")
 		}
+		if claims.SessionID == "" {
+			return apperrors.ErrUnauthorized("invalid token")
+		}
 
-		user, err := m.repo.GetUserByID(c.Context(), claims.UserID)
+		valid, err := m.sessions.IsSessionValid(c.Context(), claims.SessionID)
 		if err != nil {
 			return apperrors.ErrInternal("authentication failed")
 		}
-		if user == nil {
-			return apperrors.ErrUnauthorized("user not found")
-		}
-		if !user.IsActive {
-			return apperrors.ErrAccountDisabled("account is disabled")
+		if !valid {
+			return apperrors.ErrUnauthorized("session revoked or expired")
 		}
 
-		c.Locals("user", user)
+		c.Locals("user", authsvc.UserFromClaims(claims))
+		c.Locals("session_id", claims.SessionID)
 		return c.Next()
 	}
 }
