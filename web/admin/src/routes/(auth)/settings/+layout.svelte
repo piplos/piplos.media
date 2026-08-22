@@ -41,12 +41,21 @@
 		{ href: '/settings/smtp/template', label: 'Шаблон письма' }
 	];
 
+	const mediaSubTabs = [
+		{ href: '/settings/media', label: 'WebP-варианты' },
+		{ href: '/settings/media/image-search', label: 'Поиск PNG/JPG' }
+	];
+
 	const showAiSidebar = $derived(
 		pathname === '/settings/ai' || pathname.startsWith('/settings/ai/')
 	);
 
 	const showSmtpSidebar = $derived(
 		pathname === '/settings/smtp' || pathname.startsWith('/settings/smtp/')
+	);
+
+	const showMediaSidebar = $derived(
+		pathname === '/settings/media' || pathname.startsWith('/settings/media/')
 	);
 
 	// Бекапы рендерят свой сайдбар в settings/backups/+layout.svelte —
@@ -137,6 +146,19 @@
 			<nav class="admin-sidebar-nav" aria-label="Подразделы SMTP">
 				{#each smtpSubTabs as tab (tab.href)}
 					<a href={tab.href} class:active={isSubActive('/settings/smtp', tab.href)}>
+						{tab.label}
+					</a>
+				{/each}
+			</nav>
+			<div class="admin-sidebar-content admin-sidebar-content--no-box">
+				{@render children()}
+			</div>
+		</div>
+	{:else if showMediaSidebar}
+		<div class="admin-sidebar-row">
+			<nav class="admin-sidebar-nav" aria-label="Подразделы медиа">
+				{#each mediaSubTabs as tab (tab.href)}
+					<a href={tab.href} class:active={isSubActive('/settings/media', tab.href)}>
 						{tab.label}
 					</a>
 				{/each}

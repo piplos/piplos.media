@@ -111,16 +111,17 @@ func main() {
 	authMw := middleware.NewAuth(authService, repo)
 	mailService := mailer.NewService(repo, repo, cfg.AdminURL, log)
 	h := &server.Handlers{
-		Auth:     handlers.NewAuthHandler(authService, repo, repo, cfg.AuthLegacyRefresh),
-		Users:    handlers.NewUsersHandler(authService, repo),
-		Content:  handlers.NewContentHandler(repo),
-		Leads:    handlers.NewLeadsHandler(repo, mailService),
-		Settings: handlers.NewSettingsHandler(repo, translate.New(repo)),
-		Public:   handlers.NewPublicHandler(repo),
-		Uploads:  handlers.NewUploadsHandler(uploadDir, publicAPIURL),
-		Files:    handlers.NewFilesHandler(uploadDir, publicAPIURL),
-		AIModels: handlers.NewAIModelsHandler(repo),
-		Backups:  handlers.NewBackupsHandler(backupSvc),
+		Auth:        handlers.NewAuthHandler(authService, repo, repo, cfg.AuthLegacyRefresh),
+		Users:       handlers.NewUsersHandler(authService, repo),
+		Content:     handlers.NewContentHandler(repo),
+		Leads:       handlers.NewLeadsHandler(repo, mailService),
+		Settings:    handlers.NewSettingsHandler(repo, translate.New(repo)),
+		Public:      handlers.NewPublicHandler(repo),
+		Uploads:     handlers.NewUploadsHandler(uploadDir, publicAPIURL),
+		Files:       handlers.NewFilesHandler(uploadDir, publicAPIURL),
+		ImageSearch: handlers.NewImageSearchHandler(repo, uploadDir),
+		AIModels:    handlers.NewAIModelsHandler(repo),
+		Backups:     handlers.NewBackupsHandler(backupSvc),
 	}
 	server.Register(app, h, authMw)
 
