@@ -826,8 +826,6 @@ ul, ol { list-style: none; }
   height: auto;
   margin: 1.5rem 0;
   border-radius: var(--radius);
-  content-visibility: auto;
-  contain-intrinsic-size: 800px 450px;
 }
 
 .rich-text blockquote {
