@@ -115,7 +115,7 @@ func PreferWebPURL(raw string) string {
 	if raw == "" {
 		return raw
 	}
-	pathPart, query, ok := splitURLPath(raw)
+	pathPart, suffix, ok := splitURLPath(raw)
 	if !ok {
 		return raw
 	}
@@ -126,10 +126,7 @@ func PreferWebPURL(raw string) string {
 	default:
 		return raw
 	}
-	if query != "" {
-		return pathPart + "?" + query
-	}
-	return pathPart
+	return pathPart + suffix
 }
 
 // PreferWebPInText rewrites /uploads/*.png|jpg|jpeg inside HTML/text to .webp.
@@ -140,15 +137,17 @@ func PreferWebPInText(s string) string {
 	return uploadRasterExtRE.ReplaceAllString(s, "${1}.webp${2}")
 }
 
-func splitURLPath(raw string) (pathPart, query string, ok bool) {
+// splitURLPath splits an /uploads/ URL into the path part and the trailing
+// "?query" / "#fragment" suffix ("" when absent).
+func splitURLPath(raw string) (pathPart, suffix string, ok bool) {
 	if !strings.Contains(raw, "/uploads/") {
 		return "", "", false
 	}
 	pathPart = raw
-	if i := strings.IndexByte(raw, '?'); i >= 0 {
-		pathPart, query = raw[:i], raw[i+1:]
+	if i := strings.IndexAny(raw, "?#"); i >= 0 {
+		pathPart, suffix = raw[:i], raw[i:]
 	}
-	return pathPart, query, true
+	return pathPart, suffix, true
 }
 
 // GenerateVariants writes full + sized WebP files next to absPath.
@@ -215,15 +214,21 @@ func writeWebP(path string, img image.Image) error {
 	if err != nil {
 		return fmt.Errorf("create %s: %w", filepath.Base(path), err)
 	}
-	defer f.Close()
 	opts := &gowebp.Options{
 		Compression: gowebp.CompressionLossy,
 		Quality:     webpQuality,
 		Mode:        gowebp.ModeFast,
 	}
 	if err := gowebp.Encode(f, img, opts); err != nil {
+		f.Close()
 		_ = os.Remove(path)
 		return fmt.Errorf("encode %s: %w", filepath.Base(path), err)
+	}
+	// Ошибка Close (недозапись на диск) значила бы битый master при
+	// уже удалённом оригинале — считаем вариант несозданным.
+	if err := f.Close(); err != nil {
+		_ = os.Remove(path)
+		return fmt.Errorf("close %s: %w", filepath.Base(path), err)
 	}
 	return nil
 }
@@ -314,10 +319,14 @@ func familyComplete(dir, stem string) bool {
 	return true
 }
 
+// disposableSiblingExts перечисляет оба регистра явно: сравнение расширений
+// через ToUpper/ToLower аллоцировало бы строки на каждый вызов.
+var disposableSiblingExts = []string{".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG"}
+
 func hasDisposableSibling(webpAbs string) bool {
 	dir := filepath.Dir(webpAbs)
 	stem := Stem(filepath.Base(webpAbs))
-	for _, e := range []string{".png", ".jpg", ".jpeg", ".PNG", ".JPG", ".JPEG"} {
+	for _, e := range disposableSiblingExts {
 		if fileExists(filepath.Join(dir, stem+e)) {
 			return true
 		}

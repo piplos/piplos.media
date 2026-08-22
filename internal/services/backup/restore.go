@@ -67,6 +67,7 @@ func restoreArchive(ctx context.Context, r io.Reader, pool *pgxpool.Pool, upload
 	// после успешного восстановления БД и полного чтения архива. Скрытые
 	// каталоги (".restore-*") не видны в файловом менеджере админки.
 	var tmpFilesDir string
+	keepTempDir := false
 	if restoreFiles {
 		if err := os.MkdirAll(uploadDir, 0o755); err != nil {
 			return manifest, fmt.Errorf("create upload dir: %w", err)
@@ -75,7 +76,14 @@ func restoreArchive(ctx context.Context, r io.Reader, pool *pgxpool.Pool, upload
 		if err != nil {
 			return manifest, fmt.Errorf("create restore temp dir: %w", err)
 		}
-		defer os.RemoveAll(tmpFilesDir)
+		// При сбое подмены (keepTempDir) каталог оставляем: в нём единственная
+		// нетронутая копия восстановленных файлов. Следующий успешный restore
+		// приберёт его (swapUploadDir удаляет все чужие записи в uploadDir).
+		defer func() {
+			if !keepTempDir {
+				os.RemoveAll(tmpFilesDir)
+			}
+		}()
 	}
 
 	var dbRestore *dbRestoreState
@@ -84,7 +92,8 @@ func restoreArchive(ctx context.Context, r io.Reader, pool *pgxpool.Pool, upload
 		if err != nil {
 			return manifest, err
 		}
-		defer dbRestore.rollback(ctx)
+		// Откат должен сработать и при отмене/таймауте операции, поэтому без ctx.
+		defer dbRestore.rollback(context.WithoutCancel(ctx))
 	}
 
 	restoredTables := map[string]bool{}
@@ -132,6 +141,7 @@ func restoreArchive(ctx context.Context, r io.Reader, pool *pgxpool.Pool, upload
 
 	if restoreFiles {
 		if err := swapUploadDir(uploadDir, tmpFilesDir); err != nil {
+			keepTempDir = true
 			return manifest, err
 		}
 	}

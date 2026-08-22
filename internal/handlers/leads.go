@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
@@ -80,11 +82,19 @@ func (h *LeadsHandler) Create(c fiber.Ctx) error {
 	}
 	created, err := h.repo.CreateLead(c.Context(), lead)
 	if err != nil {
-		return apperrors.ErrInternal("failed to save request")
+		return internalErr("failed to save request", err)
 	}
 	if h.notify != nil {
 		notifyLead := *created
-		go h.notify.NotifyNewLead(context.Background(), &notifyLead)
+		go func() {
+			// A panic in the notifier must not take down the whole process.
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Fprintf(os.Stderr, "lead notification panic: %v\n", r)
+				}
+			}()
+			h.notify.NotifyNewLead(context.Background(), &notifyLead)
+		}()
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"id": created.ID})
 }
@@ -110,7 +120,7 @@ func (h *LeadsHandler) List(c fiber.Ctx) error {
 
 	leads, total, err := h.repo.ListLeads(c.Context(), status, limit, offset)
 	if err != nil {
-		return apperrors.ErrInternal("failed to list leads")
+		return internalErr("failed to list leads", err)
 	}
 	return c.JSON(fiber.Map{"leads": leads, "total": total})
 }
@@ -119,7 +129,7 @@ func (h *LeadsHandler) List(c fiber.Ctx) error {
 func (h *LeadsHandler) Get(c fiber.Ctx) error {
 	lead, err := h.repo.GetLead(c.Context(), c.Params("id"))
 	if err != nil {
-		return apperrors.ErrInternal("failed to get lead")
+		return internalErr("failed to get lead", err)
 	}
 	if lead == nil {
 		return apperrors.ErrNotFound("lead not found")
@@ -146,7 +156,7 @@ func (h *LeadsHandler) UpdateStatus(c fiber.Ctx) error {
 
 	lead, err := h.repo.UpdateLeadStatus(c.Context(), c.Params("id"), status)
 	if err != nil {
-		return apperrors.ErrInternal("failed to update lead")
+		return internalErr("failed to update lead", err)
 	}
 	if lead == nil {
 		return apperrors.ErrNotFound("lead not found")
@@ -157,7 +167,7 @@ func (h *LeadsHandler) UpdateStatus(c fiber.Ctx) error {
 // Delete removes a lead.
 func (h *LeadsHandler) Delete(c fiber.Ctx) error {
 	if err := h.repo.DeleteLead(c.Context(), c.Params("id")); err != nil {
-		return apperrors.ErrInternal("failed to delete lead")
+		return internalErr("failed to delete lead", err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }

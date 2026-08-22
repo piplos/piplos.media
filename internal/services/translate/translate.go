@@ -52,11 +52,10 @@ func (s *Service) TranslateFields(ctx context.Context, fields map[string]string,
 		systemPrompt = strings.ReplaceAll(defaultPrompt, "{target_language}", LanguageDisplayName(targetLang))
 	}
 
-	sourceJSON, err := json.Marshal(fields)
+	userPrompt, err := buildUserPrompt(fields)
 	if err != nil {
-		return nil, fmt.Errorf("marshal source fields: %w", err)
+		return nil, err
 	}
-	userPrompt := fmt.Sprintf("Input JSON to translate:\n%s", string(sourceJSON))
 
 	content, err := client.ChatJSON(ctx, systemPrompt, userPrompt, 0.3)
 	if err != nil {
@@ -68,6 +67,15 @@ func (s *Service) TranslateFields(ctx context.Context, fields map[string]string,
 		return nil, fmt.Errorf("unmarshal translated JSON: %w", err)
 	}
 	return out, nil
+}
+
+// buildUserPrompt marshals the source fields into the user message format.
+func buildUserPrompt(fields map[string]string) (string, error) {
+	sourceJSON, err := json.Marshal(fields)
+	if err != nil {
+		return "", fmt.Errorf("marshal source fields: %w", err)
+	}
+	return fmt.Sprintf("Input JSON to translate:\n%s", string(sourceJSON)), nil
 }
 
 func (s *Service) resolveClient(ctx context.Context) (ai.Client, ai.TaskSettings, error) {
@@ -115,15 +123,13 @@ func (s *Service) TestTranslation(ctx context.Context) (map[string]string, strin
 		"title":       "Analytics Dashboard",
 		"description": "Real-time metrics for operations teams.",
 	}
+	userPrompt, err := buildUserPrompt(fields)
+	if err != nil {
+		return nil, "", err
+	}
 	translated, err := s.TranslateFields(ctx, fields, "ru")
 	if err != nil {
 		return nil, "", err
 	}
-	userPrompt := fmt.Sprintf("Input JSON to translate:\n%s", mustJSON(fields))
 	return translated, userPrompt, nil
-}
-
-func mustJSON(v any) string {
-	b, _ := json.Marshal(v)
-	return string(b)
 }

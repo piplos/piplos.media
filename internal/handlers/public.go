@@ -56,7 +56,7 @@ func filteredLegalTranslations(t models.LegalTranslations, lang string) models.L
 func (h *PublicHandler) Projects(c fiber.Ctx) error {
 	items, err := h.repo.ListProjects(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to load projects")
+		return internalErr("failed to load projects", err)
 	}
 	q := parseProjectListQuery(c)
 	published := filterPublishedProjects(items, q)
@@ -73,7 +73,7 @@ func (h *PublicHandler) Projects(c fiber.Ctx) error {
 func (h *PublicHandler) Project(c fiber.Ctx) error {
 	p, err := h.repo.GetProject(c.Context(), c.Params("slug"))
 	if err != nil {
-		return apperrors.ErrInternal("failed to load project")
+		return internalErr("failed to load project", err)
 	}
 	if p == nil || !p.Published {
 		return apperrors.ErrNotFound("project not found")
@@ -95,7 +95,7 @@ func (h *PublicHandler) Project(c fiber.Ctx) error {
 func (h *PublicHandler) Services(c fiber.Ctx) error {
 	items, err := h.repo.ListServices(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to load services")
+		return internalErr("failed to load services", err)
 	}
 	q := parseServiceListQuery(c)
 	published := filterPublishedServices(items, q)
@@ -111,7 +111,7 @@ func (h *PublicHandler) Services(c fiber.Ctx) error {
 func (h *PublicHandler) Service(c fiber.Ctx) error {
 	s, err := h.repo.GetService(c.Context(), c.Params("slug"))
 	if err != nil {
-		return apperrors.ErrInternal("failed to load service")
+		return internalErr("failed to load service", err)
 	}
 	if s == nil || !s.Published {
 		return apperrors.ErrNotFound("service not found")
@@ -126,7 +126,7 @@ func (h *PublicHandler) Service(c fiber.Ctx) error {
 func (h *PublicHandler) Stack(c fiber.Ctx) error {
 	items, err := h.repo.ListStackItems(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to load stack")
+		return internalErr("failed to load stack", err)
 	}
 	published := []models.StackItem{}
 	for _, s := range items {
@@ -145,13 +145,13 @@ func (h *PublicHandler) SEO(c fiber.Ctx) error {
 	if path := c.Query("path"); path != "" {
 		p, err := h.repo.GetSEOPageByPath(c.Context(), path)
 		if err != nil {
-			return apperrors.ErrInternal("failed to load seo")
+			return internalErr("failed to load seo", err)
 		}
 		return c.JSON(fiber.Map{"page": p})
 	}
 	items, err := h.repo.ListSEOPages(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to load seo")
+		return internalErr("failed to load seo", err)
 	}
 	return c.JSON(fiber.Map{"pages": items})
 }
@@ -162,7 +162,7 @@ func (h *PublicHandler) SEO(c fiber.Ctx) error {
 func (h *PublicHandler) Pages(c fiber.Ctx) error {
 	items, err := h.repo.ListPages(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to load pages")
+		return internalErr("failed to load pages", err)
 	}
 	lang := c.Query("lang")
 	now := time.Now()
@@ -184,7 +184,7 @@ func (h *PublicHandler) Pages(c fiber.Ctx) error {
 func (h *PublicHandler) Page(c fiber.Ctx) error {
 	p, err := h.repo.GetPageBySlug(c.Context(), c.Params("slug"))
 	if err != nil {
-		return apperrors.ErrInternal("failed to load page")
+		return internalErr("failed to load page", err)
 	}
 	if p == nil || !p.IsLive(time.Now()) {
 		return apperrors.ErrNotFound("page not found")
@@ -201,7 +201,7 @@ func (h *PublicHandler) Page(c fiber.Ctx) error {
 func (h *PublicHandler) Legal(c fiber.Ctx) error {
 	items, err := h.repo.ListLegalPages(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to load legal pages")
+		return internalErr("failed to load legal pages", err)
 	}
 	lang := c.Query("lang")
 	for i := range items {
@@ -215,7 +215,7 @@ func (h *PublicHandler) Legal(c fiber.Ctx) error {
 func (h *PublicHandler) LegalPage(c fiber.Ctx) error {
 	p, err := h.repo.GetLegalPageBySlug(c.Context(), c.Params("slug"))
 	if err != nil {
-		return apperrors.ErrInternal("failed to load legal page")
+		return internalErr("failed to load legal page", err)
 	}
 	if p == nil {
 		return apperrors.ErrNotFound("legal page not found")
@@ -228,7 +228,7 @@ func (h *PublicHandler) LegalPage(c fiber.Ctx) error {
 func (h *PublicHandler) Languages(c fiber.Ctx) error {
 	langs, err := h.repo.ListLanguages(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to load languages")
+		return internalErr("failed to load languages", err)
 	}
 	enabled := []models.Language{}
 	for _, l := range langs {

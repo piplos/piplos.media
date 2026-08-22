@@ -8,8 +8,8 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	apperrors "github.com/piplos/piplos.media/internal/errors"
 	authperms "github.com/piplos/piplos.media/internal/auth"
+	apperrors "github.com/piplos/piplos.media/internal/errors"
 	"github.com/piplos/piplos.media/internal/middleware"
 	"github.com/piplos/piplos.media/internal/models"
 	authsvc "github.com/piplos/piplos.media/internal/services/auth"
@@ -29,17 +29,33 @@ type AuthSessionStore interface {
 	RevokeSessionByTokenHash(ctx context.Context, tokenHash string) error
 }
 
+// AtomicRefreshSessionStore is the hardened AuthSessionStore contract used by
+// refresh rotation: ClaimRefreshSession atomically revokes the session if it
+// is still active and reports whether this call won the claim (RowsAffected>0),
+// closing the TOCTOU window of check-then-revoke rotation; RevokeSessionChain
+// revokes every active session rotated from one — the reuse-detection defense
+// for leaked refresh tokens. The production repository implements it; stores
+// that predate it transparently fall back to legacy check-then-revoke (see
+// AuthHandler.refresh).
+type AtomicRefreshSessionStore interface {
+	AuthSessionStore
+	ClaimRefreshSession(ctx context.Context, sessionID string) (bool, error)
+	RevokeSessionChain(ctx context.Context, sessionID string) error
+}
+
 // AuthHandler serves login/refresh/me/logout endpoints.
 type AuthHandler struct {
 	auth     *authsvc.Service
 	users    AuthUserStore
 	sessions AuthSessionStore
+	atomic   AtomicRefreshSessionStore // nil unless sessions supports atomic claims
 	legacy   bool
 }
 
 // NewAuthHandler creates an AuthHandler.
 func NewAuthHandler(auth *authsvc.Service, users AuthUserStore, sessions AuthSessionStore, legacyRefresh bool) *AuthHandler {
-	return &AuthHandler{auth: auth, users: users, sessions: sessions, legacy: legacyRefresh}
+	atomic, _ := sessions.(AtomicRefreshSessionStore)
+	return &AuthHandler{auth: auth, users: users, sessions: sessions, atomic: atomic, legacy: legacyRefresh}
 }
 
 type loginRequest struct {
@@ -54,6 +70,16 @@ type refreshRequest struct {
 type logoutRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
+
+// dummyBcryptHash hashes an unguessable string; compared against when the
+// email is unknown so login takes the same time as the known-email path
+// (otherwise response timing reveals which addresses exist).
+const dummyBcryptHash = "$2a$10$5rdJOcuN.BkI3.Gn30J20Ok283B75V10dCwNO9ITYaudC4/Y6QMYy"
+
+// replayGraceWindow separates token theft from a benign concurrent
+// double-submit of the same refresh token: only reuse of a token revoked
+// earlier than this window triggers chain revocation (see Refresh).
+const replayGraceWindow = 5 * time.Second
 
 func (h *AuthHandler) issueTokens(ctx context.Context, user *models.User, rotatedFrom *string) (access, refresh, sessionID string, err error) {
 	refresh, err = h.auth.NewRefreshToken()
@@ -76,7 +102,7 @@ func (h *AuthHandler) issueTokens(ctx context.Context, user *models.User, rotate
 func (h *AuthHandler) tokenResponse(c fiber.Ctx, user *models.User, rotatedFrom *string) error {
 	access, refresh, _, err := h.issueTokens(c.Context(), user, rotatedFrom)
 	if err != nil {
-		return apperrors.ErrInternal("token generation failed")
+		return internalErr("token generation failed", err)
 	}
 	return c.JSON(fiber.Map{
 		"access_token":  access,
@@ -98,9 +124,13 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 
 	user, err := h.users.GetUserByEmail(c.Context(), req.Email)
 	if err != nil {
-		return apperrors.ErrInternal("login failed")
+		return internalErr("login failed", err)
 	}
-	if user == nil || !h.auth.CheckPassword(user.PasswordHash, req.Password) {
+	if user == nil {
+		h.auth.CheckPassword(dummyBcryptHash, req.Password)
+		return apperrors.ErrUnauthorized("invalid email or password")
+	}
+	if !h.auth.CheckPassword(user.PasswordHash, req.Password) {
 		return apperrors.ErrUnauthorized("invalid email or password")
 	}
 	if !user.IsActive {
@@ -111,63 +141,93 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 }
 
 // Refresh exchanges a refresh token for a new token pair (with rotation).
+//
+// Rotation is guarded by an atomic claim (ClaimRefreshSession): the UPDATE
+// flips revoked_at only while the row is still active, so of several
+// concurrent refreshes with the same token exactly one wins and every loser
+// is a replay rejected with 401. Presenting a token that was already rotated
+// earlier additionally triggers reuse detection below. Session stores without
+// atomic-claim support (see AtomicRefreshSessionStore) fall back to the
+// legacy check-then-revoke rotation.
 func (h *AuthHandler) Refresh(c fiber.Ctx) error {
 	var req refreshRequest
 	if err := c.Bind().Body(&req); err != nil || req.RefreshToken == "" {
 		return apperrors.ErrInvalidRequest("refresh_token is required")
 	}
 
-	session, user, err := h.resolveRefreshSession(c, req.RefreshToken)
+	hash := h.auth.HashRefreshToken(req.RefreshToken)
+	session, err := h.sessions.GetSessionByTokenHash(c.Context(), hash)
 	if err != nil {
-		return err
+		return internalErr("refresh failed", err)
+	}
+	if session == nil {
+		return h.refreshLegacy(c, req.RefreshToken)
+	}
+
+	if session.RevokedAt != nil {
+		// Reuse detection: this token was already rotated/revoked before the
+		// request — the classic refresh-theft signal. Kill every active
+		// session derived from it so a thief cannot keep riding the chain.
+		// A revocation younger than replayGraceWindow is more likely a benign
+		// concurrent duplicate (HTTP retry racing the winning request), so it
+		// gets no chain revocation. Best-effort either way: the 401 below is
+		// enforced regardless of cleanup outcome.
+		if h.atomic != nil && time.Since(*session.RevokedAt) > replayGraceWindow {
+			_ = h.atomic.RevokeSessionChain(c.Context(), session.ID)
+		}
+		return apperrors.ErrUnauthorized("invalid refresh token")
+	}
+	if time.Now().After(session.ExpiresAt) {
+		// Plain expiry without revocation is benign (client was offline):
+		// reject, but do not treat it as theft.
+		return apperrors.ErrUnauthorized("invalid refresh token")
+	}
+
+	user, err := h.users.GetUserByID(c.Context(), session.UserID)
+	if err != nil {
+		return internalErr("refresh failed", err)
 	}
 	if user == nil || !user.IsActive {
 		return apperrors.ErrUnauthorized("user not found or disabled")
 	}
 
-	if session.ID != "" {
-		if err := h.sessions.RevokeSession(c.Context(), session.ID); err != nil {
-			return apperrors.ErrInternal("refresh failed")
+	if h.atomic != nil {
+		claimed, err := h.atomic.ClaimRefreshSession(c.Context(), session.ID)
+		if err != nil {
+			return internalErr("refresh failed", err)
 		}
-		rotatedFrom := session.ID
-		return h.tokenResponse(c, user, &rotatedFrom)
+		if !claimed {
+			// Lost the claim to a concurrent request with the same token.
+			// Unlike the revoked-at-read path above this is not theft
+			// evidence — a client may legitimately double-submit — so no
+			// chain revocation.
+			return apperrors.ErrUnauthorized("invalid refresh token")
+		}
+	} else if err := h.sessions.RevokeSession(c.Context(), session.ID); err != nil {
+		// Legacy store: best-effort revoke before rotating (racy by design —
+		// superseded by AtomicRefreshSessionStore).
+		return internalErr("refresh failed", err)
 	}
 
-	// Legacy stateless refresh: issue new session without revoking.
-	return h.tokenResponse(c, user, nil)
+	rotatedFrom := session.ID
+	return h.tokenResponse(c, user, &rotatedFrom)
 }
 
-func (h *AuthHandler) resolveRefreshSession(c fiber.Ctx, refreshToken string) (*models.RefreshSession, *models.User, error) {
-	hash := h.auth.HashRefreshToken(refreshToken)
-	session, err := h.sessions.GetSessionByTokenHash(c.Context(), hash)
-	if err != nil {
-		return nil, nil, apperrors.ErrInternal("refresh failed")
-	}
-	if session != nil {
-		if session.RevokedAt != nil || time.Now().After(session.ExpiresAt) {
-			return nil, nil, apperrors.ErrUnauthorized("invalid refresh token")
-		}
-		user, err := h.users.GetUserByID(c.Context(), session.UserID)
-		if err != nil {
-			return nil, nil, apperrors.ErrInternal("refresh failed")
-		}
-		return session, user, nil
-	}
-
+// refreshLegacy serves the pre-sessions stateless refresh tokens when enabled.
+func (h *AuthHandler) refreshLegacy(c fiber.Ctx, refreshToken string) error {
 	if !h.legacy {
-		return nil, nil, apperrors.ErrUnauthorized("invalid refresh token")
+		return apperrors.ErrUnauthorized("invalid refresh token")
 	}
-
 	claims, err := h.auth.ValidateLegacyRefreshToken(refreshToken)
 	if err != nil {
-		return nil, nil, apperrors.ErrUnauthorized("invalid refresh token")
+		return apperrors.ErrUnauthorized("invalid refresh token")
 	}
 	user, err := h.users.GetUserByID(c.Context(), claims.UserID)
 	if err != nil {
-		return nil, nil, apperrors.ErrInternal("refresh failed")
+		return internalErr("refresh failed", err)
 	}
 	// Legacy path: no DB session to rotate; issue new session pair.
-	return &models.RefreshSession{ID: ""}, user, nil
+	return h.tokenResponse(c, user, nil)
 }
 
 // Logout revokes the refresh session (idempotent).
@@ -178,11 +238,11 @@ func (h *AuthHandler) Logout(c fiber.Ctx) error {
 	if req.RefreshToken != "" {
 		hash := h.auth.HashRefreshToken(req.RefreshToken)
 		if err := h.sessions.RevokeSessionByTokenHash(c.Context(), hash); err != nil {
-			return apperrors.ErrInternal("logout failed")
+			return internalErr("logout failed", err)
 		}
 	} else if sid, ok := c.Locals("session_id").(string); ok && sid != "" {
 		if err := h.sessions.RevokeSession(c.Context(), sid); err != nil {
-			return apperrors.ErrInternal("logout failed")
+			return internalErr("logout failed", err)
 		}
 	}
 
@@ -197,7 +257,7 @@ func (h *AuthHandler) Me(c fiber.Ctx) error {
 	}
 	user, err := h.users.GetUserByID(c.Context(), current.ID)
 	if err != nil {
-		return apperrors.ErrInternal("failed to load user")
+		return internalErr("failed to load user", err)
 	}
 	if user == nil {
 		return apperrors.ErrUnauthorized("user not found")

@@ -174,7 +174,8 @@ func dumpDatabase(ctx context.Context, pool *pgxpool.Pool, tmpDir string) ([]Tab
 	if err != nil {
 		return nil, fmt.Errorf("begin dump transaction: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	// Откат должен сработать и при отмене/таймауте операции, поэтому без ctx.
+	defer tx.Rollback(context.WithoutCancel(ctx))
 
 	tables, err := publicTables(ctx, tx)
 	if err != nil {
@@ -231,19 +232,22 @@ func addFileToTar(tw *tar.Writer, src, entryName string) error {
 	if err != nil {
 		return fmt.Errorf("open %s: %w", src, err)
 	}
-	defer f.Close()
 	st, err := f.Stat()
 	if err != nil {
+		f.Close()
 		return fmt.Errorf("stat %s: %w", src, err)
 	}
 	hdr := &tar.Header{Name: entryName, Mode: 0o644, Size: st.Size(), ModTime: st.ModTime()}
 	if err := tw.WriteHeader(hdr); err != nil {
+		f.Close()
 		return fmt.Errorf("tar header %s: %w", entryName, err)
 	}
 	if _, err := io.Copy(tw, f); err != nil {
+		f.Close()
 		return fmt.Errorf("tar write %s: %w", entryName, err)
 	}
-	return nil
+	// Ошибка Close значила бы усечённые данные в архиве — не глотаем её.
+	return f.Close()
 }
 
 // countFiles counts regular files under dir (0 when dir is missing).

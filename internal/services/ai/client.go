@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // ProviderSettings is the composite JSON for GEMINI/GROK/OPENAI/OPENROUTER keys.
@@ -36,15 +37,21 @@ type openAICompat struct {
 	apiKey   string
 	baseURL  string
 	model    string
-	timeout  time.Duration
 	provider string
+	http     *http.Client
 }
 
 func newOpenAICompat(apiKey, baseURL, model, provider string, timeout time.Duration) *openAICompat {
+	return &openAICompat{apiKey: apiKey, baseURL: baseURL, model: model, provider: provider, http: newHTTPClient(timeout)}
+}
+
+// newHTTPClient builds a client with the given overall request timeout
+// (defaulting to 120s when unset) so connections are reused across requests.
+func newHTTPClient(timeout time.Duration) *http.Client {
 	if timeout <= 0 {
 		timeout = 120 * time.Second
 	}
-	return &openAICompat{apiKey: apiKey, baseURL: baseURL, model: model, timeout: timeout, provider: provider}
+	return &http.Client{Timeout: timeout}
 }
 
 func (c *openAICompat) TestAPIKey(ctx context.Context) error {
@@ -58,7 +65,7 @@ func (c *openAICompat) TestAPIKey(ctx context.Context) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
-	resp, err := (&http.Client{Timeout: c.timeout}).Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
@@ -93,7 +100,7 @@ func (c *openAICompat) ChatJSON(ctx context.Context, systemPrompt, userPrompt st
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
-	resp, err := (&http.Client{Timeout: c.timeout}).Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("AI request failed: %w", err)
 	}
@@ -129,19 +136,26 @@ func (c *openAICompat) ChatJSON(ctx context.Context, systemPrompt, userPrompt st
 type geminiClient struct {
 	apiKey   string
 	model    string
-	timeout  time.Duration
 	provider string
+	http     *http.Client
+	base     string // переопределяет базовый URL (для тестов); пусто — боевой endpoint
 }
 
 func newGemini(apiKey, model string, timeout time.Duration) *geminiClient {
-	if timeout <= 0 {
-		timeout = 120 * time.Second
-	}
-	return &geminiClient{apiKey: apiKey, model: model, timeout: timeout, provider: "gemini"}
+	return &geminiClient{apiKey: apiKey, model: model, provider: "gemini", http: newHTTPClient(timeout)}
 }
 
 func (c *geminiClient) baseURL() string {
+	if c.base != "" {
+		return c.base
+	}
 	return fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent", c.model)
+}
+
+// setAuth passes the API key via header instead of the ?key= query parameter:
+// transport errors embed the full request URL and would leak the key into logs.
+func (c *geminiClient) setAuth(req *http.Request) {
+	req.Header.Set("x-goog-api-key", c.apiKey)
 }
 
 func (c *geminiClient) TestAPIKey(ctx context.Context) error {
@@ -149,13 +163,13 @@ func (c *geminiClient) TestAPIKey(ctx context.Context) error {
 		return fmt.Errorf("API key is empty")
 	}
 	body := []byte(`{"contents":[{"parts":[{"text":"Hi"}]}]}`)
-	url := fmt.Sprintf("%s?key=%s", c.baseURL(), c.apiKey)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL(), bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := (&http.Client{Timeout: c.timeout}).Do(req)
+	c.setAuth(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
@@ -188,13 +202,13 @@ func (c *geminiClient) ChatJSON(ctx context.Context, systemPrompt, userPrompt st
 	if err != nil {
 		return "", err
 	}
-	url := fmt.Sprintf("%s?key=%s", c.baseURL(), c.apiKey)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL(), bytes.NewReader(raw))
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := (&http.Client{Timeout: c.timeout}).Do(req)
+	c.setAuth(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("AI request failed: %w", err)
 	}
@@ -259,17 +273,27 @@ func ProviderSettingKey(provider string) string {
 
 func stripJSONFences(content string) string {
 	content = strings.TrimSpace(content)
-	if strings.HasPrefix(content, "```") {
-		content = strings.TrimPrefix(content, "```json")
-		content = strings.TrimPrefix(content, "```")
-		content = strings.TrimSuffix(content, "```")
+	if !strings.HasPrefix(content, "```") {
+		return content
 	}
-	return strings.TrimSpace(content)
+	after := content[3:]
+	// Необязательная метка языка (```json, ```JSON, ...) до перевода строки.
+	if len(after) >= 4 && strings.EqualFold(after[:4], "json") {
+		after = after[4:]
+	}
+	after = strings.TrimPrefix(after, "\n")
+	after = strings.TrimPrefix(after, "```")
+	after = strings.TrimSuffix(after, "```")
+	return strings.TrimSpace(after)
 }
 
+// truncate shortens s to at most n bytes without splitting a UTF-8 rune.
 func truncate(s string, n int) string {
 	if len(s) <= n {
 		return s
+	}
+	for n > 0 && !utf8.RuneStart(s[n]) {
+		n--
 	}
 	return s[:n] + "..."
 }

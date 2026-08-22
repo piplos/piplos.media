@@ -3,6 +3,7 @@
  */
 import { redirect } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 import {
 	COOKIE_ACCESS_TOKEN,
 	COOKIE_REFRESH_TOKEN,
@@ -19,9 +20,40 @@ interface AuthTokenResponse {
 	user?: AdminUser;
 }
 
+/**
+ * Secure-флаг для кук сессии. Приоритет:
+ * 1) явный override COOKIE_SECURE ('true'/'false');
+ * 2) X-Forwarded-Proto — за TLS-прокси без настроенного PROTOCOL_HEADER
+ *    event.url.protocol остаётся http, хотя клиент ходит по https;
+ * 3) protocol страницы (текущее поведение; локальный dev).
+ */
+/**
+ * Минимальный структурный поднабор RequestEvent: достаточно, чтобы функцию
+ * могли вызывать и экшены, деструктурирующие { request, url }.
+ */
+interface SecureProtoSource {
+	request: { headers: Headers };
+	url: URL;
+}
+
+export function resolveCookieSecure(event: SecureProtoSource): boolean {
+	const override = env.COOKIE_SECURE?.trim().toLowerCase();
+	if (override === 'true') return true;
+	if (override === 'false') return false;
+
+	const forwardedProto = event.request.headers
+		.get('x-forwarded-proto')
+		?.split(',')[0]
+		?.trim()
+		.toLowerCase();
+	if (forwardedProto) return forwardedProto === 'https';
+
+	return event.url.protocol === 'https:';
+}
+
 /** Единственная точка обновления access token (hooks вызывают до loaders). */
 export async function ensureValidSession(event: RequestEvent): Promise<boolean> {
-	const secure = event.url.protocol === 'https:';
+	const secure = resolveCookieSecure(event);
 	const accessToken = event.cookies.get(COOKIE_ACCESS_TOKEN) ?? null;
 	const refreshToken = event.cookies.get(COOKIE_REFRESH_TOKEN) ?? null;
 

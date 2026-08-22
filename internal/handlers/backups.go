@@ -24,7 +24,7 @@ func NewBackupsHandler(svc *backup.Service) *BackupsHandler {
 func (h *BackupsHandler) List(c fiber.Ctx) error {
 	archives, err := h.svc.List(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to list backups: " + err.Error())
+		return internalErr("failed to list backups: "+err.Error(), err)
 	}
 	return c.JSON(fiber.Map{"archives": archives, "status": h.svc.Status()})
 }
@@ -50,7 +50,7 @@ func (h *BackupsHandler) Run(c fiber.Ctx) error {
 		// По умолчанию — как в настройках расписания.
 		cfg, err := h.svc.Settings(c.Context())
 		if err != nil {
-			return apperrors.ErrInternal("failed to load backup settings")
+			return internalErr("failed to load backup settings", err)
 		}
 		if req.Type == "" {
 			req.Type = cfg.Type
@@ -116,7 +116,7 @@ func (h *BackupsHandler) Download(c fiber.Ctx) error {
 		if errors.Is(err, fs.ErrNotExist) {
 			return apperrors.ErrNotFound("archive not found")
 		}
-		return apperrors.ErrInternal("failed to open archive: " + err.Error())
+		return internalErr("failed to open archive: "+err.Error(), err)
 	}
 	c.Set(fiber.HeaderContentType, "application/gzip")
 	c.Set(fiber.HeaderContentDisposition, `attachment; filename="`+name+`"`)
@@ -139,7 +139,7 @@ func (h *BackupsHandler) Delete(c fiber.Ctx) error {
 		return apperrors.ErrInvalidRequest("invalid archive name")
 	}
 	if err := h.svc.Delete(c.Context(), req.Storage, req.Name); err != nil {
-		return apperrors.ErrInternal("failed to delete archive: " + err.Error())
+		return internalErr("failed to delete archive: "+err.Error(), err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
 	"image"
 	"image/png"
 	"mime/multipart"
@@ -183,3 +184,54 @@ func TestRebuildVariantsReturnsAccepted(t *testing.T) {
 	}
 }
 
+func TestUploadDoesNotOverwriteExistingFile(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "icon.svg"), []byte("<svg old/>"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	h := NewUploadsHandler(dir, "")
+	app := fiber.New()
+	app.Post("/upload", h.Upload)
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", "icon.svg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := part.Write([]byte(`<svg xmlns="http://www.w3.org/2000/svg"><path/></svg>`)); err != nil {
+		t.Fatal(err)
+	}
+	_ = writer.WriteField("name", "icon.svg")
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/upload", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("upload status = %d, want 200", resp.StatusCode)
+	}
+
+	var out struct {
+		Filename string `json:"filename"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Filename != "icon-1.svg" {
+		t.Fatalf("filename = %q, want icon-1.svg (existing must not be overwritten)", out.Filename)
+	}
+	raw, err := os.ReadFile(filepath.Join(dir, "icon.svg"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(raw) != "<svg old/>" {
+		t.Fatalf("existing file was overwritten: %q", raw)
+	}
+}

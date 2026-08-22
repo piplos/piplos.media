@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/piplos/piplos.media/internal/config"
@@ -37,14 +38,18 @@ type smtpLoader interface {
 }
 
 // LoadSMTP reads and decrypts SMTP settings from the database.
+// An unset setting ("") yields a zero config, not an error: callers use
+// Ready() to detect the "not configured" state.
 func LoadSMTP(ctx context.Context, repo smtpLoader) (SMTPConfig, error) {
 	raw, err := repo.GetDecryptedValue(ctx, config.KeySMTP)
 	if err != nil {
 		return SMTPConfig{}, fmt.Errorf("load smtp settings: %w", err)
 	}
 	var cfg SMTPConfig
-	if err := json.Unmarshal([]byte(raw), &cfg); err != nil {
-		return SMTPConfig{}, fmt.Errorf("parse smtp settings: %w", err)
+	if strings.TrimSpace(raw) != "" {
+		if err := json.Unmarshal([]byte(raw), &cfg); err != nil {
+			return SMTPConfig{}, fmt.Errorf("parse smtp settings: %w", err)
+		}
 	}
 	if cfg.Port == 0 {
 		cfg.Port = 587
