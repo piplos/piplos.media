@@ -65,7 +65,7 @@ func (req *projectRequest) toModel(id string) (*models.Project, error) {
 func (h *ContentHandler) ListProjects(c fiber.Ctx) error {
 	items, err := h.repo.ListProjects(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to list projects")
+		return internalErr("failed to list projects", err)
 	}
 	return c.JSON(fiber.Map{"projects": items})
 }
@@ -74,7 +74,7 @@ func (h *ContentHandler) ListProjects(c fiber.Ctx) error {
 func (h *ContentHandler) GetProject(c fiber.Ctx) error {
 	p, err := h.repo.GetProject(c.Context(), c.Params("slug"))
 	if err != nil {
-		return apperrors.ErrInternal("failed to get project")
+		return internalErr("failed to get project", err)
 	}
 	if p == nil {
 		return apperrors.ErrNotFound("project not found")
@@ -94,7 +94,7 @@ func (h *ContentHandler) CreateProject(c fiber.Ctx) error {
 	}
 	created, err := h.repo.CreateProject(c.Context(), p)
 	if err != nil {
-		return apperrors.ErrInternal("failed to create project")
+		return internalErr("failed to create project", err)
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"project": created})
 }
@@ -103,7 +103,7 @@ func (h *ContentHandler) CreateProject(c fiber.Ctx) error {
 func (h *ContentHandler) UpdateProject(c fiber.Ctx) error {
 	existing, err := h.repo.GetProject(c.Context(), c.Params("slug"))
 	if err != nil {
-		return apperrors.ErrInternal("failed to get project")
+		return internalErr("failed to get project", err)
 	}
 	if existing == nil {
 		return apperrors.ErrNotFound("project not found")
@@ -119,7 +119,7 @@ func (h *ContentHandler) UpdateProject(c fiber.Ctx) error {
 	}
 	updated, err := h.repo.UpdateProject(c.Context(), p)
 	if err != nil {
-		return apperrors.ErrInternal("failed to update project")
+		return internalErr("failed to update project", err)
 	}
 	if updated == nil {
 		return apperrors.ErrNotFound("project not found")
@@ -130,7 +130,7 @@ func (h *ContentHandler) UpdateProject(c fiber.Ctx) error {
 // DeleteProject removes a project.
 func (h *ContentHandler) DeleteProject(c fiber.Ctx) error {
 	if err := h.repo.DeleteProject(c.Context(), c.Params("slug")); err != nil {
-		return apperrors.ErrInternal("failed to delete project")
+		return internalErr("failed to delete project", err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }
@@ -170,7 +170,7 @@ func (h *ContentHandler) ReorderProjects(c fiber.Ctx) error {
 	}
 
 	if err := h.repo.ReorderProjects(c.Context(), groups); err != nil {
-		return apperrors.ErrInternal("failed to reorder projects")
+		return internalErr("failed to reorder projects", err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }
@@ -190,7 +190,7 @@ func (h *ContentHandler) ReorderProjectsGlobal(c fiber.Ctx) error {
 		return apperrors.ErrInvalidRequest("ids is required")
 	}
 	if err := h.repo.ReorderProjectsGlobal(c.Context(), req.IDs); err != nil {
-		return apperrors.ErrInternal("failed to reorder projects")
+		return internalErr("failed to reorder projects", err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }
@@ -227,7 +227,7 @@ func (req *serviceRequest) toModel(id string) (*models.Service, error) {
 func (h *ContentHandler) ListServices(c fiber.Ctx) error {
 	items, err := h.repo.ListServices(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to list services")
+		return internalErr("failed to list services", err)
 	}
 	return c.JSON(fiber.Map{"services": items})
 }
@@ -244,7 +244,7 @@ func (h *ContentHandler) CreateService(c fiber.Ctx) error {
 	}
 	created, err := h.repo.CreateService(c.Context(), s)
 	if err != nil {
-		return apperrors.ErrInternal("failed to create service")
+		return internalErr("failed to create service", err)
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"service": created})
 }
@@ -261,7 +261,7 @@ func (h *ContentHandler) UpdateService(c fiber.Ctx) error {
 	}
 	updated, err := h.repo.UpdateService(c.Context(), s)
 	if err != nil {
-		return apperrors.ErrInternal("failed to update service")
+		return internalErr("failed to update service", err)
 	}
 	if updated == nil {
 		return apperrors.ErrNotFound("service not found")
@@ -272,7 +272,7 @@ func (h *ContentHandler) UpdateService(c fiber.Ctx) error {
 // DeleteService removes a service.
 func (h *ContentHandler) DeleteService(c fiber.Ctx) error {
 	if err := h.repo.DeleteService(c.Context(), c.Params("id")); err != nil {
-		return apperrors.ErrInternal("failed to delete service")
+		return internalErr("failed to delete service", err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }
@@ -291,7 +291,7 @@ func (h *ContentHandler) ReorderServices(c fiber.Ctx) error {
 		return apperrors.ErrInvalidRequest("ids is required")
 	}
 	if err := h.repo.ReorderServices(c.Context(), req.IDs); err != nil {
-		return apperrors.ErrInternal("failed to reorder services")
+		return internalErr("failed to reorder services", err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }
@@ -326,7 +326,7 @@ func (req *stackRequest) toModel(id string) (*models.StackItem, error) {
 func (h *ContentHandler) ListStack(c fiber.Ctx) error {
 	items, err := h.repo.ListStackItems(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to list stack")
+		return internalErr("failed to list stack", err)
 	}
 	return c.JSON(fiber.Map{"stack": items})
 }
@@ -343,7 +343,7 @@ func (h *ContentHandler) CreateStackItem(c fiber.Ctx) error {
 	}
 	created, err := h.repo.CreateStackItem(c.Context(), s)
 	if err != nil {
-		return apperrors.ErrInternal("failed to create stack item")
+		return internalErr("failed to create stack item", err)
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"item": created})
 }
@@ -360,7 +360,7 @@ func (h *ContentHandler) UpdateStackItem(c fiber.Ctx) error {
 	}
 	updated, err := h.repo.UpdateStackItem(c.Context(), s)
 	if err != nil {
-		return apperrors.ErrInternal("failed to update stack item")
+		return internalErr("failed to update stack item", err)
 	}
 	if updated == nil {
 		return apperrors.ErrNotFound("stack item not found")
@@ -371,7 +371,7 @@ func (h *ContentHandler) UpdateStackItem(c fiber.Ctx) error {
 // DeleteStackItem removes a stack item.
 func (h *ContentHandler) DeleteStackItem(c fiber.Ctx) error {
 	if err := h.repo.DeleteStackItem(c.Context(), c.Params("id")); err != nil {
-		return apperrors.ErrInternal("failed to delete stack item")
+		return internalErr("failed to delete stack item", err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }
@@ -411,7 +411,7 @@ func (h *ContentHandler) ReorderStack(c fiber.Ctx) error {
 	}
 
 	if err := h.repo.ReorderStack(c.Context(), groups); err != nil {
-		return apperrors.ErrInternal("failed to reorder stack")
+		return internalErr("failed to reorder stack", err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }
@@ -440,7 +440,7 @@ func (req *seoRequest) toModel(id string, langCodes []string) (*models.SEOPage, 
 func (h *ContentHandler) seoLangCodes(c fiber.Ctx) ([]string, error) {
 	langs, err := h.repo.ListLanguages(c.Context())
 	if err != nil {
-		return nil, apperrors.ErrInternal("failed to load languages")
+		return nil, internalErr("failed to load languages", err)
 	}
 	return models.EnabledLanguageCodes(langs), nil
 }
@@ -449,7 +449,7 @@ func (h *ContentHandler) seoLangCodes(c fiber.Ctx) ([]string, error) {
 func (h *ContentHandler) ListSEO(c fiber.Ctx) error {
 	items, err := h.repo.ListSEOPages(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to list seo pages")
+		return internalErr("failed to list seo pages", err)
 	}
 	return c.JSON(fiber.Map{"pages": items})
 }
@@ -470,7 +470,7 @@ func (h *ContentHandler) CreateSEO(c fiber.Ctx) error {
 	}
 	created, err := h.repo.CreateSEOPage(c.Context(), p)
 	if err != nil {
-		return apperrors.ErrInternal("failed to create seo page")
+		return internalErr("failed to create seo page", err)
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"page": created})
 }
@@ -491,7 +491,7 @@ func (h *ContentHandler) UpdateSEO(c fiber.Ctx) error {
 	}
 	updated, err := h.repo.UpdateSEOPage(c.Context(), p)
 	if err != nil {
-		return apperrors.ErrInternal("failed to update seo page")
+		return internalErr("failed to update seo page", err)
 	}
 	if updated == nil {
 		return apperrors.ErrNotFound("seo page not found")
@@ -502,7 +502,7 @@ func (h *ContentHandler) UpdateSEO(c fiber.Ctx) error {
 // DeleteSEO removes a SEO entry.
 func (h *ContentHandler) DeleteSEO(c fiber.Ctx) error {
 	if err := h.repo.DeleteSEOPage(c.Context(), c.Params("id")); err != nil {
-		return apperrors.ErrInternal("failed to delete seo page")
+		return internalErr("failed to delete seo page", err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }
@@ -540,7 +540,7 @@ func (req *pageRequest) toModel(id string) (*models.Page, error) {
 func (h *ContentHandler) ListPages(c fiber.Ctx) error {
 	items, err := h.repo.ListPages(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to list pages")
+		return internalErr("failed to list pages", err)
 	}
 	return c.JSON(fiber.Map{"pages": items})
 }
@@ -549,7 +549,7 @@ func (h *ContentHandler) ListPages(c fiber.Ctx) error {
 func (h *ContentHandler) GetPage(c fiber.Ctx) error {
 	p, err := h.repo.GetPage(c.Context(), c.Params("id"))
 	if err != nil {
-		return apperrors.ErrInternal("failed to get page")
+		return internalErr("failed to get page", err)
 	}
 	if p == nil {
 		return apperrors.ErrNotFound("page not found")
@@ -569,7 +569,7 @@ func (h *ContentHandler) CreatePage(c fiber.Ctx) error {
 	}
 	created, err := h.repo.CreatePage(c.Context(), p)
 	if err != nil {
-		return apperrors.ErrInternal("failed to create page")
+		return internalErr("failed to create page", err)
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"page": created})
 }
@@ -586,7 +586,7 @@ func (h *ContentHandler) UpdatePage(c fiber.Ctx) error {
 	}
 	updated, err := h.repo.UpdatePage(c.Context(), p)
 	if err != nil {
-		return apperrors.ErrInternal("failed to update page")
+		return internalErr("failed to update page", err)
 	}
 	if updated == nil {
 		return apperrors.ErrNotFound("page not found")
@@ -598,7 +598,7 @@ func (h *ContentHandler) UpdatePage(c fiber.Ctx) error {
 // table and cannot be deleted through this endpoint.
 func (h *ContentHandler) DeletePage(c fiber.Ctx) error {
 	if err := h.repo.DeletePage(c.Context(), c.Params("id")); err != nil {
-		return apperrors.ErrInternal("failed to delete page")
+		return internalErr("failed to delete page", err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }
@@ -613,7 +613,7 @@ type legalRequest struct {
 func (h *ContentHandler) ListLegal(c fiber.Ctx) error {
 	items, err := h.repo.ListLegalPages(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to list legal pages")
+		return internalErr("failed to list legal pages", err)
 	}
 	return c.JSON(fiber.Map{"pages": items})
 }
@@ -622,7 +622,7 @@ func (h *ContentHandler) ListLegal(c fiber.Ctx) error {
 func (h *ContentHandler) GetLegal(c fiber.Ctx) error {
 	p, err := h.repo.GetLegalPage(c.Context(), c.Params("id"))
 	if err != nil {
-		return apperrors.ErrInternal("failed to load legal page")
+		return internalErr("failed to load legal page", err)
 	}
 	if p == nil {
 		return apperrors.ErrNotFound("legal page not found")
@@ -641,7 +641,7 @@ func (h *ContentHandler) UpdateLegal(c fiber.Ctx) error {
 	}
 	existing, err := h.repo.GetLegalPage(c.Context(), c.Params("id"))
 	if err != nil {
-		return apperrors.ErrInternal("failed to load legal page")
+		return internalErr("failed to load legal page", err)
 	}
 	if existing == nil {
 		return apperrors.ErrNotFound("legal page not found")
@@ -649,7 +649,7 @@ func (h *ContentHandler) UpdateLegal(c fiber.Ctx) error {
 	existing.Translations = req.Translations
 	updated, err := h.repo.UpdateLegalPage(c.Context(), existing)
 	if err != nil {
-		return apperrors.ErrInternal("failed to update legal page")
+		return internalErr("failed to update legal page", err)
 	}
 	return c.JSON(fiber.Map{"page": updated})
 }

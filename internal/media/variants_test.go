@@ -74,6 +74,7 @@ func TestPreferWebPURL(t *testing.T) {
 	}{
 		{"https://api.test/uploads/p/a.png", "https://api.test/uploads/p/a.webp"},
 		{"/uploads/p/a.JPG", "/uploads/p/a.webp"},
+		{"/uploads/a.png#frag", "/uploads/a.webp#frag"},
 		{"https://api.test/uploads/p/a.webp", "https://api.test/uploads/p/a.webp"},
 		{"https://cdn.test/other.png", "https://cdn.test/other.png"},
 		{"", ""},

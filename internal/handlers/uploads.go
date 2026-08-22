@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path"
@@ -106,13 +108,13 @@ func (h *UploadsHandler) Upload(c fiber.Ctx) error {
 
 	src, err := file.Open()
 	if err != nil {
-		return apperrors.ErrInternal("failed to open upload")
+		return internalErr("failed to open upload", err)
 	}
 	defer src.Close()
 
 	body, err := io.ReadAll(io.LimitReader(src, maxUploadBytes+1))
 	if err != nil {
-		return apperrors.ErrInternal("failed to read upload")
+		return internalErr("failed to read upload", err)
 	}
 	if len(body) > maxUploadBytes {
 		return apperrors.ErrInvalidRequest("file exceeds 5 MiB limit")
@@ -133,7 +135,7 @@ func (h *UploadsHandler) Upload(c fiber.Ctx) error {
 	// Target folder is created on demand: forms upload straight into an
 	// entity folder (projects/<slug> etc.) that may not exist yet.
 	if err := os.MkdirAll(folderAbs, 0o755); err != nil {
-		return apperrors.ErrInternal("failed to create target folder")
+		return internalErr("failed to create target folder", err)
 	}
 
 	name := uuid.NewString() + ext
@@ -146,8 +148,28 @@ func (h *UploadsHandler) Upload(c fiber.Ctx) error {
 	}
 	destPath := filepath.Join(folderAbs, name)
 
-	if err := os.WriteFile(destPath, body, 0o644); err != nil {
-		return apperrors.ErrInternal("failed to save upload")
+	// Create exclusively: uniqueName is check-then-act, so a concurrent upload
+	// with the same requested name must not silently overwrite the winner's file.
+	var f *os.File
+	for {
+		f, err = os.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+		if !errors.Is(err, fs.ErrExist) {
+			break
+		}
+		// Lost a race for this name — pick the next free one.
+		name = uniqueName(folderAbs, name)
+		destPath = filepath.Join(folderAbs, name)
+	}
+	if err != nil {
+		return internalErr("failed to save upload", err)
+	}
+	_, writeErr := f.Write(body)
+	if closeErr := f.Close(); writeErr == nil {
+		writeErr = closeErr
+	}
+	if writeErr != nil {
+		_ = os.Remove(destPath) // no partial file left behind
+		return internalErr("failed to save upload", writeErr)
 	}
 
 	fileRel := path.Join(folderRel, name)

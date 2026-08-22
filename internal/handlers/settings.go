@@ -48,7 +48,7 @@ func maskSetting(s *models.Setting) {
 func (h *SettingsHandler) ListSettings(c fiber.Ctx) error {
 	items, err := h.repo.ListSettings(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to list settings")
+		return internalErr("failed to list settings", err)
 	}
 	for i := range items {
 		maskSetting(&items[i])
@@ -64,7 +64,7 @@ func (h *SettingsHandler) GetSetting(c fiber.Ctx) error {
 	}
 	raw, err := h.repo.GetSetting(c.Context(), key)
 	if err != nil {
-		return apperrors.ErrInternal("failed to get setting")
+		return internalErr("failed to get setting", err)
 	}
 	if raw == "" {
 		return apperrors.ErrNotFound("setting not found")
@@ -94,7 +94,7 @@ func (h *SettingsHandler) UpdateSetting(c fiber.Ctx) error {
 		return apperrors.ErrInvalidRequest("value must be a JSON object")
 	}
 	if err := h.repo.SetCompositeSetting(c.Context(), key, req.Value, config.SensitiveFields[key]); err != nil {
-		return apperrors.ErrInternal("failed to update setting")
+		return internalErr("failed to update setting", err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }
@@ -133,12 +133,14 @@ func (h *SettingsHandler) firstEnabledModel(ctx context.Context, provider string
 }
 
 func (h *SettingsHandler) testAIProviderKey(ctx context.Context, provider, apiKey string) error {
-	model, err := h.firstEnabledModel(ctx, provider)
+	// firstEnabledModel already distinguishes a storage failure from an empty
+	// model list; collapsing both into one message hid real DB errors.
+	modelID, err := h.firstEnabledModel(ctx, provider)
 	if err != nil {
-		return fmt.Errorf("no enabled models for provider")
+		return err
 	}
 	timeout := 15 * time.Second
-	client := ai.NewClient(provider, apiKey, model, timeout)
+	client := ai.NewClient(provider, apiKey, modelID, timeout)
 	return client.TestAPIKey(ctx)
 }
 
@@ -155,7 +157,9 @@ func (h *SettingsHandler) testS3(ctx context.Context, rawValue string) error {
 			return fmt.Errorf("failed to load stored S3 settings")
 		}
 		var storedCfg storage.S3Config
-		_ = json.Unmarshal([]byte(stored), &storedCfg)
+		if uerr := json.Unmarshal([]byte(stored), &storedCfg); uerr != nil {
+			return fmt.Errorf("failed to parse stored S3 settings")
+		}
 		if cfg.AccessKeyID == maskedValue {
 			cfg.AccessKeyID = storedCfg.AccessKeyID
 		}
@@ -190,7 +194,7 @@ func (h *SettingsHandler) TestSetting(c fiber.Ctx) error {
 		if apiKey == "" || apiKey == maskedValue {
 			stored, err := h.repo.GetDecryptedValue(c.Context(), key)
 			if err != nil {
-				return apperrors.ErrInternal("failed to load stored provider settings")
+				return internalErr("failed to load stored provider settings", err)
 			}
 			apiKey = extractAPIKeyFromProviderJSON(stored)
 		}
@@ -220,10 +224,12 @@ func (h *SettingsHandler) TestSetting(c fiber.Ctx) error {
 	if cfg.Username == maskedValue || cfg.Password == maskedValue {
 		stored, err := h.repo.GetDecryptedValue(c.Context(), config.KeySMTP)
 		if err != nil {
-			return apperrors.ErrInternal("failed to load stored SMTP settings")
+			return internalErr("failed to load stored SMTP settings", err)
 		}
 		var storedCfg smtpSettings
-		_ = json.Unmarshal([]byte(stored), &storedCfg)
+		if uerr := json.Unmarshal([]byte(stored), &storedCfg); uerr != nil {
+			return internalErr("failed to load stored SMTP settings", uerr)
+		}
 		if cfg.Username == maskedValue {
 			cfg.Username = storedCfg.Username
 		}
@@ -246,7 +252,7 @@ func (h *SettingsHandler) TestTranslation(c fiber.Ctx) error {
 	defer cancel()
 	translated, userPrompt, err := h.translate.TestTranslation(ctx)
 	if err != nil {
-		return apperrors.New(apperrors.CodeServiceError, "translation test failed: "+err.Error())
+		return withCause(apperrors.New(apperrors.CodeServiceError, "translation test failed: "+err.Error()), err)
 	}
 	return c.JSON(fiber.Map{
 		"response": map[string]any{
@@ -262,7 +268,7 @@ func (h *SettingsHandler) TestTranslation(c fiber.Ctx) error {
 func (h *SettingsHandler) ListLanguages(c fiber.Ctx) error {
 	langs, err := h.repo.ListLanguages(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to list languages")
+		return internalErr("failed to list languages", err)
 	}
 	return c.JSON(fiber.Map{"languages": langs})
 }
@@ -286,12 +292,31 @@ func (h *SettingsHandler) UpsertLanguage(c fiber.Ctx) error {
 	if len(req.Code) < 2 || len(req.Code) > 5 || req.Name == "" {
 		return apperrors.ErrInvalidRequest("code (2-5 chars) and name are required")
 	}
+	// The default language cannot be disabled: the public site only serves
+	// enabled languages and would be left without a working locale
+	// (mirrors the DeleteLanguage protection).
+	if !req.Enabled {
+		isDefault := req.IsDefault
+		langs, err := h.repo.ListLanguages(c.Context())
+		if err != nil {
+			return internalErr("failed to save language", err)
+		}
+		for _, l := range langs {
+			if l.Code == req.Code && l.IsDefault {
+				isDefault = true
+				break
+			}
+		}
+		if isDefault {
+			return apperrors.ErrInvalidRequest("cannot disable the default language")
+		}
+	}
 	lang := models.Language{
 		Code: req.Code, Name: req.Name, IsDefault: req.IsDefault,
 		Enabled: req.Enabled, SortOrder: req.SortOrder,
 	}
 	if err := h.repo.UpsertLanguage(c.Context(), lang); err != nil {
-		return apperrors.ErrInternal("failed to save language")
+		return internalErr("failed to save language", err)
 	}
 	return c.JSON(fiber.Map{"language": lang})
 }
@@ -301,7 +326,7 @@ func (h *SettingsHandler) DeleteLanguage(c fiber.Ctx) error {
 	code := c.Params("code")
 	langs, err := h.repo.ListLanguages(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to delete language")
+		return internalErr("failed to delete language", err)
 	}
 	for _, l := range langs {
 		if l.Code == code && l.IsDefault {
@@ -309,7 +334,7 @@ func (h *SettingsHandler) DeleteLanguage(c fiber.Ctx) error {
 		}
 	}
 	if err := h.repo.DeleteLanguage(c.Context(), code); err != nil {
-		return apperrors.ErrInternal("failed to delete language")
+		return internalErr("failed to delete language", err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }
@@ -333,7 +358,7 @@ func (h *SettingsHandler) Translate(c fiber.Ctx) error {
 
 	translated, err := h.translate.TranslateFields(c.Context(), req.Fields, req.TargetLang)
 	if err != nil {
-		return apperrors.New(apperrors.CodeServiceError, "translation failed: "+err.Error())
+		return withCause(apperrors.New(apperrors.CodeServiceError, "translation failed: "+err.Error()), err)
 	}
 	return c.JSON(fiber.Map{"fields": translated, "target_lang": req.TargetLang})
 }

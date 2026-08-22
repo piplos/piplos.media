@@ -104,7 +104,7 @@ func (h *FilesHandler) List(c fiber.Ctx) error {
 		if os.IsNotExist(err) {
 			return apperrors.ErrNotFound("folder not found")
 		}
-		return apperrors.ErrInternal("failed to read folder")
+		return internalErr("failed to read folder", err)
 	}
 
 	folders := []folderInfo{}
@@ -151,7 +151,7 @@ func (h *FilesHandler) CreateFolder(c fiber.Ctx) error {
 		return apperrors.ErrInvalidRequest("invalid folder name")
 	}
 	if err := os.MkdirAll(abs, 0o755); err != nil {
-		return apperrors.ErrInternal("failed to create folder")
+		return internalErr("failed to create folder", err)
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"path": rel})
 }
@@ -170,6 +170,11 @@ func (h *FilesHandler) Rename(c fiber.Ctx) error {
 	if !okFrom || !okTo || fromRel == "" || toRel == "" || !validEntryName(path.Base(toRel)) {
 		return apperrors.ErrInvalidRequest("invalid path")
 	}
+	// MkdirAll below would happily create intermediate folders with names that
+	// CreateFolder rejects (dotfiles, reserved characters) — validate them too.
+	if parent := path.Dir(toRel); parent != "." && !validFolderPath(parent) {
+		return apperrors.ErrInvalidRequest("invalid path")
+	}
 	if _, err := os.Stat(fromAbs); err != nil {
 		return apperrors.ErrNotFound("source not found")
 	}
@@ -177,10 +182,10 @@ func (h *FilesHandler) Rename(c fiber.Ctx) error {
 		return apperrors.ErrInvalidRequest("target already exists")
 	}
 	if err := os.MkdirAll(filepath.Dir(toAbs), 0o755); err != nil {
-		return apperrors.ErrInternal("failed to prepare target folder")
+		return internalErr("failed to prepare target folder", err)
 	}
 	if err := os.Rename(fromAbs, toAbs); err != nil {
-		return apperrors.ErrInternal("failed to rename")
+		return internalErr("failed to rename", err)
 	}
 	media.RenameVariants(fromAbs, toAbs)
 	return c.JSON(fiber.Map{"path": toRel, "url": uploadsFileURL(h.publicURL, toRel)})
@@ -222,7 +227,7 @@ func (h *FilesHandler) Move(c fiber.Ctx) error {
 			return apperrors.ErrInvalidRequest("already exists in destination: " + name)
 		}
 		if err := os.Rename(srcAbs, targetAbs); err != nil {
-			return apperrors.ErrInternal("failed to move " + name)
+			return internalErr("failed to move "+name, err)
 		}
 		media.RenameVariants(srcAbs, targetAbs)
 		moved = append(moved, targetRel)
@@ -246,7 +251,7 @@ func (h *FilesHandler) Delete(c fiber.Ctx) error {
 		_, statErr := os.Stat(abs)
 		existed := statErr == nil
 		if err := os.RemoveAll(abs); err != nil {
-			return apperrors.ErrInternal("failed to delete " + rel)
+			return internalErr("failed to delete "+rel, err)
 		}
 		// Only clean sized sidecars when a real WebP master was deleted.
 		if existed {

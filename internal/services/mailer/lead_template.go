@@ -76,16 +76,17 @@ func LeadTemplateVars(lead *models.Lead, adminURL string) map[string]string {
 }
 
 // RenderLeadEmail renders the template from settings, replacing {{var}} placeholders.
-// The body is Markdown: the plain-text part keeps the raw text, the HTML part
-// is rendered via goldmark (newlines become <br>).
+// Replacement is single-pass (strings.Replacer), so lead-controlled values that
+// themselves look like "{{placeholder}}" are never re-expanded — and the output
+// does not depend on map iteration order. The body is Markdown: the plain-text
+// part keeps the raw text, the HTML part is rendered via goldmark (newlines become <br>).
 func RenderLeadEmail(tpl LeadTemplate, lead *models.Lead, adminURL string) LeadEmail {
 	vars := LeadTemplateVars(lead, adminURL)
-	replace := func(s string) string {
-		for key, value := range vars {
-			s = strings.ReplaceAll(s, "{{"+key+"}}", value)
-		}
-		return s
+	pairs := make([]string, 0, 2*len(vars))
+	for key, value := range vars {
+		pairs = append(pairs, "{{"+key+"}}", value)
 	}
+	replace := strings.NewReplacer(pairs...).Replace
 
 	subject := strings.TrimSpace(replace(tpl.Subject))
 	if subject == "" {

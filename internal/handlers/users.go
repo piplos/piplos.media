@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"context"
+	"errors"
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
@@ -12,14 +14,27 @@ import (
 	authsvc "github.com/piplos/piplos.media/internal/services/auth"
 )
 
+// UserStore abstracts user persistence (implemented by *repository.Repository).
+// Integrity violations surface as domain errors: repository.ErrDuplicateEmail
+// and repository.ErrLastActiveAdmin are rendered as 409.
+type UserStore interface {
+	ListUsers(ctx context.Context) ([]models.User, error)
+	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	GetUserByID(ctx context.Context, id string) (*models.User, error)
+	CreateUser(ctx context.Context, email, passwordHash, fullName string, role models.UserRole, notifyLeads bool) (*models.User, error)
+	UpdateUser(ctx context.Context, id, fullName string, role models.UserRole, isActive bool, notifyLeads bool, passwordHash string) (*models.User, error)
+	DeleteUser(ctx context.Context, id string) error
+	RevokeAllUserSessions(ctx context.Context, userID string) error
+}
+
 // UsersHandler manages admin panel accounts (admin role only).
 type UsersHandler struct {
 	auth *authsvc.Service
-	repo *repository.Repository
+	repo UserStore
 }
 
 // NewUsersHandler creates a UsersHandler.
-func NewUsersHandler(auth *authsvc.Service, repo *repository.Repository) *UsersHandler {
+func NewUsersHandler(auth *authsvc.Service, repo UserStore) *UsersHandler {
 	return &UsersHandler{auth: auth, repo: repo}
 }
 
@@ -45,7 +60,7 @@ func parseRole(role string) (models.UserRole, error) {
 func (h *UsersHandler) List(c fiber.Ctx) error {
 	users, err := h.repo.ListUsers(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to list users")
+		return internalErr("failed to list users", err)
 	}
 	return c.JSON(fiber.Map{"users": users})
 }
@@ -67,7 +82,7 @@ func (h *UsersHandler) Create(c fiber.Ctx) error {
 
 	existing, err := h.repo.GetUserByEmail(c.Context(), req.Email)
 	if err != nil {
-		return apperrors.ErrInternal("failed to create user")
+		return internalErr("failed to create user", err)
 	}
 	if existing != nil {
 		return apperrors.ErrConflict("user with this email already exists")
@@ -75,7 +90,7 @@ func (h *UsersHandler) Create(c fiber.Ctx) error {
 
 	hash, err := h.auth.HashPassword(req.Password)
 	if err != nil {
-		return apperrors.ErrInternal("failed to hash password")
+		return internalErr("failed to hash password", err)
 	}
 	notifyLeads := true
 	if req.NotifyLeads != nil {
@@ -83,7 +98,11 @@ func (h *UsersHandler) Create(c fiber.Ctx) error {
 	}
 	user, err := h.repo.CreateUser(c.Context(), req.Email, hash, req.FullName, role, notifyLeads)
 	if err != nil {
-		return apperrors.ErrInternal("failed to create user")
+		// Гонка с параллельной регистрацией того же email: уникальный индекс.
+		if errors.Is(err, repository.ErrDuplicateEmail) {
+			return apperrors.ErrConflict("user with this email already exists")
+		}
+		return internalErr("failed to create user", err)
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"user": user})
 }
@@ -120,13 +139,13 @@ func (h *UsersHandler) Update(c fiber.Ctx) error {
 			return apperrors.ErrInvalidRequest("password must be at least 8 chars")
 		}
 		if hash, err = h.auth.HashPassword(req.Password); err != nil {
-			return apperrors.ErrInternal("failed to hash password")
+			return internalErr("failed to hash password", err)
 		}
 	}
 
 	existing, err := h.repo.GetUserByID(c.Context(), id)
 	if err != nil {
-		return apperrors.ErrInternal("failed to update user")
+		return internalErr("failed to update user", err)
 	}
 	if existing == nil {
 		return apperrors.ErrNotFound("user not found")
@@ -134,7 +153,10 @@ func (h *UsersHandler) Update(c fiber.Ctx) error {
 
 	user, err := h.repo.UpdateUser(c.Context(), id, req.FullName, role, isActive, notifyLeads, hash)
 	if err != nil {
-		return apperrors.ErrInternal("failed to update user")
+		if errors.Is(err, repository.ErrLastActiveAdmin) {
+			return apperrors.ErrConflict("cannot remove the last active administrator")
+		}
+		return internalErr("failed to update user", err)
 	}
 	if user == nil {
 		return apperrors.ErrNotFound("user not found")
@@ -143,7 +165,7 @@ func (h *UsersHandler) Update(c fiber.Ctx) error {
 	needsRevoke := hash != "" || role != existing.Role || (existing.IsActive && !isActive)
 	if needsRevoke {
 		if err := h.repo.RevokeAllUserSessions(c.Context(), id); err != nil {
-			return apperrors.ErrInternal("failed to revoke sessions")
+			return internalErr("failed to revoke sessions", err)
 		}
 	}
 
@@ -158,7 +180,10 @@ func (h *UsersHandler) Delete(c fiber.Ctx) error {
 		return apperrors.ErrInvalidRequest("you cannot delete your own account")
 	}
 	if err := h.repo.DeleteUser(c.Context(), id); err != nil {
-		return apperrors.ErrInternal("failed to delete user")
+		if errors.Is(err, repository.ErrLastActiveAdmin) {
+			return apperrors.ErrConflict("cannot remove the last active administrator")
+		}
+		return internalErr("failed to delete user", err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
 }

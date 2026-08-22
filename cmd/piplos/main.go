@@ -77,6 +77,9 @@ func main() {
 	schedulerCtx, stopScheduler := context.WithCancel(ctx)
 	backupSvc.StartScheduler(schedulerCtx)
 
+	// Периодическая очистка истёкших и отозванных refresh-сессий.
+	go server.RunSessionPurgeLoop(schedulerCtx, repo, cfg.SessionsPurgeInterval(), log)
+
 	publicAPIURL := cfg.PublicAPIURL
 	if publicAPIURL == "" {
 		publicAPIURL = "http://localhost:" + cfg.Port
@@ -94,7 +97,16 @@ func main() {
 	app.Use(recover.New())
 	app.Use(middleware.CORS(cfg.CORSOrigins))
 	app.Use(middleware.ErrorHandler(log))
-	app.Use("/uploads", static.New(uploadDir, static.Config{MaxAge: 86400}))
+
+	// Загруженные файлы отдаются с sandbox-CSP и nosniff: SVG/HTML из uploads
+	// не исполняются в контексте основного домена (stored XSS), а обычные
+	// изображения продолжают отображаться через <img> без изменений.
+	uploadsStatic := static.New(uploadDir, static.Config{MaxAge: 86400})
+	app.Use("/uploads", func(c fiber.Ctx) error {
+		c.Set(fiber.HeaderContentSecurityPolicy, "sandbox")
+		c.Set(fiber.HeaderXContentTypeOptions, "nosniff")
+		return uploadsStatic(c)
+	})
 
 	authMw := middleware.NewAuth(authService, repo)
 	mailService := mailer.NewService(repo, repo, cfg.AdminURL, log)
@@ -117,17 +129,27 @@ func main() {
 	})
 
 	log.Info().Str("port", cfg.Port).Msg("server starting")
+	serverErr := make(chan error, 1)
 	go func() {
-		if err := app.Listen("0.0.0.0:"+cfg.Port, fiber.ListenConfig{DisableStartupMessage: true}); err != nil {
-			log.Fatal().Err(err).Msg("start server")
-		}
+		serverErr <- app.Listen("0.0.0.0:"+cfg.Port, fiber.ListenConfig{DisableStartupMessage: true})
 	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	<-quit
+	select {
+	case err := <-serverErr:
+		// Listener failed to start or died unexpectedly. Tear down explicitly:
+		// log.Fatal/os.Exit inside the goroutine would skip cleanup entirely.
+		if err != nil {
+			log.Error().Err(err).Msg("start server")
+		}
+		stopScheduler()
+		db.Close()
+		os.Exit(1)
+	case <-quit:
+		log.Info().Msg("shutting down")
+	}
 
-	log.Info().Msg("shutting down")
 	stopScheduler()
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

@@ -17,13 +17,9 @@ func scanAIProviderModel(row pgx.Row, m *models.AIProviderModel) error {
 	return row.Scan(&m.ID, &m.Provider, &m.ModelID, &m.DisplayName, &m.Enabled)
 }
 
-// ListAIProviderModels returns all catalog models.
-func (r *Repository) ListAIProviderModels(ctx context.Context) ([]models.AIProviderModel, error) {
-	rows, err := r.pool.Query(ctx,
-		`SELECT `+aiProviderModelColumns+` FROM ai_provider_models ORDER BY provider, display_name`)
-	if err != nil {
-		return nil, fmt.Errorf("list ai provider models: %w", err)
-	}
+// listAIProviderModels collects catalog models from an open result set
+// (nil slice when empty, matching the JSON shape of the admin endpoints).
+func listAIProviderModels(rows pgx.Rows) ([]models.AIProviderModel, error) {
 	defer rows.Close()
 
 	var list []models.AIProviderModel
@@ -37,6 +33,16 @@ func (r *Repository) ListAIProviderModels(ctx context.Context) ([]models.AIProvi
 	return list, rows.Err()
 }
 
+// ListAIProviderModels returns all catalog models.
+func (r *Repository) ListAIProviderModels(ctx context.Context) ([]models.AIProviderModel, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT `+aiProviderModelColumns+` FROM ai_provider_models ORDER BY provider, display_name`)
+	if err != nil {
+		return nil, fmt.Errorf("list ai provider models: %w", err)
+	}
+	return listAIProviderModels(rows)
+}
+
 // ListEnabledAIProviderModels returns enabled models for a provider.
 func (r *Repository) ListEnabledAIProviderModels(ctx context.Context, provider string) ([]models.AIProviderModel, error) {
 	rows, err := r.pool.Query(ctx,
@@ -45,17 +51,7 @@ func (r *Repository) ListEnabledAIProviderModels(ctx context.Context, provider s
 	if err != nil {
 		return nil, fmt.Errorf("list enabled ai models: %w", err)
 	}
-	defer rows.Close()
-
-	var list []models.AIProviderModel
-	for rows.Next() {
-		var m models.AIProviderModel
-		if err := scanAIProviderModel(rows, &m); err != nil {
-			return nil, fmt.Errorf("scan ai provider model: %w", err)
-		}
-		list = append(list, m)
-	}
-	return list, rows.Err()
+	return listAIProviderModels(rows)
 }
 
 // GetAIProviderModelByID returns one model or nil.

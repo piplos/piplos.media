@@ -6,6 +6,7 @@ import {
 	accessCookieOptions,
 	refreshCookieOptions
 } from '$lib/auth.server';
+import { resolveCookieSecure } from '$lib/api.server';
 import { API_V1_PREFIX, getApiBaseUrl } from '$lib/env.server';
 import { STAFF_ROLES } from '$lib/permissions';
 import type { AdminUser } from '$lib/types';
@@ -61,7 +62,9 @@ export const actions: Actions = {
 			return fail(403, { email, error: 'Недостаточно прав доступа' });
 		}
 
-		const secure = url.protocol === 'https:';
+		// Secure-флаг как в api.server: COOKIE_SECURE > X-Forwarded-Proto > protocol,
+		// иначе за TLS-прокси без PROTOCOL_HEADER куки уходят без Secure.
+		const secure = resolveCookieSecure({ request, url });
 		cookies.set(COOKIE_ACCESS_TOKEN, payload.access_token, accessCookieOptions(secure));
 		cookies.set(COOKIE_REFRESH_TOKEN, payload.refresh_token, refreshCookieOptions(secure));
 		cookies.delete('admin_user', { path: '/' });

@@ -18,6 +18,9 @@ type Config struct {
 	JWTExpirationMinutes    int
 	JWTRefreshExpirationHrs int
 
+	// Как часто удаляются истёкшие/отозванные refresh-сессии (в минутах).
+	SessionsPurgeIntervalMinutes int
+
 	CORSOrigins []string
 
 	// Ключ шифрования секретов в таблице settings (AES-256-GCM, >= 32 байт).
@@ -57,6 +60,14 @@ func (c *Config) JWTRefreshExpiration() time.Duration {
 	return time.Duration(c.JWTRefreshExpirationHrs) * time.Hour
 }
 
+// SessionsPurgeInterval returns the delay between expired-session cleanups.
+func (c *Config) SessionsPurgeInterval() time.Duration {
+	if c.SessionsPurgeIntervalMinutes <= 0 {
+		return time.Hour
+	}
+	return time.Duration(c.SessionsPurgeIntervalMinutes) * time.Minute
+}
+
 // Load reads configuration from the environment.
 func Load() Config {
 	return Config{
@@ -65,6 +76,8 @@ func Load() Config {
 		JWTSecret:               env("JWT_SECRET", ""),
 		JWTExpirationMinutes:    envInt("JWT_EXPIRATION_MINUTES", 15),
 		JWTRefreshExpirationHrs: envInt("JWT_REFRESH_EXPIRATION_HOURS", 168),
+
+		SessionsPurgeIntervalMinutes: envInt("SESSIONS_PURGE_INTERVAL_MINUTES", 60),
 		CORSOrigins:             envCSV("CORS_ORIGINS", []string{"*"}),
 		EncryptionKey:           env("ENCRYPTION_KEY", ""),
 		AdminEmail:              env("ADMIN_EMAIL", ""),

@@ -2,13 +2,18 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/rs/zerolog"
+
+	"github.com/piplos/piplos.media/internal/middleware"
 )
 
 func TestResolveUploadPath(t *testing.T) {
@@ -114,5 +119,46 @@ func TestFilesListHidesSizedWebPVariants(t *testing.T) {
 	}
 	if names["cover-480.webp"] || names["cover-960.webp"] {
 		t.Fatalf("sized variants must be hidden, got %#v", names)
+	}
+}
+
+func TestRenameValidatesTargetParentSegments(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	h := NewFilesHandler(dir, "")
+	app := fiber.New()
+	app.Use(middleware.ErrorHandler(zerolog.Nop()))
+	app.Post("/rename", h.Rename)
+
+	do := func(from, to string) int {
+		t.Helper()
+		body := fmt.Sprintf(`{"from":%q,"to":%q}`, from, to)
+		req := httptest.NewRequest(http.MethodPost, "/rename", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return resp.StatusCode
+	}
+
+	// Intermediate folder with a name CreateFolder would reject must fail too.
+	if got := do("a.txt", "bad:name/x.txt"); got != http.StatusBadRequest {
+		t.Fatalf("invalid parent segment: got %d, want 400", got)
+	}
+	if got := do("a.txt", ".hidden/x.txt"); got != http.StatusBadRequest {
+		t.Fatalf("dotfile parent segment: got %d, want 400", got)
+	}
+	if got := do("a.txt", "sub/x.txt"); got != http.StatusOK {
+		t.Fatalf("valid nested rename: got %d, want 200", got)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "sub", "x.txt")); err != nil {
+		t.Fatalf("renamed file missing: %v", err)
+	}
+	if got := do("sub/x.txt", "b.txt"); got != http.StatusOK {
+		t.Fatalf("rename into root: got %d, want 200", got)
 	}
 }

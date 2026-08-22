@@ -78,6 +78,41 @@ func (r *Repository) RevokeSession(ctx context.Context, sessionID string) error 
 	return nil
 }
 
+// ClaimRefreshSession atomically revokes the session if it is still active
+// (never revoked and not expired) and reports whether this call won the claim.
+// It is the serialization point of refresh-token rotation: concurrent refresh
+// requests presenting the same token run this UPDATE against the same row, so
+// exactly one of them can see affected>0; every loser means a replay.
+func (r *Repository) ClaimRefreshSession(ctx context.Context, sessionID string) (bool, error) {
+	tag, err := r.pool.Exec(ctx,
+		`UPDATE refresh_sessions SET revoked_at = now()
+		 WHERE id = $1 AND revoked_at IS NULL AND expires_at > now()`, sessionID)
+	if err != nil {
+		return false, fmt.Errorf("claim refresh session: %w", err)
+	}
+	return tag.RowsAffected() > 0, nil
+}
+
+// RevokeSessionChain revokes every active session in the rotation subtree
+// rooted at sessionID: the session itself plus everything rotated from it,
+// directly or transitively (refresh_sessions.rotated_from forms a tree).
+// Used by reuse detection: an already-revoked token coming back means its
+// rotation chain leaked, so all live tokens derived from it must die.
+func (r *Repository) RevokeSessionChain(ctx context.Context, sessionID string) error {
+	_, err := r.pool.Exec(ctx,
+		`WITH RECURSIVE chain(id) AS (
+			SELECT id FROM refresh_sessions WHERE id = $1
+			UNION
+			SELECT s.id FROM refresh_sessions s JOIN chain c ON s.rotated_from = c.id
+		)
+		UPDATE refresh_sessions r SET revoked_at = now()
+		WHERE r.revoked_at IS NULL AND r.id IN (SELECT id FROM chain)`, sessionID)
+	if err != nil {
+		return fmt.Errorf("revoke session chain: %w", err)
+	}
+	return nil
+}
+
 // RevokeSessionByTokenHash marks a session revoked by token hash.
 func (r *Repository) RevokeSessionByTokenHash(ctx context.Context, tokenHash string) error {
 	_, err := r.pool.Exec(ctx,

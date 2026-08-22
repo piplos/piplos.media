@@ -11,6 +11,9 @@ import (
 	"github.com/piplos/piplos.media/internal/repository"
 )
 
+// aiProviders are the providers accepted by CreateAIModel.
+var aiProviders = map[string]bool{"gemini": true, "grok": true, "openai": true, "openrouter": true}
+
 // AIModelsHandler manages the ai_provider_models catalog.
 type AIModelsHandler struct {
 	repo *repository.Repository
@@ -31,7 +34,7 @@ type createAIModelRequest struct {
 func (h *AIModelsHandler) ListAIModels(c fiber.Ctx) error {
 	list, err := h.repo.ListAIProviderModels(c.Context())
 	if err != nil {
-		return apperrors.ErrInternal("failed to list AI models")
+		return internalErr("failed to list AI models", err)
 	}
 	if list == nil {
 		list = []models.AIProviderModel{}
@@ -51,8 +54,7 @@ func (h *AIModelsHandler) CreateAIModel(c fiber.Ctx) error {
 	if req.Provider == "" || req.ModelID == "" || req.DisplayName == "" {
 		return apperrors.ErrInvalidRequest("provider, model_id and display_name are required")
 	}
-	allowed := map[string]bool{"gemini": true, "grok": true, "openai": true, "openrouter": true}
-	if !allowed[req.Provider] {
+	if !aiProviders[req.Provider] {
 		return apperrors.ErrInvalidRequest("unknown provider")
 	}
 	model, err := h.repo.CreateAIProviderModel(c.Context(), req.Provider, req.ModelID, req.DisplayName)
@@ -60,7 +62,7 @@ func (h *AIModelsHandler) CreateAIModel(c fiber.Ctx) error {
 		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique") {
 			return apperrors.ErrConflict("model already exists")
 		}
-		return apperrors.ErrInternal("failed to create AI model")
+		return internalErr("failed to create AI model", err)
 	}
 	return c.Status(fiber.StatusCreated).JSON(model)
 }
@@ -86,7 +88,7 @@ func (h *AIModelsHandler) UpdateAIModel(c fiber.Ctx) error {
 	}
 	found, err := h.repo.GetAIProviderModelByID(c.Context(), id)
 	if err != nil {
-		return apperrors.ErrInternal("failed to load AI model")
+		return internalErr("failed to load AI model", err)
 	}
 	if found == nil {
 		return apperrors.ErrNotFound("model not found")
@@ -101,7 +103,7 @@ func (h *AIModelsHandler) UpdateAIModel(c fiber.Ctx) error {
 	}
 	model, err := h.repo.UpdateAIProviderModel(c.Context(), id, displayName, enabled)
 	if err != nil {
-		return apperrors.ErrInternal("failed to update AI model")
+		return internalErr("failed to update AI model", err)
 	}
 	if model == nil {
 		return apperrors.ErrNotFound("model not found")
@@ -117,7 +119,7 @@ func (h *AIModelsHandler) DeleteAIModel(c fiber.Ctx) error {
 	}
 	deleted, err := h.repo.DeleteAIProviderModel(c.Context(), id)
 	if err != nil {
-		return apperrors.ErrInternal("failed to delete AI model")
+		return internalErr("failed to delete AI model", err)
 	}
 	if !deleted {
 		return apperrors.ErrNotFound("model not found")
