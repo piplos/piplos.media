@@ -123,8 +123,9 @@
 	let linkText = $state('');
 	let linkUrl = $state('');
 	let linkStyle = $state<LinkStyle>('link');
-	let linkTarget = $state<'same' | 'blank'>('same');
-	let linkNofollow = $state(false);
+	// По умолчанию ссылки ведут в новую вкладку с nofollow; чистый Markdown остаётся только при «в текущей вкладке» без nofollow.
+	let linkTarget = $state<'same' | 'blank'>('blank');
+	let linkNofollow = $state(true);
 
 	function toggleLinkPanel() {
 		if (!linkPanelOpen) {
@@ -173,8 +174,8 @@
 		linkText = '';
 		linkUrl = '';
 		linkStyle = 'link';
-		linkTarget = 'same';
-		linkNofollow = false;
+		linkTarget = 'blank';
+		linkNofollow = true;
 	}
 
 	function insertImage(url: string, alt: string) {
@@ -452,8 +453,9 @@
 				<Button variant="primary" disabled={!linkUrl.trim()} onclick={insertLink}>Вставить</Button>
 			</div>
 			<p class="mde-embed-hint">
-				Обычная ссылка вставляется как Markdown; кнопки и открытие в новой вкладке — как HTML-тег
-				<code>&lt;a&gt;</code> со стилями сайта.
+				По умолчанию ссылка открывается в новой вкладке с <code>nofollow</code> и вставляется как
+				HTML-тег <code>&lt;a&gt;</code>; чистый Markdown <code>[текст](url)</code> останется, только
+				если выбрать «в текущей вкладке» и снять <code>nofollow</code>.
 			</p>
 		</div>
 	{/if}
