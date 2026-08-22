@@ -54,6 +54,13 @@ export function settingsBreadcrumbs(pathname: string): SettingsBreadcrumb[] {
 	}
 
 	if (pathname === '/settings/media' || pathname.startsWith('/settings/media/')) {
+		if (pathname === '/settings/media/image-search') {
+			return [
+				{ label: 'Настройки', href: '/settings' },
+				{ label: 'Медиа', href: '/settings/media' },
+				{ label: 'Поиск PNG/JPG' }
+			];
+		}
 		return [{ label: 'Настройки', href: '/settings' }, { label: 'Медиа' }];
 	}
 

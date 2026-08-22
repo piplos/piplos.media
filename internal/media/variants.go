@@ -46,8 +46,8 @@ func IsRasterExt(ext string) bool {
 	}
 }
 
-// isDisposableOriginal reports PNG/JPEG sources we remove after WebP succeeds.
-func isDisposableOriginal(ext string) bool {
+// IsDisposableOriginal reports PNG/JPEG sources we remove after WebP succeeds.
+func IsDisposableOriginal(ext string) bool {
 	switch strings.ToLower(ext) {
 	case ".jpg", ".jpeg", ".png":
 		return true
@@ -203,7 +203,7 @@ func GenerateVariants(absPath string) (out Variants, err error) {
 	}
 
 	// Best-effort: WebP family is already the source of truth.
-	if isDisposableOriginal(ext) {
+	if IsDisposableOriginal(ext) {
 		_ = os.Remove(absPath)
 	}
 	return out, nil
@@ -291,7 +291,7 @@ func RebuildDir(root string) (ok, failed int, err error) {
 		dir := filepath.Dir(path)
 		stem := Stem(name)
 		if familyComplete(dir, stem) {
-			if isDisposableOriginal(ext) {
+			if IsDisposableOriginal(ext) {
 				_ = os.Remove(path)
 			}
 			ok++

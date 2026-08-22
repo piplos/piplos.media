@@ -11,16 +11,17 @@ import (
 
 // Handlers groups all route handlers.
 type Handlers struct {
-	Auth     *handlers.AuthHandler
-	Users    *handlers.UsersHandler
-	Content  *handlers.ContentHandler
-	Leads    *handlers.LeadsHandler
-	Settings *handlers.SettingsHandler
-	Public   *handlers.PublicHandler
-	Uploads  *handlers.UploadsHandler
-	Files    *handlers.FilesHandler
-	AIModels *handlers.AIModelsHandler
-	Backups  *handlers.BackupsHandler
+	Auth        *handlers.AuthHandler
+	Users       *handlers.UsersHandler
+	Content     *handlers.ContentHandler
+	Leads       *handlers.LeadsHandler
+	Settings    *handlers.SettingsHandler
+	Public      *handlers.PublicHandler
+	Uploads     *handlers.UploadsHandler
+	Files       *handlers.FilesHandler
+	ImageSearch *handlers.ImageSearchHandler
+	AIModels    *handlers.AIModelsHandler
+	Backups     *handlers.BackupsHandler
 }
 
 // APIPrefix is the versioned path on the API host (api.piplos.media/v1/...).
@@ -136,6 +137,11 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	adm.Post("/ai-models", h.AIModels.CreateAIModel)
 	adm.Put("/ai-models/:id", h.AIModels.UpdateAIModel)
 	adm.Delete("/ai-models/:id", h.AIModels.DeleteAIModel)
+
+	// Поиск вставленных PNG/JPG в контенте и замена ссылок на WebP.
+	adm.Get("/media/image-references", h.ImageSearch.References)
+	adm.Post("/media/image-references/replace", h.ImageSearch.Replace)
+	adm.Post("/media/image-references/replace-all", h.ImageSearch.ReplaceAll)
 
 	// Backups (создание, восстановление, скачивание, удаление).
 	adm.Get("/backups", h.Backups.List)
