@@ -254,7 +254,7 @@
 	}
 
 	.article-block :global(img) {
-		max-width: min(360px, 100%);
+		width: 100%;
 		margin: 2rem auto;
 	}
 
