@@ -10,6 +10,18 @@ export interface AdminUser {
 	updated_at: string;
 }
 
+/** Ключ внешнего агента (Manus, n8n, ...). Хеш и сырой ключ из API не приходят. */
+export interface APIKey {
+	id: string;
+	name: string;
+	key_prefix: string;
+	created_by?: string | null;
+	last_used_at?: string | null;
+	revoked_at?: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
 export interface Language {
 	code: string;
 	name: string;

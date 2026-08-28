@@ -46,15 +46,17 @@ func ErrorHandler(log zerolog.Logger) fiber.Handler {
 	}
 }
 
-// Auth handles JWT authentication and role checks.
+// Auth handles JWT and API-key authentication.
 type Auth struct {
 	authService *authsvc.Service
 	sessions    SessionChecker
+	apiKeys     APIKeyChecker
 }
 
-// NewAuth creates auth middleware.
-func NewAuth(authService *authsvc.Service, sessions SessionChecker) *Auth {
-	return &Auth{authService: authService, sessions: sessions}
+// NewAuth creates auth middleware. apiKeys may be nil when no agent routes
+// are registered.
+func NewAuth(authService *authsvc.Service, sessions SessionChecker, apiKeys APIKeyChecker) *Auth {
+	return &Auth{authService: authService, sessions: sessions, apiKeys: apiKeys}
 }
 
 // RequireAuth validates the Bearer token and stores the user in locals.

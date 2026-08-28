@@ -20,6 +20,7 @@ import (
 	"github.com/piplos/piplos.media/internal/middleware"
 	"github.com/piplos/piplos.media/internal/models"
 	authsvc "github.com/piplos/piplos.media/internal/services/auth"
+	"github.com/piplos/piplos.media/internal/utils"
 )
 
 type routeCase struct {
@@ -77,6 +78,19 @@ var (
 		{http.MethodPost, "/v1/languages"},
 		{http.MethodGet, "/v1/ai-models"},
 		{http.MethodPost, "/v1/ai-models"},
+		{http.MethodGet, "/v1/api-keys"},
+		{http.MethodPost, "/v1/api-keys"},
+		{http.MethodPost, "/v1/api-keys/k-1/revoke"},
+		{http.MethodDelete, "/v1/api-keys/k-1"},
+	}
+
+	agentRoutes = []routeCase{
+		{http.MethodPost, "/v1/agent/articles"},
+		{http.MethodGet, "/v1/agent/articles"},
+		{http.MethodGet, "/v1/agent/articles/abc"},
+		{http.MethodPut, "/v1/agent/articles/abc"},
+		{http.MethodDelete, "/v1/agent/articles/abc"},
+		{http.MethodPost, "/v1/agent/uploads"},
 	}
 )
 
@@ -92,6 +106,18 @@ func (f *fakeSessionChecker) IsSessionValid(_ context.Context, sessionID string)
 	return f.validSessions[sessionID], nil
 }
 
+// fakeAPIKeyChecker resolves the raw key "pk_live_valid-key" to an active key
+// and "pk_live_revoked-key" to a revoked one.
+type fakeAPIKeyChecker struct {
+	keys map[string]*models.APIKey
+}
+
+func (f *fakeAPIKeyChecker) GetAPIKeyByHash(_ context.Context, keyHash string) (*models.APIKey, error) {
+	return f.keys[keyHash], nil
+}
+
+func (f *fakeAPIKeyChecker) TouchAPIKeyLastUsed(_ context.Context, _ string) error { return nil }
+
 func newAuthTestApp(t *testing.T) (*fiber.App, *authsvc.Service, *fakeSessionChecker) {
 	t.Helper()
 
@@ -105,7 +131,12 @@ func newAuthTestApp(t *testing.T) (*fiber.App, *authsvc.Service, *fakeSessionChe
 		"admin-session":   true,
 		"manager-session": true,
 	}}
-	authMw := middleware.NewAuth(authService, sessions)
+	now := time.Now()
+	keyChecker := &fakeAPIKeyChecker{keys: map[string]*models.APIKey{
+		utils.HashAPIKey("pk_live_valid-key"):   {ID: "k-1", Name: "manus"},
+		utils.HashAPIKey("pk_live_revoked-key"): {ID: "k-2", Name: "old", RevokedAt: &now},
+	}}
+	authMw := middleware.NewAuth(authService, sessions, keyChecker)
 
 	app := fiber.New()
 	app.Use(middleware.ErrorHandler(zerolog.Nop()))
@@ -128,6 +159,15 @@ func newAuthTestApp(t *testing.T) (*fiber.App, *authsvc.Service, *fakeSessionChe
 
 	api.Post("/auth/login", ok)
 	api.Post("/auth/refresh", ok)
+
+	// Agent group must be registered before the "" groups (prefix-scoped
+	// middleware runs in registration order). Paths are relative to the
+	// /agent group prefix.
+	agent := api.Group("/agent", authMw.RequireAPIKey())
+	for _, r := range agentRoutes {
+		registerProbe(agent, strings.TrimPrefix(routeSuffix(r.path), "/agent"), r.method, ok)
+	}
+
 	authn := api.Group("", authMw.RequireAuth())
 	authn.Get("/auth/me", ok)
 
@@ -237,6 +277,44 @@ func TestAdminRoutesAllowAdmin(t *testing.T) {
 		if resp.StatusCode != http.StatusNoContent {
 			t.Fatalf("%s %s as admin: got %d, want 204", r.method, r.path, resp.StatusCode)
 		}
+	}
+}
+
+// TestAgentRoutesRequireAPIKey probes every agent route: no token or an
+// invalid/revoked key must yield 401 (they never fall into the JWT flow).
+func TestAgentRoutesRequireAPIKey(t *testing.T) {
+	app, _, _ := newAuthTestApp(t)
+
+	for _, r := range agentRoutes {
+		for _, token := range []string{"", "pk_live_unknown", "not-a-jwt", "pk_live_revoked-key"} {
+			resp := doRequest(t, app, r.method, r.path, token, "")
+			if resp.StatusCode != http.StatusUnauthorized {
+				t.Fatalf("%s %s with token %q: got %d, want 401", r.method, r.path, token, resp.StatusCode)
+			}
+		}
+	}
+}
+
+func TestAgentRoutesAllowValidKey(t *testing.T) {
+	app, _, _ := newAuthTestApp(t)
+
+	for _, r := range agentRoutes {
+		resp := doRequest(t, app, r.method, r.path, "pk_live_valid-key", "")
+		if resp.StatusCode != http.StatusNoContent {
+			t.Fatalf("%s %s with valid key: got %d, want 204", r.method, r.path, resp.StatusCode)
+		}
+	}
+}
+
+func TestAgentRoutesRejectUserRoleTokens(t *testing.T) {
+	// A valid admin JWT must not authenticate agent routes: different schemes.
+	app, authService, _ := newAuthTestApp(t)
+	admin := &models.User{ID: "admin-id", Email: "admin@test.com", Role: models.RoleAdmin, IsActive: true}
+	token := tokenFor(t, authService, admin, "admin-session")
+
+	resp := doRequest(t, app, http.MethodGet, "/v1/agent/articles", token, "")
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("agent route with JWT: got %d, want 401", resp.StatusCode)
 	}
 }
 
@@ -371,7 +449,7 @@ func newAuthHandlerRouteApp(t *testing.T, users *authRouteUserStore) (*fiber.App
 	authService := authsvc.New(cfg)
 	sessions := &authRouteSessionStore{byHash: map[string]*models.RefreshSession{}, byID: map[string]*models.RefreshSession{}}
 	authHandler := handlers.NewAuthHandler(authService, users, sessions, false)
-	authMw := middleware.NewAuth(authService, sessions)
+	authMw := middleware.NewAuth(authService, sessions, nil)
 
 	app := fiber.New()
 	app.Use(middleware.ErrorHandler(zerolog.Nop()))

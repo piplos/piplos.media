@@ -33,7 +33,7 @@ func newTestAuth(t *testing.T, sessions *fakeSessionChecker) (*authsvc.Service, 
 	t.Helper()
 	cfg := &config.Config{JWTSecret: testJWTSecret, JWTExpirationMinutes: 15}
 	authSvc := authsvc.New(cfg)
-	return authSvc, middleware.NewAuth(authSvc, sessions)
+	return authSvc, middleware.NewAuth(authSvc, sessions, nil)
 }
 
 func protectedApp(t *testing.T, authMw *middleware.Auth, afterAuth ...fiber.Handler) *fiber.App {

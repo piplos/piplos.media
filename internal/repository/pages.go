@@ -61,7 +61,8 @@ func (r *Repository) GetPageBySlug(ctx context.Context, slug string) (*models.Pa
 	return scanPage(row)
 }
 
-// CreatePage inserts a page.
+// CreatePage inserts a page. Concurrent inserts of the same slug return
+// ErrDuplicateSlug instead of a raw constraint error.
 func (r *Repository) CreatePage(ctx context.Context, p *models.Page) (*models.Page, error) {
 	tr, err := p.Translations.JSON()
 	if err != nil {
@@ -74,10 +75,18 @@ func (r *Repository) CreatePage(ctx context.Context, p *models.Page) (*models.Pa
 		`INSERT INTO pages (slug, published, publish_at, image, tags, translations)
 		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING `+pageColumns,
 		p.Slug, p.Published, p.PublishAt, p.Image, p.Tags, tr)
-	return scanPage(row)
+	created, err := scanPage(row)
+	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, fmt.Errorf("create page: %w", ErrDuplicateSlug)
+		}
+		return nil, fmt.Errorf("create page: %w", err)
+	}
+	return created, nil
 }
 
-// UpdatePage updates a page.
+// UpdatePage updates a page. A slug collision with another page returns
+// ErrDuplicateSlug.
 func (r *Repository) UpdatePage(ctx context.Context, p *models.Page) (*models.Page, error) {
 	tr, err := p.Translations.JSON()
 	if err != nil {
@@ -90,7 +99,14 @@ func (r *Repository) UpdatePage(ctx context.Context, p *models.Page) (*models.Pa
 		`UPDATE pages SET slug = $2, published = $3, publish_at = $4, image = $5, tags = $6, translations = $7, updated_at = now()
 		 WHERE id = $1 RETURNING `+pageColumns,
 		p.ID, p.Slug, p.Published, p.PublishAt, p.Image, p.Tags, tr)
-	return scanPage(row)
+	updated, err := scanPage(row)
+	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, fmt.Errorf("update page: %w", ErrDuplicateSlug)
+		}
+		return nil, fmt.Errorf("update page: %w", err)
+	}
+	return updated, nil
 }
 
 // DeletePage removes a page by id.
