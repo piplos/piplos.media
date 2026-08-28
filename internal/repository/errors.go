@@ -11,4 +11,8 @@ var (
 	// ErrDuplicateEmail is returned when inserting a user violates the
 	// unique constraint on users.email.
 	ErrDuplicateEmail = errors.New("user with this email already exists")
+
+	// ErrDuplicateSlug is returned when inserting/updating a page violates
+	// the unique constraint on pages.slug.
+	ErrDuplicateSlug = errors.New("page with this slug already exists")
 )

@@ -3,13 +3,15 @@ import { confirmAction } from './confirm.svelte';
 
 type DeleteEnhanceOptions = {
 	message: string;
+	/** Текст кнопки подтверждения (по умолчанию «Удалить»). */
+	confirmLabel?: string;
 	onSuccess: () => void | Promise<void>;
 	onError?: (message: string) => void;
 };
 
-export function deleteEnhance({ message, onSuccess, onError }: DeleteEnhanceOptions): SubmitFunction {
+export function deleteEnhance({ message, confirmLabel, onSuccess, onError }: DeleteEnhanceOptions): SubmitFunction {
 	return async ({ cancel }) => {
-		if (!(await confirmAction(message))) {
+		if (!(await confirmAction({ message, confirmLabel }))) {
 			cancel();
 			return;
 		}

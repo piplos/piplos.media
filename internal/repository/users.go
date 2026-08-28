@@ -66,7 +66,8 @@ func (r *Repository) CountUsers(ctx context.Context) (int, error) {
 }
 
 // isUniqueViolation reports whether err is (or wraps) a Postgres unique_violation.
-// The only unique constraint on users is email.
+// Package-level helper: callers resolve which constraint fired (users.email,
+// pages.slug, api_keys.key_hash) from their own context.
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"

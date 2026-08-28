@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"strings"
 	"time"
 
@@ -569,6 +570,9 @@ func (h *ContentHandler) CreatePage(c fiber.Ctx) error {
 	}
 	created, err := h.repo.CreatePage(c.Context(), p)
 	if err != nil {
+		if errors.Is(err, repository.ErrDuplicateSlug) {
+			return apperrors.ErrConflict("slug already exists")
+		}
 		return internalErr("failed to create page", err)
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"page": created})
@@ -586,6 +590,9 @@ func (h *ContentHandler) UpdatePage(c fiber.Ctx) error {
 	}
 	updated, err := h.repo.UpdatePage(c.Context(), p)
 	if err != nil {
+		if errors.Is(err, repository.ErrDuplicateSlug) {
+			return apperrors.ErrConflict("slug already exists")
+		}
 		return internalErr("failed to update page", err)
 	}
 	if updated == nil {

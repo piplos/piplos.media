@@ -260,6 +260,32 @@ func (p *Page) IsLive(now time.Time) bool {
 	return p.PublishAt == nil || !p.PublishAt.After(now)
 }
 
+// ArticleStatus is the publication state shown to external agents:
+// "draft" | "scheduled" | "published".
+func (p *Page) ArticleStatus(now time.Time) string {
+	if !p.Published {
+		return "draft"
+	}
+	if p.PublishAt != nil && p.PublishAt.After(now) {
+		return "scheduled"
+	}
+	return "published"
+}
+
+// APIKey is a credential for external agents (Manus, n8n, ...).
+// KeyHash is never serialized; the raw key is shown exactly once at creation.
+type APIKey struct {
+	ID         string     `json:"id"`
+	Name       string     `json:"name"`
+	KeyHash    string     `json:"-"`
+	KeyPrefix  string     `json:"key_prefix"`
+	CreatedBy  *string    `json:"created_by,omitempty"`
+	LastUsedAt *time.Time `json:"last_used_at,omitempty"`
+	RevokedAt  *time.Time `json:"revoked_at,omitempty"`
+	CreatedAt  time.Time  `json:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at"`
+}
+
 // EnabledLanguageCodes returns codes of enabled content languages.
 func EnabledLanguageCodes(langs []Language) []string {
 	codes := make([]string, 0, len(langs))

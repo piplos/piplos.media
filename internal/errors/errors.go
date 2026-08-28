@@ -15,6 +15,7 @@ const (
 	CodeAccountDisabled = "account_disabled"
 	CodeNotFound        = "not_found"
 	CodeConflict        = "conflict"
+	CodeValidation      = "validation_failed"
 	CodeServiceError    = "service_error"
 )
 
@@ -25,6 +26,7 @@ var codeToStatus = map[string]int{
 	CodeAccountDisabled: http.StatusForbidden,
 	CodeNotFound:        http.StatusNotFound,
 	CodeConflict:        http.StatusConflict,
+	CodeValidation:      http.StatusUnprocessableEntity,
 	CodeServiceError:    http.StatusServiceUnavailable,
 	CodeInternal:        http.StatusInternalServerError,
 }
@@ -70,5 +72,6 @@ func ErrForbidden(msg string) *AppError       { return New(CodeForbidden, msg) }
 func ErrAccountDisabled(msg string) *AppError { return New(CodeAccountDisabled, msg) }
 func ErrNotFound(msg string) *AppError        { return New(CodeNotFound, msg) }
 func ErrConflict(msg string) *AppError        { return New(CodeConflict, msg) }
+func ErrValidation(msg string) *AppError      { return New(CodeValidation, msg) }
 func ErrInternal(msg string) *AppError        { return New(CodeInternal, msg) }
 func ErrService(msg string) *AppError         { return New(CodeServiceError, msg) }

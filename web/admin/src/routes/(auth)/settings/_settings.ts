@@ -64,5 +64,10 @@ export function settingsBreadcrumbs(pathname: string): SettingsBreadcrumb[] {
 		return [{ label: 'Настройки', href: '/settings' }, { label: 'Медиа' }];
 	}
 
+	if (pathname === '/settings/api-keys' || pathname.startsWith('/settings/api-keys/')) {
+		return [{ label: 'Настройки', href: '/settings' }, { label: 'API-ключи' }];
+	}
+
 	return [{ label: 'Настройки' }];
 }
+

@@ -367,7 +367,7 @@ func TestRefreshInactiveUser(t *testing.T) {
 
 func TestLogoutRevokesSession(t *testing.T) {
 	h, authSvc, sessions := newAuthTestHandler(t)
-	authMw := middleware.NewAuth(authSvc, sessions)
+	authMw := middleware.NewAuth(authSvc, sessions, nil)
 	app := fiber.New()
 	app.Use(middleware.ErrorHandler(zerolog.Nop()))
 	app.Post("/login", h.Login)

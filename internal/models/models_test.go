@@ -61,3 +61,28 @@ func TestIsLegalPath(t *testing.T) {
 		}
 	}
 }
+
+func TestPageArticleStatus(t *testing.T) {
+	now := time.Date(2026, 7, 17, 12, 0, 0, 0, time.UTC)
+	past := now.Add(-time.Hour)
+	future := now.Add(time.Hour)
+
+	tests := []struct {
+		name string
+		page Page
+		want string
+	}{
+		{"draft", Page{Published: false}, "draft"},
+		{"draft with future schedule", Page{Published: false, PublishAt: &future}, "draft"},
+		{"published no schedule", Page{Published: true}, "published"},
+		{"published with past schedule", Page{Published: true, PublishAt: &past}, "published"},
+		{"scheduled for future", Page{Published: true, PublishAt: &future}, "scheduled"},
+		{"boundary now is published", Page{Published: true, PublishAt: &now}, "published"},
+	}
+
+	for _, tt := range tests {
+		if got := tt.page.ArticleStatus(now); got != tt.want {
+			t.Errorf("%s: ArticleStatus() = %q, want %q", tt.name, got, tt.want)
+		}
+	}
+}

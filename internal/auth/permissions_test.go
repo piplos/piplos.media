@@ -37,6 +37,14 @@ var expectedRouteGroups = []routeProbe{
 	{"GET", "/v1/ai-models", authperms.GroupAdmin},
 	{"POST", "/v1/ai-models", authperms.GroupAdmin},
 	{"GET", "/v1/backups", authperms.GroupAdmin},
+	{"GET", "/v1/api-keys", authperms.GroupAdmin},
+	{"POST", "/v1/api-keys", authperms.GroupAdmin},
+	{"DELETE", "/v1/api-keys/k-1", authperms.GroupAdmin},
+	// Agent samples (API-key auth)
+	{"GET", "/v1/agent/articles", authperms.GroupAgent},
+	{"POST", "/v1/agent/articles", authperms.GroupAgent},
+	{"PUT", "/v1/agent/articles/abc", authperms.GroupAgent},
+	{"POST", "/v1/agent/uploads", authperms.GroupAgent},
 }
 
 func matrixMatchesRoute(r authperms.RoutePermission, method, path string) bool {

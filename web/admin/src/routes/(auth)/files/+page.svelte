@@ -516,7 +516,7 @@
 				<dt>Путь</dt>
 				<dd>{preview.path}</dd>
 			</dl>
-			<div class="preview-url">
+			<div class="preview-url copy-field">
 				<input type="text" readonly value={preview.url} aria-label="Ссылка на файл" />
 				<Button variant="secondary" onclick={() => preview && copyUrl(preview.url)}>Копировать</Button>
 			</div>
@@ -832,21 +832,9 @@
 		color: #18181b;
 		word-break: break-all;
 	}
+	/* Раскладка поля — общая .copy-field в app.css. */
 	.preview-url {
-		display: flex;
-		gap: 0.5rem;
-	}
-	.preview-url input {
-		flex: 1;
-		min-width: 0;
-		min-height: 2.25rem;
-		padding: 0.375rem 0.75rem;
-		font-size: 0.8125rem;
-		color: #374151;
-		background: #fafafa;
-		border: 1px solid #d1d5db;
-		border-radius: 8px;
-		box-sizing: border-box;
+		margin-bottom: 1rem;
 	}
 	.preview-actions {
 		display: flex;

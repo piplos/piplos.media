@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
 	import AdminBreadcrumbs from '$lib/components/AdminBreadcrumbs.svelte';
 	import { setTabLayoutContext } from '$lib/tab-layout.svelte';
@@ -24,7 +25,7 @@
 		{ href: '/settings/media', label: 'Медиа', icon: 'media' },
 		{ href: '/settings/backups', label: 'Бекапы', icon: 'backups' },
 		{ href: '/settings/users', label: 'Пользователи', icon: 'users' }
-	];
+	] as const;
 
 	function isActive(href: string) {
 		if (href === '/settings') return pathname === '/settings';
@@ -34,17 +35,25 @@
 	const aiSubTabs = [
 		{ href: '/settings/ai', label: 'Провайдеры' },
 		{ href: '/settings/ai/translation', label: 'Перевод' }
-	];
+	] as const;
 
 	const smtpSubTabs = [
 		{ href: '/settings/smtp', label: 'Подключение' },
 		{ href: '/settings/smtp/template', label: 'Шаблон письма' }
-	];
+	] as const;
 
 	const mediaSubTabs = [
 		{ href: '/settings/media', label: 'WebP-варианты' },
 		{ href: '/settings/media/image-search', label: 'Поиск PNG/JPG' }
-	];
+	] as const;
+
+	// Боковое меню для разделов без своего подменю: «Языки» (это страница
+	// «Общие») и «API-ключи» рядом друг с другом. Остальные разделы живут
+	// только в горизонтальном баре.
+	const sectionSidebarTabs = [
+		{ href: '/settings', label: 'Языки' },
+		{ href: '/settings/api-keys', label: 'API-ключи' }
+	] as const;
 
 	const showAiSidebar = $derived(
 		pathname === '/settings/ai' || pathname.startsWith('/settings/ai/')
@@ -64,6 +73,13 @@
 		pathname === '/settings/backups' || pathname.startsWith('/settings/backups/')
 	);
 
+	// Боковое меню (Языки + API-ключи) — только на этих двух страницах,
+	// по образцу сайдбара AI. Остальные страницы без подменю (Пользователи)
+	// рендерятся без сайдбара.
+	const showSectionSidebar = $derived(
+		pathname === '/settings' || pathname === '/settings/api-keys'
+	);
+
 	function isSubActive(rootHref: string, href: string) {
 		if (href === rootHref) return pathname === rootHref;
 		return pathname === href || pathname.startsWith(href + '/');
@@ -79,7 +95,7 @@
 		<div class="settings-tabs-list">
 			{#each tabs as tab (tab.href)}
 				<a
-					href={tab.href}
+					href={resolve(tab.href)}
 					class="settings-tab-link"
 					class:settings-tab-link--active={isActive(tab.href)}
 				>
@@ -132,7 +148,7 @@
 		<div class="admin-sidebar-row">
 			<nav class="admin-sidebar-nav" aria-label="Подразделы AI">
 				{#each aiSubTabs as tab (tab.href)}
-					<a href={tab.href} class:active={isSubActive('/settings/ai', tab.href)}>
+					<a href={resolve(tab.href)} class:active={isSubActive('/settings/ai', tab.href)}>
 						{tab.label}
 					</a>
 				{/each}
@@ -145,7 +161,7 @@
 		<div class="admin-sidebar-row">
 			<nav class="admin-sidebar-nav" aria-label="Подразделы SMTP">
 				{#each smtpSubTabs as tab (tab.href)}
-					<a href={tab.href} class:active={isSubActive('/settings/smtp', tab.href)}>
+					<a href={resolve(tab.href)} class:active={isSubActive('/settings/smtp', tab.href)}>
 						{tab.label}
 					</a>
 				{/each}
@@ -158,7 +174,7 @@
 		<div class="admin-sidebar-row">
 			<nav class="admin-sidebar-nav" aria-label="Подразделы медиа">
 				{#each mediaSubTabs as tab (tab.href)}
-					<a href={tab.href} class:active={isSubActive('/settings/media', tab.href)}>
+					<a href={resolve(tab.href)} class:active={isSubActive('/settings/media', tab.href)}>
 						{tab.label}
 					</a>
 				{/each}
@@ -169,6 +185,19 @@
 		</div>
 	{:else if showBackupsSection}
 		{@render children()}
+	{:else if showSectionSidebar}
+		<div class="admin-sidebar-row">
+			<nav class="admin-sidebar-nav" aria-label="Разделы настроек">
+				{#each sectionSidebarTabs as tab (tab.href)}
+					<a href={resolve(tab.href)} class:active={isActive(tab.href)}>
+						{tab.label}
+					</a>
+				{/each}
+			</nav>
+			<div class="admin-sidebar-content admin-sidebar-content--no-box">
+				{@render children()}
+			</div>
+		</div>
 	{:else}
 		<div class="settings-content">
 			{@render children()}

@@ -108,8 +108,9 @@ func main() {
 		return uploadsStatic(c)
 	})
 
-	authMw := middleware.NewAuth(authService, repo)
+	authMw := middleware.NewAuth(authService, repo, repo)
 	mailService := mailer.NewService(repo, repo, cfg.AdminURL, log)
+	uploadsHandler := handlers.NewUploadsHandler(uploadDir, publicAPIURL)
 	h := &server.Handlers{
 		Auth:        handlers.NewAuthHandler(authService, repo, repo, cfg.AuthLegacyRefresh),
 		Users:       handlers.NewUsersHandler(authService, repo),
@@ -117,11 +118,13 @@ func main() {
 		Leads:       handlers.NewLeadsHandler(repo, mailService),
 		Settings:    handlers.NewSettingsHandler(repo, translate.New(repo)),
 		Public:      handlers.NewPublicHandler(repo),
-		Uploads:     handlers.NewUploadsHandler(uploadDir, publicAPIURL),
+		Uploads:     uploadsHandler,
 		Files:       handlers.NewFilesHandler(uploadDir, publicAPIURL),
 		ImageSearch: handlers.NewImageSearchHandler(repo, uploadDir),
 		AIModels:    handlers.NewAIModelsHandler(repo),
 		Backups:     handlers.NewBackupsHandler(backupSvc),
+		APIKeys:     handlers.NewAPIKeysHandler(repo),
+		Agent:       handlers.NewAgentHandler(repo, uploadsHandler),
 	}
 	server.Register(app, h, authMw)
 

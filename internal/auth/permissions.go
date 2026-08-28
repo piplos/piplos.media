@@ -9,6 +9,7 @@ const (
 	GroupAuthenticated = "authenticated"
 	GroupStaff         = "staff"
 	GroupAdmin         = "admin"
+	GroupAgent         = "agent"
 )
 
 // StaffRoles may access content, uploads, files, leads, read languages, translate.
@@ -57,4 +58,7 @@ var APIRoutes = []RoutePermission{
 	{Method: "DELETE", Path: "/v1/languages/*", Group: GroupAdmin},
 	{Method: "*", Path: "/v1/ai-models", Group: GroupAdmin},
 	{Method: "*", Path: "/v1/backups", Group: GroupAdmin},
+	{Method: "*", Path: "/v1/api-keys", Group: GroupAdmin},
+	// Agent (external automation, API-key auth — not JWT/session)
+	{Method: "*", Path: "/v1/agent", Group: GroupAgent},
 }

@@ -138,8 +138,4 @@
 		cursor: pointer;
 		margin-right: 0.375rem;
 	}
-	:global(.chart-table) tbody tr.row-blocked,
-	:global(.chart-table) tbody tr.row-blocked td {
-		background: rgba(220, 38, 38, 0.06);
-	}
 </style>

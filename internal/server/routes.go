@@ -22,6 +22,8 @@ type Handlers struct {
 	ImageSearch *handlers.ImageSearchHandler
 	AIModels    *handlers.AIModelsHandler
 	Backups     *handlers.BackupsHandler
+	APIKeys     *handlers.APIKeysHandler
+	Agent       *handlers.AgentHandler
 }
 
 // APIPrefix is the versioned path on the API host (api.piplos.media/v1/...).
@@ -52,6 +54,19 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	// Auth.
 	api.Post("/auth/login", h.Auth.Login)
 	api.Post("/auth/refresh", h.Auth.Refresh)
+
+	// External agents: DB-key auth, NOT RequireAuth (JWT/session based).
+	// Registered BEFORE the "" groups below: in Fiber group middleware is
+	// prefix-scoped in registration order, so /v1/agent paths must hit
+	// RequireAPIKey before the broader RequireAuth middleware.
+	agent := api.Group("/agent", auth.RequireAPIKey())
+	agent.Post("/articles", h.Agent.CreateArticle)
+	agent.Get("/articles", h.Agent.ListArticles)
+	agent.Get("/articles/:id", h.Agent.GetArticle)
+	agent.Put("/articles/:id", h.Agent.UpdateArticle)
+	agent.Delete("/articles/:id", h.Agent.DeleteArticle)
+	agent.Post("/uploads", h.Agent.Uploads)
+
 	authn := api.Group("", auth.RequireAuth())
 	authn.Get("/auth/me", h.Auth.Me)
 	authn.Post("/auth/logout", h.Auth.Logout)
@@ -137,6 +152,12 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	adm.Post("/ai-models", h.AIModels.CreateAIModel)
 	adm.Put("/ai-models/:id", h.AIModels.UpdateAIModel)
 	adm.Delete("/ai-models/:id", h.AIModels.DeleteAIModel)
+
+	// API keys for external agents (admin manages credentials).
+	adm.Get("/api-keys", h.APIKeys.List)
+	adm.Post("/api-keys", h.APIKeys.Create)
+	adm.Post("/api-keys/:id/revoke", h.APIKeys.Revoke)
+	adm.Delete("/api-keys/:id", h.APIKeys.Delete)
 
 	// Поиск вставленных PNG/JPG в контенте и замена ссылок на WebP.
 	adm.Get("/media/image-references", h.ImageSearch.References)
