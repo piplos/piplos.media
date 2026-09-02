@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -25,6 +26,7 @@ import (
 // unique constraint emulated via repository.ErrDuplicateSlug.
 type fakeAgentStore struct {
 	langs []models.Language
+	stack []models.StackItem
 	pages map[string]*models.Page
 	seo   map[string]*models.SEOPage
 }
@@ -35,6 +37,12 @@ func newFakeAgentStore() *fakeAgentStore {
 			{Code: "en", Name: "English", IsDefault: true, Enabled: true},
 			{Code: "ru", Name: "Русский", Enabled: true, SortOrder: 1},
 		},
+		stack: []models.StackItem{
+			{ID: "s-flutter", Slug: "flutter", Label: "Flutter", Published: true},
+			{ID: "s-go", Slug: "golang", Label: "Go", Published: true},
+			{ID: "s-figma", Slug: "figma", Label: "Figma", Published: true},
+			{ID: "s-php", Slug: "php", Label: "PHP", Published: false},
+		},
 		pages: map[string]*models.Page{},
 		seo:   map[string]*models.SEOPage{},
 	}
@@ -42,6 +50,10 @@ func newFakeAgentStore() *fakeAgentStore {
 
 func (f *fakeAgentStore) ListLanguages(_ context.Context) ([]models.Language, error) {
 	return f.langs, nil
+}
+
+func (f *fakeAgentStore) ListStackItems(_ context.Context) ([]models.StackItem, error) {
+	return f.stack, nil
 }
 
 func (f *fakeAgentStore) slugTaken(slug, exceptID string) bool {
@@ -156,6 +168,7 @@ type agentArticleOut struct {
 	Slug         string              `json:"slug"`
 	Published    bool                `json:"published"`
 	PublishAt    *time.Time          `json:"publish_at"`
+	Tags         []string            `json:"tags"`
 	Translations models.Translations `json:"translations"`
 	Status       string              `json:"status"`
 	SEO          *models.SEOPage     `json:"seo"`
@@ -173,6 +186,7 @@ func newAgentTestApp(t *testing.T) (*fiber.App, *fakeAgentStore) {
 	app.Use(middleware.ErrorHandler(zerolog.Nop()))
 	h := handlers.NewAgentHandler(store, nil)
 	app.Post("/v1/agent/articles", h.CreateArticle)
+	app.Get("/v1/agent/stack", h.ListStack)
 	app.Get("/v1/agent/articles", h.ListArticles)
 	app.Get("/v1/agent/articles/:id", h.GetArticle)
 	app.Put("/v1/agent/articles/:id", h.UpdateArticle)
@@ -222,7 +236,7 @@ func TestAgentCreateRejectsMissingTranslations(t *testing.T) {
 	tr := fullTranslations()
 	delete(tr["ru"], "body")
 	tr["en"]["title"] = "   "
-	body := fmt.Sprintf(`{"published":true,"translations":%s}`, mustJSON(t, tr))
+	body := fmt.Sprintf(`{"tags":["Flutter"],"published":true,"translations":%s}`, mustJSON(t, tr))
 
 	resp := doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles", body)
 	if resp.StatusCode != http.StatusUnprocessableEntity {
@@ -245,7 +259,7 @@ func TestAgentCreateRejectsUnsupportedLanguage(t *testing.T) {
 
 	tr := fullTranslations()
 	tr["de"] = map[string]string{"title": "x", "description": "y", "body": "z"}
-	body := fmt.Sprintf(`{"published":true,"translations":%s}`, mustJSON(t, tr))
+	body := fmt.Sprintf(`{"tags":["Flutter"],"published":true,"translations":%s}`, mustJSON(t, tr))
 
 	resp := doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles", body)
 	if resp.StatusCode != http.StatusUnprocessableEntity {
@@ -262,7 +276,7 @@ func TestAgentCreateAutoSlugFromCyrillicTitle(t *testing.T) {
 	app, store := newAgentTestApp(t)
 
 	tr := fullTranslations()
-	body := fmt.Sprintf(`{"published":true,"translations":%s}`, mustJSON(t, tr))
+	body := fmt.Sprintf(`{"tags":["Flutter"],"published":true,"translations":%s}`, mustJSON(t, tr))
 
 	resp := doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles", body)
 	if resp.StatusCode != http.StatusCreated {
@@ -296,7 +310,7 @@ func TestAgentCreateSlugValidationAndConflict(t *testing.T) {
 	app, store := newAgentTestApp(t)
 
 	// Invalid charset.
-	body := fmt.Sprintf(`{"slug":"My Slug","published":true,"translations":%s}`, mustJSON(t, fullTranslations()))
+	body := fmt.Sprintf(`{"slug":"My Slug","tags":["Flutter"],"published":true,"translations":%s}`, mustJSON(t, fullTranslations()))
 	resp := doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles", body)
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("invalid slug: got %d, want 400", resp.StatusCode)
@@ -304,7 +318,7 @@ func TestAgentCreateSlugValidationAndConflict(t *testing.T) {
 
 	// Explicit duplicate.
 	store.pages["p-1"] = &models.Page{ID: "p-1", Slug: "taken"}
-	body = fmt.Sprintf(`{"slug":"taken","published":true,"translations":%s}`, mustJSON(t, fullTranslations()))
+	body = fmt.Sprintf(`{"slug":"taken","tags":["Flutter"],"published":true,"translations":%s}`, mustJSON(t, fullTranslations()))
 	resp = doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles", body)
 	if resp.StatusCode != http.StatusConflict {
 		t.Fatalf("duplicate slug: got %d, want 409", resp.StatusCode)
@@ -326,9 +340,9 @@ func TestAgentCreateStatuses(t *testing.T) {
 		body string
 		want string
 	}{
-		{"draft", fmt.Sprintf(`{"published":false,"translations":%s}`, mustJSON(t, fullTranslations())), "draft"},
-		{"scheduled", fmt.Sprintf(`{"published":true,"publish_at":%q,"translations":%s}`, future, mustJSON(t, fullTranslations())), "scheduled"},
-		{"published past", fmt.Sprintf(`{"published":true,"publish_at":%q,"translations":%s}`, past, mustJSON(t, fullTranslations())), "published"},
+		{"draft", fmt.Sprintf(`{"tags":["Flutter"],"published":false,"translations":%s}`, mustJSON(t, fullTranslations())), "draft"},
+		{"scheduled", fmt.Sprintf(`{"tags":["Flutter"],"published":true,"publish_at":%q,"translations":%s}`, future, mustJSON(t, fullTranslations())), "scheduled"},
+		{"published past", fmt.Sprintf(`{"tags":["Flutter"],"published":true,"publish_at":%q,"translations":%s}`, past, mustJSON(t, fullTranslations())), "published"},
 	}
 	for _, tc := range cases {
 		resp := doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles", tc.body)
@@ -352,7 +366,7 @@ func TestAgentCreateWithSEO(t *testing.T) {
 		"en": {"title": "SEO En", "description": "Desc"},
 		"ru": {"title": "SEO Ru", "description": "Описание"},
 	}
-	body := fmt.Sprintf(`{"slug":"with-seo","published":true,"translations":%s,"seo":{"translations":%s}}`,
+	body := fmt.Sprintf(`{"slug":"with-seo","tags":["Flutter"],"published":true,"translations":%s,"seo":{"translations":%s}}`,
 		mustJSON(t, fullTranslations()), mustJSON(t, seo))
 
 	resp := doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles", body)
@@ -385,7 +399,7 @@ func TestAgentUpdateMovesSEOOnSlugChange(t *testing.T) {
 	app, _ := newAgentTestApp(t)
 
 	seo := models.Translations{"en": {"title": "SEO", "description": "D"}, "ru": {"title": "СЕО", "description": "О"}}
-	createBody := fmt.Sprintf(`{"slug":"old-slug","published":true,"translations":%s,"seo":{"translations":%s}}`,
+	createBody := fmt.Sprintf(`{"slug":"old-slug","tags":["Flutter"],"published":true,"translations":%s,"seo":{"translations":%s}}`,
 		mustJSON(t, fullTranslations()), mustJSON(t, seo))
 	resp := doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles", createBody)
 	var created struct {
@@ -394,7 +408,7 @@ func TestAgentUpdateMovesSEOOnSlugChange(t *testing.T) {
 	decodeAgentJSON(t, resp.Body, &created)
 
 	// Update with a new slug and no seo block: entry must move, translations kept.
-	updateBody := fmt.Sprintf(`{"slug":"new-slug","published":true,"translations":%s}`, mustJSON(t, fullTranslations()))
+	updateBody := fmt.Sprintf(`{"slug":"new-slug","tags":["Flutter"],"published":true,"translations":%s}`, mustJSON(t, fullTranslations()))
 	resp = doAgentRequest(t, app, http.MethodPut, "/v1/agent/articles/"+created.Article.ID, updateBody)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("update: got %d, want 200", resp.StatusCode)
@@ -417,7 +431,7 @@ func TestAgentUpdateSEOOccupiedPath(t *testing.T) {
 	// Article A with SEO at /articles/a; article B occupying /articles/b.
 	seoA := models.Translations{"en": {"title": "A", "description": "D"}, "ru": {"title": "А", "description": "Д"}}
 	resp := doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles",
-		fmt.Sprintf(`{"slug":"a","published":true,"translations":%s,"seo":{"translations":%s}}`,
+		fmt.Sprintf(`{"slug":"a","tags":["Flutter"],"published":true,"translations":%s,"seo":{"translations":%s}}`,
 			mustJSON(t, fullTranslations()), mustJSON(t, seoA)))
 	var a struct {
 		Article agentArticleOut `json:"article"`
@@ -427,7 +441,7 @@ func TestAgentUpdateSEOOccupiedPath(t *testing.T) {
 	store.seo[uuid.Must(uuid.NewRandom()).String()] = &models.SEOPage{ID: "seo-b", Path: "/articles/b"}
 
 	// Rename A onto B's path -> 409.
-	updateBody := fmt.Sprintf(`{"slug":"b","published":true,"translations":%s}`, mustJSON(t, fullTranslations()))
+	updateBody := fmt.Sprintf(`{"slug":"b","tags":["Flutter"],"published":true,"translations":%s}`, mustJSON(t, fullTranslations()))
 	resp = doAgentRequest(t, app, http.MethodPut, "/v1/agent/articles/"+a.Article.ID, updateBody)
 	if resp.StatusCode != http.StatusConflict {
 		t.Fatalf("occupied seo path: got %d, want 409", resp.StatusCode)
@@ -438,7 +452,7 @@ func TestAgentUpdateValidation(t *testing.T) {
 	app, _ := newAgentTestApp(t)
 
 	resp := doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles",
-		fmt.Sprintf(`{"slug":"upd","published":true,"translations":%s}`, mustJSON(t, fullTranslations())))
+		fmt.Sprintf(`{"slug":"upd","tags":["Flutter"],"published":true,"translations":%s}`, mustJSON(t, fullTranslations())))
 	var created struct {
 		Article agentArticleOut `json:"article"`
 	}
@@ -448,7 +462,7 @@ func TestAgentUpdateValidation(t *testing.T) {
 	tr := fullTranslations()
 	delete(tr["en"], "body")
 	resp = doAgentRequest(t, app, http.MethodPut, "/v1/agent/articles/"+created.Article.ID,
-		fmt.Sprintf(`{"published":true,"translations":%s}`, mustJSON(t, tr)))
+		fmt.Sprintf(`{"tags":["Flutter"],"published":true,"translations":%s}`, mustJSON(t, tr)))
 	if resp.StatusCode != http.StatusUnprocessableEntity {
 		t.Fatalf("partial update: got %d, want 422", resp.StatusCode)
 	}
@@ -456,14 +470,14 @@ func TestAgentUpdateValidation(t *testing.T) {
 	// Unknown UUID -> 404 (valid UUID that does not exist).
 	missingID := uuid.Must(uuid.NewRandom()).String()
 	resp = doAgentRequest(t, app, http.MethodPut, "/v1/agent/articles/"+missingID,
-		fmt.Sprintf(`{"published":true,"translations":%s}`, mustJSON(t, fullTranslations())))
+		fmt.Sprintf(`{"tags":["Flutter"],"published":true,"translations":%s}`, mustJSON(t, fullTranslations())))
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("unknown id: got %d, want 404", resp.StatusCode)
 	}
 
 	// Non-UUID id -> 400 (not a 500 from the driver).
 	resp = doAgentRequest(t, app, http.MethodPut, "/v1/agent/articles/not-a-uuid",
-		fmt.Sprintf(`{"published":true,"translations":%s}`, mustJSON(t, fullTranslations())))
+		fmt.Sprintf(`{"tags":["Flutter"],"published":true,"translations":%s}`, mustJSON(t, fullTranslations())))
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("non-uuid id: got %d, want 400", resp.StatusCode)
 	}
@@ -474,7 +488,7 @@ func TestAgentDeleteRemovesSEO(t *testing.T) {
 
 	seo := models.Translations{"en": {"title": "SEO", "description": "D"}, "ru": {"title": "СЕО", "description": "О"}}
 	resp := doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles",
-		fmt.Sprintf(`{"slug":"del","published":true,"translations":%s,"seo":{"translations":%s}}`,
+		fmt.Sprintf(`{"slug":"del","tags":["Flutter"],"published":true,"translations":%s,"seo":{"translations":%s}}`,
 			mustJSON(t, fullTranslations()), mustJSON(t, seo)))
 	var created struct {
 		Article agentArticleOut `json:"article"`
@@ -499,9 +513,9 @@ func TestAgentListIncludesDrafts(t *testing.T) {
 	app, _ := newAgentTestApp(t)
 
 	doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles",
-		fmt.Sprintf(`{"slug":"one","published":true,"translations":%s}`, mustJSON(t, fullTranslations())))
+		fmt.Sprintf(`{"slug":"one","tags":["Flutter"],"published":true,"translations":%s}`, mustJSON(t, fullTranslations())))
 	doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles",
-		fmt.Sprintf(`{"slug":"two","published":false,"translations":%s}`, mustJSON(t, fullTranslations())))
+		fmt.Sprintf(`{"slug":"two","tags":["Flutter"],"published":false,"translations":%s}`, mustJSON(t, fullTranslations())))
 
 	resp := doAgentRequest(t, app, http.MethodGet, "/v1/agent/articles", "")
 	if resp.StatusCode != http.StatusOK {
@@ -513,6 +527,107 @@ func TestAgentListIncludesDrafts(t *testing.T) {
 	decodeAgentJSON(t, resp.Body, &out)
 	if len(out.Articles) != 2 {
 		t.Fatalf("list len = %d, want 2", len(out.Articles))
+	}
+}
+
+func TestAgentCreateRequiresTags(t *testing.T) {
+	app, _ := newAgentTestApp(t)
+
+	var out agentErrorResponse
+
+	// No tags at all.
+	body := fmt.Sprintf(`{"published":true,"translations":%s}`, mustJSON(t, fullTranslations()))
+	resp := doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles", body)
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("no tags: got %d, want 422", resp.StatusCode)
+	}
+	decodeAgentJSON(t, resp.Body, &out)
+	if out.Error != "validation_failed" || out.Message != "missing: tags" {
+		t.Fatalf("no tags: got %s / %q, want validation_failed / missing: tags", out.Error, out.Message)
+	}
+
+	// Blank strings after trim count as missing too.
+	body = fmt.Sprintf(`{"tags":["  ",""],"published":true,"translations":%s}`, mustJSON(t, fullTranslations()))
+	resp = doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles", body)
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("blank tags: got %d, want 422", resp.StatusCode)
+	}
+	decodeAgentJSON(t, resp.Body, &out)
+	if out.Message != "missing: tags" {
+		t.Fatalf("blank tags: message = %q, want missing: tags", out.Message)
+	}
+}
+
+func TestAgentCreateRejectsUnknownTags(t *testing.T) {
+	app, _ := newAgentTestApp(t)
+
+	body := fmt.Sprintf(`{"tags":["Flutter","Nocat"],"published":true,"translations":%s}`,
+		mustJSON(t, fullTranslations()))
+	resp := doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles", body)
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("got %d, want 422", resp.StatusCode)
+	}
+	var out agentErrorResponse
+	decodeAgentJSON(t, resp.Body, &out)
+	if out.Error != "validation_failed" {
+		t.Fatalf("error code = %q, want validation_failed", out.Error)
+	}
+	if out.Message != "unknown stack tags: Nocat" {
+		t.Fatalf("message = %q, want unknown stack tags: Nocat", out.Message)
+	}
+}
+
+func TestAgentCreateCanonicalizesTags(t *testing.T) {
+	app, _ := newAgentTestApp(t)
+
+	// Case-insensitive catalog match, trim and dedupe: stored values are the
+	// canonical catalog labels in request order.
+	body := fmt.Sprintf(`{"tags":["flutter"," GO ","Flutter","figma"],"published":true,"translations":%s}`,
+		mustJSON(t, fullTranslations()))
+	resp := doAgentRequest(t, app, http.MethodPost, "/v1/agent/articles", body)
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("got %d, want 201", resp.StatusCode)
+	}
+	var out struct {
+		Article agentArticleOut `json:"article"`
+	}
+	decodeAgentJSON(t, resp.Body, &out)
+	want := []string{"Flutter", "Go", "Figma"}
+	if !slices.Equal(out.Article.Tags, want) {
+		t.Fatalf("tags = %v, want %v", out.Article.Tags, want)
+	}
+
+	// Update accepts the canonical labels as-is.
+	resp = doAgentRequest(t, app, http.MethodPut, "/v1/agent/articles/"+out.Article.ID,
+		fmt.Sprintf(`{"tags":["Figma"],"published":true,"translations":%s}`, mustJSON(t, fullTranslations())))
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("update: got %d, want 200", resp.StatusCode)
+	}
+	decodeAgentJSON(t, resp.Body, &out)
+	if !slices.Equal(out.Article.Tags, []string{"Figma"}) {
+		t.Fatalf("updated tags = %v, want [Figma]", out.Article.Tags)
+	}
+}
+
+func TestAgentListStack(t *testing.T) {
+	app, _ := newAgentTestApp(t)
+
+	resp := doAgentRequest(t, app, http.MethodGet, "/v1/agent/stack", "")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("got %d, want 200", resp.StatusCode)
+	}
+	var out struct {
+		Stack []models.StackItem `json:"stack"`
+	}
+	decodeAgentJSON(t, resp.Body, &out)
+	// Published items only — the agent picks tags from what the site shows.
+	if len(out.Stack) != 3 {
+		t.Fatalf("stack len = %d, want 3", len(out.Stack))
+	}
+	for _, it := range out.Stack {
+		if it.Slug == "php" {
+			t.Fatal("unpublished item must not be listed")
+		}
 	}
 }
 
