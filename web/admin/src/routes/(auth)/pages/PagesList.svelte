@@ -7,6 +7,7 @@
 	import Button from '$lib/components/Button.svelte';
 	import { deleteEnhance } from '$lib/delete-enhance';
 	import { formatDate } from '$lib/format';
+	import Pagination from '$lib/components/Pagination.svelte';
 	import {
 		LEGAL_SLUG_LABELS,
 		PAGE_STATUS_LABELS,
@@ -46,6 +47,11 @@
 	function legalPath(slug: string): string {
 		return `/{lang}/legal/${slug}`;
 	}
+
+	/** Человекочитаемая ссылка на страницу списка статей. */
+	function pageHref(n: number): string {
+		return n === 1 ? '/pages' : `/pages?page=${n}`;
+	}
 </script>
 
 <svelte:head>
@@ -63,7 +69,7 @@
 		<nav class="admin-sidebar-nav" aria-label="Разделы страниц">
 			<a href="/pages" class="sidebar-link" class:active={!isLegal}>
 				<span class="sidebar-label">Статьи</span>
-				<span class="sidebar-count">{data.pages.length}</span>
+				<span class="sidebar-count">{data.total}</span>
 			</a>
 			<a href="/pages/legal" class="sidebar-link" class:active={isLegal}>
 				<span class="sidebar-label">Правовые документы</span>
@@ -221,6 +227,9 @@
 							</tbody>
 						</table>
 					</div>
+					{#if data.totalPages > 1}
+						<Pagination page={data.page} totalPages={data.totalPages} makeHref={pageHref} />
+					{/if}
 				{/if}
 			{/if}
 		</div>

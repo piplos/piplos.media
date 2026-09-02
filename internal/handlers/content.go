@@ -537,13 +537,22 @@ func (req *pageRequest) toModel(id string) (*models.Page, error) {
 	}, nil
 }
 
-// ListPages returns all custom pages (admin view).
+// ListPages returns custom pages (admin view) with ?limit/?offset pagination.
 func (h *ContentHandler) ListPages(c fiber.Ctx) error {
-	items, err := h.repo.ListPages(c.Context())
+	limit := fiber.Query(c, "limit", 50)
+	if limit < 1 || limit > 200 {
+		limit = 50
+	}
+	offset := fiber.Query(c, "offset", 0)
+	if offset < 0 {
+		offset = 0
+	}
+
+	items, total, err := h.repo.ListPagesPaged(c.Context(), limit, offset)
 	if err != nil {
 		return internalErr("failed to list pages", err)
 	}
-	return c.JSON(fiber.Map{"pages": items})
+	return c.JSON(fiber.Map{"pages": items, "total": total})
 }
 
 // GetPage returns one custom page.

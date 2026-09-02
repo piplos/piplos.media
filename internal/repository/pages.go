@@ -29,13 +29,8 @@ func scanPage(row pgx.Row) (*models.Page, error) {
 	return &p, nil
 }
 
-// ListPages returns all custom pages, newest first (admin view, including drafts).
-func (r *Repository) ListPages(ctx context.Context) ([]models.Page, error) {
-	rows, err := r.pool.Query(ctx,
-		"SELECT "+pageColumns+" FROM pages ORDER BY COALESCE(publish_at, created_at) DESC, created_at DESC")
-	if err != nil {
-		return nil, fmt.Errorf("list pages: %w", err)
-	}
+// collectPages drains a pages query into a slice, closing rows.
+func collectPages(rows pgx.Rows) ([]models.Page, error) {
 	defer rows.Close()
 
 	items := []models.Page{}
@@ -47,6 +42,37 @@ func (r *Repository) ListPages(ctx context.Context) ([]models.Page, error) {
 		items = append(items, *p)
 	}
 	return items, rows.Err()
+}
+
+// ListPages returns all custom pages, newest first (admin view, including drafts).
+func (r *Repository) ListPages(ctx context.Context) ([]models.Page, error) {
+	rows, err := r.pool.Query(ctx,
+		"SELECT "+pageColumns+" FROM pages ORDER BY COALESCE(publish_at, created_at) DESC, created_at DESC")
+	if err != nil {
+		return nil, fmt.Errorf("list pages: %w", err)
+	}
+	return collectPages(rows)
+}
+
+// ListPagesPaged returns custom pages, newest first, paginated with
+// limit/offset, along with the total count (admin view, including drafts).
+func (r *Repository) ListPagesPaged(ctx context.Context, limit, offset int) ([]models.Page, int, error) {
+	var total int
+	if err := r.pool.QueryRow(ctx, "SELECT count(*) FROM pages").Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count pages: %w", err)
+	}
+
+	rows, err := r.pool.Query(ctx,
+		"SELECT "+pageColumns+" FROM pages ORDER BY COALESCE(publish_at, created_at) DESC, created_at DESC LIMIT $1 OFFSET $2",
+		limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list pages: %w", err)
+	}
+	items, err := collectPages(rows)
+	if err != nil {
+		return nil, 0, err
+	}
+	return items, total, nil
 }
 
 // GetPage returns a page by id or nil.
