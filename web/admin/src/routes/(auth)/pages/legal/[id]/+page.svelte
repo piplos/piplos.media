@@ -8,6 +8,7 @@
 	const docTitle = $derived(LEGAL_SLUG_LABELS[data.page.slug] ?? data.page.slug);
 	const breadcrumbs = $derived([
 		{ label: 'Страницы', href: '/pages' },
+		{ label: 'Правовые документы', href: '/pages/legal' },
 		{ label: docTitle }
 	]);
 </script>
