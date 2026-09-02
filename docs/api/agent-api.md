@@ -24,7 +24,7 @@ API для внешних автоматизаций (Manus, n8n и др.): со
 | `published` | bool | `false` → черновик; `true` → публикация (немедленная или отложенная через `publish_at`) |
 | `publish_at` | string \| null | RFC 3339. В будущем + `published: true` → отложенная публикация; в прошлом или null → немедленная |
 | `image` | string | Путь к обложке, например `/uploads/pages/<slug>/cover.webp` (см. «Загрузка картинок») |
-| `tags` | string[] | Метки из каталога стека |
+| `tags` | string[] | **Обязательно.** Стек статьи: непустой список меток из каталога стека — см. `GET /v1/agent/stack`. Совпадение с `label` без учёта регистра; значения канонизируются к каталогу, дубликаты схлопываются, максимум 20 |
 | `translations` | object | **Обязательно.** Каждое включённое зеркало языка: `title`, `description`, `body` |
 | `seo` | object \| null | Опционально. `{ "translations": { "<lang>": { "title", "description", "keywords", "og_title", "og_description", "og_image" } } }` — обязательны `title` и `description` на каждом языке |
 
@@ -42,6 +42,20 @@ API для внешних автоматизаций (Manus, n8n и др.): со
 
 Лишние/опечатанные коды языков тоже отклоняются:
 `{"error": "validation_failed", "message": "unsupported languages: de"}`.
+
+## Каталог стека (теги статьи)
+
+`GET /v1/agent/stack` → `{"stack": [{"slug", "label", "icon", "group_id", …}]}` —
+опубликованные технологии сайта. `tags` статьи обязателен и собирается только
+из этих значений (поле `label`); передавать можно без учёта регистра — сервер
+приведёт к канонической форме каталога и уберёт дубликаты.
+
+Нарушение → `422`:
+
+```json
+{"error": "validation_failed", "message": "missing: tags"}
+{"error": "validation_failed", "message": "unknown stack tags: Nocat"}
+```
 
 ## Методы
 
@@ -154,7 +168,7 @@ API для внешних автоматизаций (Manus, n8n и др.): со
 | 401 | `unauthorized` | Нет/неверный/отозванный API-ключ |
 | 404 | `not_found` | Статья не найдена |
 | 409 | `conflict` | Slug или SEO-путь заняты |
-| 422 | `validation_failed` | Неполные переводы — см. список `missing:` в сообщении |
+| 422 | `validation_failed` | Неполные переводы или теги вне каталога стека — см. `missing:` / `unknown stack tags:` в сообщении |
 | 500 | `internal_error` | Сбой на сервере |
 
 Формат всех ошибок: `{"error": "<code>", "message": "<human-readable>"}`.

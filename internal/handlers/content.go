@@ -558,6 +558,19 @@ func (h *ContentHandler) GetPage(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"page": p})
 }
 
+// validatePageTags applies the article tags rule server-side: tags are
+// required and must come from the stack catalog — same rule as the agent API
+// (canonicalizeTags). The admin UI enforces this via TagSelect; this guards
+// direct API calls.
+func (h *ContentHandler) validatePageTags(c fiber.Ctx, p *models.Page) error {
+	items, err := h.repo.ListStackItems(c.Context())
+	if err != nil {
+		return internalErr("failed to load stack catalog", err)
+	}
+	p.Tags, err = canonicalizeTags(p.Tags, items)
+	return err
+}
+
 // CreatePage adds a custom page.
 func (h *ContentHandler) CreatePage(c fiber.Ctx) error {
 	var req pageRequest
@@ -566,6 +579,9 @@ func (h *ContentHandler) CreatePage(c fiber.Ctx) error {
 	}
 	p, err := req.toModel("")
 	if err != nil {
+		return err
+	}
+	if err := h.validatePageTags(c, p); err != nil {
 		return err
 	}
 	created, err := h.repo.CreatePage(c.Context(), p)
@@ -586,6 +602,9 @@ func (h *ContentHandler) UpdatePage(c fiber.Ctx) error {
 	}
 	p, err := req.toModel(c.Params("id"))
 	if err != nil {
+		return err
+	}
+	if err := h.validatePageTags(c, p); err != nil {
 		return err
 	}
 	updated, err := h.repo.UpdatePage(c.Context(), p)

@@ -22,6 +22,7 @@ import (
 // (implemented by *repository.Repository).
 type AgentStore interface {
 	ListLanguages(ctx context.Context) ([]models.Language, error)
+	ListStackItems(ctx context.Context) ([]models.StackItem, error)
 	ListPages(ctx context.Context) ([]models.Page, error)
 	GetPage(ctx context.Context, id string) (*models.Page, error)
 	GetPageBySlug(ctx context.Context, slug string) (*models.Page, error)
@@ -79,6 +80,10 @@ var (
 	seoRequiredFields = []string{"title", "description"}
 
 	agentSlugPattern = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
+
+	// agentStackTagLimit caps the tags array: articles pick a stack, not a
+	// replacement for the body.
+	agentStackTagLimit = 20
 )
 
 // articleSEOPath is the SEO entry path convention for articles.
@@ -203,6 +208,48 @@ func (h *AgentHandler) upsertSEO(c fiber.Ctx, path string, tr models.Translation
 	return updated, nil
 }
 
+// canonicalizeTags validates article tags against the stack catalog: tags
+// are required, trimmed, deduped (case-insensitive) and mapped onto the
+// catalog labels, so stored values always match the catalog exactly.
+// Returns error (not *AppError): callers assign the result into an existing
+// error variable, and a typed nil would make that check misfire.
+func canonicalizeTags(tags []string, items []models.StackItem) ([]string, error) {
+	byLabel := make(map[string]string, len(items))
+	for _, it := range items {
+		byLabel[strings.ToLower(strings.TrimSpace(it.Label))] = it.Label
+	}
+
+	canonical := []string{}
+	seen := make(map[string]struct{}, len(tags))
+	var unknown []string
+	for _, t := range tags {
+		t = strings.TrimSpace(t)
+		if t == "" {
+			continue
+		}
+		label, ok := byLabel[strings.ToLower(t)]
+		if !ok {
+			unknown = append(unknown, t)
+			continue
+		}
+		if _, dup := seen[strings.ToLower(label)]; dup {
+			continue
+		}
+		seen[strings.ToLower(label)] = struct{}{}
+		canonical = append(canonical, label)
+	}
+	if len(unknown) > 0 {
+		return nil, apperrors.ErrValidation("unknown stack tags: " + strings.Join(unknown, ", "))
+	}
+	if len(canonical) == 0 {
+		return nil, apperrors.ErrValidation("missing: tags")
+	}
+	if len(canonical) > agentStackTagLimit {
+		return nil, apperrors.ErrValidation(fmt.Sprintf("tags: at most %d items allowed", agentStackTagLimit))
+	}
+	return canonical, nil
+}
+
 // bindArticleRequest parses the body and validates translations for the
 // request's languages (strict, article fields + optional SEO block).
 // Shared by create and update (DRY).
@@ -223,7 +270,34 @@ func (h *AgentHandler) bindArticleRequest(c fiber.Ctx) (*agentArticleRequest, []
 			return nil, nil, err
 		}
 	}
+
+	items, err := h.repo.ListStackItems(c.Context())
+	if err != nil {
+		return nil, nil, internalErr("failed to load stack catalog", err)
+	}
+	req.Tags, err = canonicalizeTags(req.Tags, items)
+	if err != nil {
+		return nil, nil, err
+	}
 	return &req, langs, nil
+}
+
+// ListStack returns the stack catalog for tag selection: the label of each
+// entry is a valid value for the article's tags field. Published items only —
+// the same set the public site shows; validation accepts any catalog label
+// so drafts never break updates of existing articles.
+func (h *AgentHandler) ListStack(c fiber.Ctx) error {
+	items, err := h.repo.ListStackItems(c.Context())
+	if err != nil {
+		return internalErr("failed to load stack catalog", err)
+	}
+	published := []models.StackItem{}
+	for _, it := range items {
+		if it.Published {
+			published = append(published, it)
+		}
+	}
+	return c.JSON(fiber.Map{"stack": published})
 }
 
 // CreateArticle adds an article on behalf of an external agent.

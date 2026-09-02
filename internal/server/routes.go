@@ -60,6 +60,7 @@ func Register(app *fiber.App, h *Handlers, auth *middleware.Auth) {
 	// prefix-scoped in registration order, so /v1/agent paths must hit
 	// RequireAPIKey before the broader RequireAuth middleware.
 	agent := api.Group("/agent", auth.RequireAPIKey())
+	agent.Get("/stack", h.Agent.ListStack)
 	agent.Post("/articles", h.Agent.CreateArticle)
 	agent.Get("/articles", h.Agent.ListArticles)
 	agent.Get("/articles/:id", h.Agent.GetArticle)
